@@ -1,0 +1,26 @@
+{
+    "manifest_version": 2,
+    "name": "Support solving FunCaptcha - OMOcaptcha.com",
+    "version": "1.0",
+    "browser_action": {
+        "default_icon": {
+            "16": "icon16.png",
+            "48": "icon48.png",
+            "128": "icon128.png"
+        }
+    },
+    "icons": {
+        "48": "icon128.png"
+      },
+    "permissions": [
+        "webRequest",
+        "webRequestBlocking",
+        "<all_urls>"
+    ],
+    "background": {
+        "scripts": [
+            "background.js"
+        ],
+        "persistent": true
+    }
+}
