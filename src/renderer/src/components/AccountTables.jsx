@@ -270,7 +270,9 @@ const AccountsTable = () => {
       features: values.features
     }
     if (values.id) {
-      ipcMainConsumer.emit('updateAccount', { id: values.id, ...newAccount })
+      // eslint-disable-next-line no-unused-vars
+      const { profileId, screenName, displayName, ...restAccount } = newAccount
+      ipcMainConsumer.emit('updateAccount', { id: values.id, ...restAccount })
     } else {
       ipcMainConsumer.emit('addAccount', newAccount)
     }

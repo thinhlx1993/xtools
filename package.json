@@ -1,7 +1,7 @@
 {
   "name": "auto-tw-tool",
   "productName": "auto-tw-tool",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "main": "./out/main/index.js",
   "author": "XMakeMoney",
   "description": "XMakeMoney with ChatGPT",

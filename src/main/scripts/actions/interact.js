@@ -1,8 +1,10 @@
-// const puppeteer = require('puppeteer-core')
+'use strict'
+// eslint-disable-next-line no-unused-vars
+const puppeteer = require('puppeteer-core')
 import logger from '../../logger'
 import { MAXIMUM_RETRY_CHATGPT } from '../../constants'
 import chatIntegration from '../../integration/chat'
-import utils from '../../utils'
+import utils from '../utils'
 import {
   profilePathSelector,
   tweetDetailPathSelector,
@@ -133,9 +135,12 @@ const commentEntry = async (page, entryElementHandle, content) => {
     console.log('NOT_FOUND_SUBMIT_BTN')
     return closeDialog()
   }
-  const enableSubmitBtnValue = await submitBtn.evaluate((element) =>
-    element.getAttribute('tabindex')
+  const enableSubmitBtnValue = await submitBtn.evaluate(
+    new Function('element', `return element.getAttribute('tabindex')`)
   )
+  // const enableSubmitBtnValue = await submitBtn.evaluate((element) =>
+  //   element.getAttribute('tabindex')
+  // )
   await utils.delayRandom()
   if (!enableSubmitBtnValue || enableSubmitBtnValue < 0) {
     console.log('value error')
@@ -326,6 +331,7 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
  * }} entryItem
  */
 const interactAdsEntry = async (page, entryElementHandle, entryItem) => {
+  logger.info('interactAdsEntry_NOT_FOUND_LINK_ADS', { entryItem })
   const video = entryItem.entities.media.find((media) => media.type === TWEET_MEDIA_TYPE.video)
   const unifiedCardVideo = entryItem.unifiedCard.media.find(
     (media) => media.type === TWEET_MEDIA_TYPE.video
@@ -347,7 +353,6 @@ const interactAdsEntry = async (page, entryElementHandle, entryItem) => {
   adsUrls = [...new Set(adsUrls)]
   if (adsUrls.length) {
     console.log('adsUrls', adsUrls)
-    console.log('entryItem', entryItem)
     await clickLinkAds(page, entryElementHandle, adsUrls)
   }
   await utils.delayRandom()
@@ -361,5 +366,5 @@ export default {
   watchVideo,
   viewImage,
   clickLinkAds,
-  interactAdsEntry,
+  interactAdsEntry
 }

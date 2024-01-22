@@ -111,7 +111,7 @@ ipcMain.on('deleteAccounts', async (event, ids) => {
             return hideMyAcc
               .deleteProfile(token, account.hideMyAccProfileId)
               .then(() => {
-                console.log('DELETED_HMA_ACCOUNT', {
+                logger.log('DELETED_HMA_ACCOUNT', {
                   username: hmaUsername,
                   profileId: account.hideMyAccProfileId
                 })

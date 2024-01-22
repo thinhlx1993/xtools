@@ -1,6 +1,6 @@
 import { mapErrorConstructor } from '../../../helpers'
 import logger from '../../../logger'
-import { REPLAY_ACTION_OPTION } from '../../../constants'
+// import { REPLAY_ACTION_OPTION } from '../../../constants'
 import { authenticateProxy } from '../../helpers'
 import utils from '../../utils'
 // eslint-disable-next-line no-unused-vars
@@ -53,17 +53,17 @@ const _func = async (browser, account, featOptions) => {
       })
     }
   }
-  if (dataMemories[account.id]) {
-    if (
-      featOptions.replayAction === REPLAY_ACTION_OPTION.timeout &&
-      featOptions.replayActionTimeout > 0
-    ) {
-      dataMemories[account.id] = setTimeout(
-        () => _func(browser, account, featOptions),
-        featOptions.replayActionTimeout * 10
-      )
-    }
-  }
+  // if (dataMemories[account.id]) {
+  //   if (
+  //     featOptions.replayAction === REPLAY_ACTION_OPTION.timeout &&
+  //     featOptions.replayActionTimeout > 0
+  //   ) {
+  //     dataMemories[account.id] = setTimeout(
+  //       () => _func(browser, account, featOptions),
+  //       featOptions.replayActionTimeout * 10
+  //     )
+  //   }
+  // }
 }
 
 const init = _func
