@@ -9,17 +9,17 @@ import { randomDelay, getOtp } from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
 
-export const openProfileBrowser = async (profileId) => {
+export const openProfileBrowser = async (profile) => {
   try {
     let proxyProtected = false
     let args = []
-    let profileData = await getProfileData(profileId, {})
-
+    console.log(profile)
+    let profileData = await getProfileData(profile, {})
     if (profileData.settings.browserType === 'hideMyAcc') {
       console.info(`get data from proxy ${profileData.proxy}`)
       const [tz] = await Promise.all([hideMyAcc.network(splitProxy(profileData.proxy))])
       console.info(`get data from tz ${tz}`)
-      profileData = await getProfileData(profileId, tz)
+      profileData = await getProfileData(profile, tz)
     }
 
     if (profileData.proxy) {
@@ -30,9 +30,9 @@ export const openProfileBrowser = async (profileId) => {
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
     }
 
-    let hideMyAccProfileDir = getAppPath(`\\profiles\\${profileId}`)
+    let hideMyAccProfileDir = getAppPath(`\\profiles\\${profile}`)
     if (profileData.settings.folderPath) {
-      hideMyAccProfileDir = `${profileData.settings.folderPath}\\${profileId}`
+      hideMyAccProfileDir = `${profileData.settings.folderPath}\\${profile}`
     }
     if (!fs.existsSync(hideMyAccProfileDir)) {
       fs.cpSync(getAppPath(`\\HMAZeroProfile`), hideMyAccProfileDir, {
@@ -44,14 +44,19 @@ export const openProfileBrowser = async (profileId) => {
     if (profileData.browser_data) {
       args.push(`--hidemyacc-data=${profileData.browser_data}`)
     }
-    // loading 2captcha plugin
-    const pathToExtension = getAppPath(`\\captcha-solve`)
-    if (fs.existsSync(pathToExtension)) {
-      console.log(`Found extention: ${pathToExtension}`)
-      // puppeteer.use(StealthPlugin())
-      args.push(`--disable-extensions-except=${pathToExtension}`)
-      args.push(`--load-extension=${pathToExtension}`)
-      // args.push(`--disable-site-isolation-trials --remote-debugging-port=9090`)
+
+    try {
+      // loading 2captcha plugin
+      const pathToExtension = getAppPath(`\\captcha-solve`)
+      if (fs.existsSync(pathToExtension)) {
+        console.log(`Found extention: ${pathToExtension}`)
+        // puppeteer.use(StealthPlugin())
+        args.push(`--disable-extensions-except=${pathToExtension}`)
+        args.push(`--load-extension=${pathToExtension}`)
+        // args.push(`--disable-site-isolation-trials --remote-debugging-port=9090`)
+      }
+    } catch (error) {
+      console.log(error)
     }
     const newBrowserOptions = {
       ...defaultPuppeteerOptions,
@@ -73,7 +78,7 @@ export const openProfileBrowser = async (profileId) => {
     }
     await page.goto('https://ipfighter.com/')
     console.info('Open the browser successfully')
-    // const signinStatus = await startSignIn(profileData, browser)
+    // await startSignIn(profile, browser) // test signin
     // await updateProfileData(profile, { status: signinStatus })
     // await _testCaptcha(page)
     // if (profileData.cookies) {
@@ -84,7 +89,7 @@ export const openProfileBrowser = async (profileId) => {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
       console.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
-      await updateProfileData(profileId, { status: 'proxy failed' })
+      await updateProfileData(profile, { status: 'proxy failed' })
     } else {
       console.error('Error occurred:', error.message)
       // Handle other types of errors
@@ -135,10 +140,9 @@ const _testCaptcha = async (page) => {
   await page.click("button[type='submit']")
 }
 
-export const startSignIn = async (profileId) => {
+export const startSignIn = async (profileId, browser) => {
   try {
     let profileData = await getProfileData(profileId, {})
-    const browser = await openProfileBrowser(profileId)
     // Start Puppeteer
     await updateProfileData(profileId, { status: 'logging in' })
     const page = await browser.newPage()
@@ -194,10 +198,8 @@ export const startSignIn = async (profileId) => {
   }
 }
 
-export const getCookies = async (profileId) => {
-  const browser = await openProfileBrowser(profileId)
+export const getCookies = async (profileId, browser) => {
   await randomDelay()
   await cacheCookies(browser, profileId)
   await randomDelay()
-  await browser.close()
 }

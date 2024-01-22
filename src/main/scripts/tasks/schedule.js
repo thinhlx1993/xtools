@@ -1,5 +1,5 @@
 import { get } from '../services/backend'
-import { startSignIn, getCookies } from './profile'
+import { openProfileBrowser, startSignIn, getCookies } from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
 
 let taskQueue = []
@@ -46,12 +46,13 @@ const processTaskQueue = async (queueId) => {
           const startDate = new Date()
           console.log(`${startDate} Worker ${queueId} start ${taskName}`)
           const profileId = queueData.profile_id
+          const browser = await openProfileBrowser(profileId)
           if (taskName === TASK_NAME_CONFIG.Login) {
-            await startSignIn(profileId)
+            await startSignIn(profileId, browser)
           } else if (taskName == TASK_NAME_CONFIG.GetCookie) {
-            await getCookies(profileId)
+            await getCookies(profileId, browser)
           }
-
+          await browser.close()
           const endDate = new Date()
           console.log(`${endDate} Worker ${queueId} finished ${taskName}`)
         }

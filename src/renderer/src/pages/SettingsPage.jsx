@@ -26,9 +26,8 @@ const SettingsPage = () => {
     hideMyAccPassword: '',
     chatGptKey: '',
     defaultCaptchaResolve: 'capguru',
-    antiCaptchaKey: '',
-    textSolveKey: '',
-    capguruKey: ''
+    capguruKey: '',
+    smsPoolKey: ''
   })
 
   useEffect(() => {
@@ -221,6 +220,15 @@ const SettingsPage = () => {
             label="capguruKey"
             name="capguruKey"
             value={settings.capguruKey}
+            onChange={handleChange}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            label="smsPoolKey"
+            name="smsPoolKey"
+            value={settings.smsPoolKey}
             onChange={handleChange}
             fullWidth
           />

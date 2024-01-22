@@ -561,9 +561,9 @@ const ProfilesPage = () => {
                   >
                     <DeleteForeverIcon />
                   </IconButton>
-                  {/* <Button color="info" onClick={() => handleOpenProfile(profile)}>
-                    Open
-                  </Button> */}
+                  <Button color="info" onClick={() => handleOpenProfile(profile)}>
+                    Open Profile
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
