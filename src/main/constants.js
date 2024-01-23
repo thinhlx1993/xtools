@@ -93,5 +93,6 @@ export const defaultPuppeteerOptions = {
 
 export const TASK_NAME_CONFIG = {
   Login: 'Login',
-  GetCookie: 'Lấy cookie'
+  GetCookie: 'Lấy cookie',
+  Captcha: 'Giải Captcha'
 }

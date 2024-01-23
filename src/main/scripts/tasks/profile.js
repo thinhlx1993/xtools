@@ -1,11 +1,19 @@
 import fs from 'fs'
+import axios from 'axios'
 import { getProfileData, updateProfileData } from '../services/backend'
 import { defaultPuppeteerOptions } from '../../constants'
-import puppeteer from 'puppeteer-core'
+import puppeteer from 'puppeteer-extra'
 import { getAppPath } from '../../utils'
 import { splitProxy } from '../../helpers'
 import hideMyAcc from '../../integration/hidemyacc'
-import { randomDelay, getOtp } from './utils'
+import {
+  randomDelay,
+  getOtp,
+  accessToIframe,
+  clickIntoNext,
+  calculateClicks,
+  sendCapGuruRequest
+} from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
 
@@ -47,13 +55,13 @@ export const openProfileBrowser = async (profile) => {
 
     try {
       // loading 2captcha plugin
-      const pathToExtension = getAppPath(`\\captcha-solve`)
+      const pathToExtension = getAppPath(`\\extentions\\SupportSolvingFunCaptcha`)
       if (fs.existsSync(pathToExtension)) {
         console.log(`Found extention: ${pathToExtension}`)
         // puppeteer.use(StealthPlugin())
         args.push(`--disable-extensions-except=${pathToExtension}`)
         args.push(`--load-extension=${pathToExtension}`)
-        // args.push(`--disable-site-isolation-trials --remote-debugging-port=9090`)
+        args.push(`--remote-debugging-port=9090`)
       }
     } catch (error) {
       console.log(error)
@@ -63,7 +71,7 @@ export const openProfileBrowser = async (profile) => {
       executablePath: profileData.settings.browserPath,
       args: [...defaultPuppeteerOptions.args, ...args]
     }
-    console.log(newBrowserOptions.args)
+    // console.log(newBrowserOptions.args)
     const browser = await puppeteer.launch(newBrowserOptions)
     const page = await browser.newPage()
 
@@ -80,7 +88,7 @@ export const openProfileBrowser = async (profile) => {
     console.info('Open the browser successfully')
     // await startSignIn(profile, browser) // test signin
     // await updateProfileData(profile, { status: signinStatus })
-    // await _testCaptcha(page)
+    // await resolveCaptcha(profile, page)
     // if (profileData.cookies) {
     //   await setCookies(page, profileData)
     // }
@@ -90,8 +98,10 @@ export const openProfileBrowser = async (profile) => {
       console.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
+      return null
     } else {
       console.error('Error occurred:', error.message)
+      return null
       // Handle other types of errors
     }
   }
@@ -123,21 +133,147 @@ export const setCookies = async (page, profileData) => {
   await page.setCookie(...cookieObj)
 }
 
-const _testCaptcha = async (page) => {
-  // переходим по указанному адресу
-  await page.goto('https://2captcha.com/demo/recaptcha-v2')
+export const resolveCaptcha = async (profileId, browser) => {
+  var page = await browser.newPage()
+  await page.goto('https://twitter.com/')
+  await randomDelay()
+  try {
+    // aria-label="Home timeline"
+    await page.waitForSelector('div[aria-label="Home timeline"]', {
+      visible: true,
+      timeout: 10000
+    })
+    await updateProfileData(profileId, { status: 'ok' })
+    return
+  } catch (error) {
+    console.log('Cant access to the homepage')
+  }
 
-  // ждем пока появится элемент с CSS селектором ".captcha-solver"
-  await page.waitForSelector('.captcha-solver')
-  // кликаем по элементу с указанным селектором
-  await page.click('.captcha-solver')
+  await page.evaluate(() =>
+    document
+      .querySelector('span')
+      ?.innerText?.includes('Hmm...this page doesn’t exist. Try searching for something else.')
+  )
+  await updateProfileData(profileId, { status: 'found captcha' })
 
-  // По умолчанию waitForSelector ожидает в течении 30 секунд, так как этого времени зачастую не достаточно, то указываем значение timeout вручную вторым параметром.
-  // Значение timeout указывается в "ms".
-  await page.waitForSelector(`.captcha-solver[data-state="solved"]`, { timeout: 150000 })
+  try {
+    let profileData = await getProfileData(profileId, {})
+    let key = ''
+    if (profileData.settings.capguruKey) {
+      key = profileData.settings.capguruKey
+    } else {
+      await updateProfileData(profileId, { status: 'captcha|not found guru key' })
+      return
+    }
 
-  // После решения капчи выполняем необходимые действия, в нашем случае нажимаем на кнопку  "check".
-  await page.click("button[type='submit']")
+    if (await page.$('a[href="/search"')) await page.click('a[href="/search"')
+
+    await randomDelay()
+    await page.waitForSelector('iframe[id="arkose_iframe"]', {
+      visible: true,
+      timeout: 10000
+    })
+    console.log('ok found iframe')
+    await randomDelay(10000, 20000)
+    // Access the first level iframe
+    const firstLevelFrame = await accessToIframe(page, 'iframe')
+
+    // Access the second level iframe
+    const secondLevelFrame = await accessToIframe(firstLevelFrame, 'iframe')
+
+    // Access the third level iframe
+    const thirdLevelFrame = await accessToIframe(secondLevelFrame, 'iframe')
+    console.log('ok found iframe 3')
+    const buttonSelector = 'button[data-theme="home.verifyButton"]' // Replace with the selector for your button
+    await thirdLevelFrame.waitForSelector(buttonSelector)
+    await thirdLevelFrame.click(buttonSelector) // click into authentication button
+    await randomDelay()
+
+    const challegingText = await thirdLevelFrame.$eval(
+      'div > div > h2 > span[role="text"]',
+      (element) => element.textContent
+    )
+
+    console.log(challegingText)
+
+    const regexTaks = /\((\d+) of (\d+)\)/ // Regex pattern to match and capture numbers in the format (X of Y)
+
+    const matchTaks = challegingText.match(regexTaks)
+    let number1, number2
+
+    if (matchTaks) {
+      number1 = matchTaks[1] // First captured group (number before "of")
+      number2 = matchTaks[2] // Second captured group (number after "of")
+    }
+
+    for (let i = 0; i < number2; i++) {
+      await page.waitForSelector('#Base64ImageCaptcha')
+      // Get the value of the input element
+      const captchaBase64 = await page.evaluate(() => {
+        const inputElement = document.getElementById('Base64ImageCaptcha')
+        return inputElement ? inputElement.value : null
+      })
+      // console.log(captchaBase64)
+      // Split the string at the comma
+      const base64Data = captchaBase64.split(',')[1]
+
+      // Prepare payload for CAPTCHA solving service
+      const payload = {
+        textinstructions: challegingText,
+        click: 'funcap',
+        key: key,
+        method: 'base64',
+        body: base64Data
+      }
+
+      // Send CAPTCHA to the solving service
+      const captchaResponse = await sendCapGuruRequest(payload)
+
+      // Wait for a while before retrieving the solution
+      await randomDelay(15000, 20000)
+
+      // Retrieve the solution
+      const rt = captchaResponse.split('|')
+      console.log(rt)
+      const solutionUrl = `http://api.cap.guru/res.php?key=${key}&id=${rt[1]}`
+      console.log(solutionUrl)
+      const solutionResponse = await axios.get(solutionUrl)
+      console.log(solutionResponse.data)
+      if (solutionResponse.data === 'ERROR_CAPTCHA_UNSOLVABLE') {
+        await updateProfileData(profileId, { status: 'ERROR_CAPTCHA_UNSOLVABLE' })
+        return
+      }
+      // Regular expression to match the pattern "x=number"
+      const regex = /x=(\d+)/
+      const match = solutionResponse.data.match(regex)
+
+      let xValue = null
+      if (match) {
+        xValue = parseInt(match[1], 10) // Convert the captured group to an integer
+        console.log(xValue)
+        const numberOfClicks = await calculateClicks(xValue)
+        console.log(`Number clicks ${numberOfClicks}`)
+        await clickIntoNext(thirdLevelFrame, numberOfClicks)
+        await randomDelay()
+        // Function to click a button based on its text content
+        await thirdLevelFrame.evaluate(() => {
+          // Find all buttons on the page
+          const buttons = Array.from(document.querySelectorAll('button'))
+          // Find the button with the text 'Submit'
+          const submitButton = buttons.find((button) => button.textContent === 'Submit')
+          // Click the button if found
+          if (submitButton) {
+            submitButton.click()
+          }
+        })
+        await randomDelay(5000, 10000)
+      }
+    }
+    await updateProfileData(profileId, { status: 'ok' })
+  } catch (error) {
+    console.log(error)
+    await updateProfileData(profileId, { status: 'captcha error' })
+  }
 }
 
 export const startSignIn = async (profileId, browser) => {
@@ -164,6 +300,7 @@ export const startSignIn = async (profileId, browser) => {
     await page.waitForXPath(nextButtonXPath)
     const nextButtons = await page.$x(nextButtonXPath)
     if (nextButtons.length === 0) {
+      await updateProfileData(profileId, { status: 'Login error' })
       throw new Error('Login error, Next button not found exception')
     }
     await nextButtons[0].click()
@@ -192,7 +329,7 @@ export const startSignIn = async (profileId, browser) => {
     await randomDelay()
     // Close Puppeteer
     await browser.close()
-    await updateProfileData(profileId, { status: 'logged' })
+    await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
   }

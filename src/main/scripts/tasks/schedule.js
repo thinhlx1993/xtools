@@ -1,5 +1,5 @@
 import { get } from '../services/backend'
-import { openProfileBrowser, startSignIn, getCookies } from './profile'
+import { openProfileBrowser, startSignIn, getCookies, resolveCaptcha } from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
 
 let taskQueue = []
@@ -43,16 +43,10 @@ const processTaskQueue = async (queueId) => {
 
         for (const task of tasks) {
           const taskName = task.tasks.tasks_name
+          const profileId = queueData.profile_id
           const startDate = new Date()
           console.log(`${startDate} Worker ${queueId} start ${taskName}`)
-          const profileId = queueData.profile_id
-          const browser = await openProfileBrowser(profileId)
-          if (taskName === TASK_NAME_CONFIG.Login) {
-            await startSignIn(profileId, browser)
-          } else if (taskName == TASK_NAME_CONFIG.GetCookie) {
-            await getCookies(profileId, browser)
-          }
-          await browser.close()
+          await startTaskWorker(profileId, taskName)
           const endDate = new Date()
           console.log(`${endDate} Worker ${queueId} finished ${taskName}`)
         }
@@ -61,4 +55,23 @@ const processTaskQueue = async (queueId) => {
       }
     }
   }, 2000) // Check every 2 seconds
+}
+
+const startTaskWorker = async (profileId, taskName) => {
+  const browser = await openProfileBrowser(profileId)
+  if (!browser) {
+    return
+  }
+  try {
+    if (taskName === TASK_NAME_CONFIG.Login) {
+      await startSignIn(profileId, browser)
+    } else if (taskName == TASK_NAME_CONFIG.GetCookie) {
+      await getCookies(profileId, browser)
+    } else if (taskName == TASK_NAME_CONFIG.Captcha) {
+      await resolveCaptcha(profileId, browser)
+    }
+  } catch (error) {
+    console.log('error in Task worker', error)
+  }
+  await browser.close()
 }
