@@ -58,17 +58,17 @@ const processTaskQueue = async (queueId) => {
 }
 
 const startTaskWorker = async (profileId, taskName) => {
-  const browser = await openProfileBrowser(profileId)
-  if (!browser) {
+  const [page, browser] = await openProfileBrowser(profileId)
+  if (!page) {
     return
   }
   try {
     if (taskName === TASK_NAME_CONFIG.Login) {
-      await startSignIn(profileId, browser)
+      await startSignIn(profileId, page)
     } else if (taskName == TASK_NAME_CONFIG.GetCookie) {
-      await getCookies(profileId, browser)
+      await getCookies(profileId, page)
     } else if (taskName == TASK_NAME_CONFIG.Captcha) {
-      await resolveCaptcha(profileId, browser)
+      await resolveCaptcha(profileId, page)
     }
   } catch (error) {
     console.log('error in Task worker', error)

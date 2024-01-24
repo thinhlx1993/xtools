@@ -475,7 +475,7 @@ const ProfilesPage = () => {
             disabled={selectedRows.length === 0}
             onClick={() => setMoveDialogOpen(true)}
           >
-            Grant Access
+            Share
           </Button>
         </Grid>
         <Grid item>

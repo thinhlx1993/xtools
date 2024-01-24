@@ -61,7 +61,7 @@ export const openProfileBrowser = async (profile) => {
         // puppeteer.use(StealthPlugin())
         args.push(`--disable-extensions-except=${pathToExtension}`)
         args.push(`--load-extension=${pathToExtension}`)
-        args.push(`--remote-debugging-port=9090`)
+        // args.push(`--remote-debugging-port=9090`)
       }
     } catch (error) {
       console.log(error)
@@ -88,11 +88,11 @@ export const openProfileBrowser = async (profile) => {
     console.info('Open the browser successfully')
     // await startSignIn(profile, browser) // test signin
     // await updateProfileData(profile, { status: signinStatus })
-    // await resolveCaptcha(profile, page)
+    await resolveCaptcha(profile, page)
     // if (profileData.cookies) {
     //   await setCookies(page, profileData)
     // }
-    return browser
+    return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
       console.error('Tunnel connection failed. Check your proxy configuration.')
@@ -133,15 +133,14 @@ export const setCookies = async (page, profileData) => {
   await page.setCookie(...cookieObj)
 }
 
-export const resolveCaptcha = async (profileId, browser) => {
-  var page = await browser.newPage()
+export const resolveCaptcha = async (profileId, page) => {
   await page.goto('https://twitter.com/')
   await randomDelay()
   try {
     // aria-label="Home timeline"
     await page.waitForSelector('div[aria-label="Home timeline"]', {
       visible: true,
-      timeout: 10000
+      timeout: 5000
     })
     await updateProfileData(profileId, { status: 'ok' })
     return
@@ -168,22 +167,20 @@ export const resolveCaptcha = async (profileId, browser) => {
 
     if (await page.$('a[href="/search"')) await page.click('a[href="/search"')
 
-    await randomDelay()
+    await randomDelay(5000, 10000)
     await page.waitForSelector('iframe[id="arkose_iframe"]', {
       visible: true,
-      timeout: 10000
+      timeout: 2000
     })
     console.log('ok found iframe')
-    await randomDelay(10000, 20000)
     // Access the first level iframe
     const firstLevelFrame = await accessToIframe(page, 'iframe')
-
     // Access the second level iframe
     const secondLevelFrame = await accessToIframe(firstLevelFrame, 'iframe')
-
     // Access the third level iframe
     const thirdLevelFrame = await accessToIframe(secondLevelFrame, 'iframe')
     console.log('ok found iframe 3')
+    await randomDelay()
     const buttonSelector = 'button[data-theme="home.verifyButton"]' // Replace with the selector for your button
     await thirdLevelFrame.waitForSelector(buttonSelector)
     await thirdLevelFrame.click(buttonSelector) // click into authentication button
@@ -230,7 +227,7 @@ export const resolveCaptcha = async (profileId, browser) => {
       const captchaResponse = await sendCapGuruRequest(payload)
 
       // Wait for a while before retrieving the solution
-      await randomDelay(15000, 20000)
+      await randomDelay(5000, 10000)
 
       // Retrieve the solution
       const rt = captchaResponse.split('|')
@@ -266,9 +263,10 @@ export const resolveCaptcha = async (profileId, browser) => {
             submitButton.click()
           }
         })
-        await randomDelay(5000, 10000)
+        await randomDelay(1000, 3000)
       }
     }
+    // You've proven you're a human. Continue your action.
     await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     console.log(error)
@@ -276,12 +274,11 @@ export const resolveCaptcha = async (profileId, browser) => {
   }
 }
 
-export const startSignIn = async (profileId, browser) => {
+export const startSignIn = async (profileId, page) => {
   try {
     let profileData = await getProfileData(profileId, {})
     // Start Puppeteer
     await updateProfileData(profileId, { status: 'logging in' })
-    const page = await browser.newPage()
 
     await page.goto('https://twitter.com')
     await randomDelay()
@@ -327,8 +324,6 @@ export const startSignIn = async (profileId, browser) => {
     await page.waitForSelector('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     await randomDelay()
-    // Close Puppeteer
-    await browser.close()
     await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
