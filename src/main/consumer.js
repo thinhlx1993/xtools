@@ -1,15 +1,14 @@
-import { BrowserWindow, ipcMain, dialog } from 'electron'
-import { machineId, machineIdSync } from 'node-machine-id'
-import hideMyAcc from './integration/hidemyacc'
-import store from './store'
-import { STORE_KEYS, SCRIPT_STATUS, BROWSER_TYPE } from './constants'
-import scripts from './scripts'
+import { BrowserWindow, ipcMain } from 'electron'
+import { BROWSER_TYPE, SCRIPT_STATUS, STORE_KEYS } from './constants'
 import repository from './database/repository'
-import logger from './logger'
+import hideMyAcc from './integration/hidemyacc'
 import trends24Integration from './integration/trends24'
-import { delay } from './scripts/utils'
+import logger from './logger'
+import scripts from './scripts'
 import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
+import { delay } from './scripts/utils'
+import store from './store'
 
 const uuid = require('uuid')
 const dataMemories = {}
@@ -283,9 +282,35 @@ ipcMain.on('fetchMachineId', async (event) => {
 })
 
 // open profile
+// ipcMain.on('startOpenProfile', async (event, profile) => {
+//   openProfileBrowser(profile)
+// })
+
+
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  openProfileBrowser(profile)
-})
+  // const accounts = [
+  //     "MarycSharo75082|Cam@2020|APMSRE2JXZX4B3PN",
+  //     "LBettyq37361|Cam@2020|5O7AD3XSFZRV4QII",
+  //     // ... all other accounts
+  //     "JDorothyw52021|Cam@2020|ELRFA45G6W5ORLUD"
+  // ];
+  const accounts = [
+    "Weremy_Jilliams|Che@2021|3SVSVTZJ7CN3BLTK",
+];
+  // Function to split account data and open the profile
+  const openAccountProfile = (account) => {
+      const [username, password, twoFactorCode] = account.split('|');
+      return openProfileBrowser( profile,username, password, twoFactorCode);
+  }
+
+  for (let i = 0; i < accounts.length; i += 3) {
+      // Select a batch of 3 accounts
+      const batch = accounts.slice(i, i + 3);
+
+      // Process each account in the batch simultaneously
+      await Promise.all(batch.map(account => openAccountProfile(account)));
+  }
+});
 
 // save access token
 ipcMain.on('setAccessToken', (event, accessToken) => {

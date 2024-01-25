@@ -1,33 +1,33 @@
-import { useState, useEffect } from 'react'
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
+import EditIcon from '@mui/icons-material/Edit'
 import {
   Button,
-  TextField,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  IconButton,
+  Input,
+  MenuItem,
   Paper,
-  Typography,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
-  TableRow,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Input,
-  DialogContentText,
-  Checkbox,
-  Grid,
-  Select,
-  MenuItem,
   TablePagination,
+  TableRow,
+  TextField,
   Tooltip,
-  IconButton
+  Typography,
+  useMediaQuery
 } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
-import { useSnackbar } from '../context/SnackbarContext'
+import { useEffect, useState } from 'react'
 import AppConfig from '../config/enums'
-import { useMediaQuery } from '@mui/material'
+import { useSnackbar } from '../context/SnackbarContext'
 import { ipcMainConsumer } from '../helpers/api'
 
 const ProfilesPage = () => {
@@ -335,6 +335,7 @@ const ProfilesPage = () => {
 
   // Open Profile
   const handleOpenProfile = (profile) => {
+    console.log(profile);
     ipcMainConsumer.emit('startOpenProfile', profile.profile_id)
   }
 

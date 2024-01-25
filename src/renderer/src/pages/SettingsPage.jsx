@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react'
 import {
-  Container,
-  TextField,
   Button,
-  Select,
-  MenuItem,
-  InputLabel,
+  Container,
   FormControl,
   Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
   Typography
 } from '@mui/material'
-import { useSnackbar } from '../context/SnackbarContext'
+import { useEffect, useState } from 'react'
 import AppConfig from '../config/enums'
+import { useSnackbar } from '../context/SnackbarContext'
 import { ipcMainConsumer } from '../helpers/api'
 import { BROWSER_TYPE, hideMyAccAPIRoot } from '../helpers/constants'
 
@@ -60,6 +60,7 @@ const SettingsPage = () => {
   }
 
   const handleSubmit = async () => {
+    console.log(settings)
     // Save settings to localStorage
     const response = await fetch(`${AppConfig.BASE_URL}/settings/`, {
       method: 'POST',

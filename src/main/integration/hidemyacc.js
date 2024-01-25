@@ -1,9 +1,9 @@
 import axios from 'axios'
-import utils from '../scripts/utils'
-import { HideMyAcc } from '../scripts/define-type'
-import logger from '../logger'
-import { mapErrorConstructor } from '../helpers'
 import { HIDE_MY_ACC_API_ROOT } from '../constants'
+import { mapErrorConstructor } from '../helpers'
+import logger from '../logger'
+import { HideMyAcc } from '../scripts/define-type'
+import utils from '../scripts/utils'
 
 /**
  * @typedef {Object} Timezone
@@ -160,7 +160,7 @@ const network = (proxy) =>
     .get('https://time.hidemyacc.com/', {
       proxy
     })
-    .then((res) => res.data)
+    .then((res) => res.data).catch((e)=> console.log(e))
 
 /**
  *

@@ -1,6 +1,6 @@
 import axios from 'axios'
+import { BACKEND_BASE_URL, STORE_KEYS } from '../../constants'
 import store from '../../store'
-import { STORE_KEYS, BACKEND_BASE_URL } from '../../constants'
 
 export const getProfileData = async (profileId, tz) => {
   const profileData = post(`/profiles/${profileId}/browserdata`, tz)
@@ -54,6 +54,7 @@ export const get = async (url) => {
 }
 
 export const post = async (url, data) => {
+  console.log(post);
   try {
     const response = await axiosInstance.post(url, data, {
       headers: {
