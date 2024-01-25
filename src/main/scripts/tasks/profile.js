@@ -1,6 +1,6 @@
 import fs from 'fs'
 import axios from 'axios'
-import { getProfileData, updateProfileData } from '../services/backend'
+import { getProfileData, updateProfileData, updatePostData } from '../services/backend'
 import { defaultPuppeteerOptions } from '../../constants'
 import puppeteer from 'puppeteer-extra'
 import { getAppPath } from '../../utils'
@@ -24,10 +24,15 @@ export const openProfileBrowser = async (profile) => {
     console.log(profile)
     let profileData = await getProfileData(profile, {})
     if (profileData.settings.browserType === 'hideMyAcc') {
-      console.info(`get data from proxy ${profileData.proxy}`)
-      const [tz] = await Promise.all([hideMyAcc.network(splitProxy(profileData.proxy))])
-      console.info(`get data from tz ${tz}`)
-      profileData = await getProfileData(profile, tz)
+      try {
+        console.info(`get data from proxy ${profileData.proxy}`)
+        const [tz] = await Promise.all([hideMyAcc.network(splitProxy(profileData.proxy))])
+        console.info(`get data from tz ${tz}`)
+        profileData = await getProfileData(profile, tz)
+      } catch (error) {
+        await updateProfileData(profile, { status: 'Proxy error' })
+        return
+      }
     }
 
     if (profileData.proxy) {
@@ -334,4 +339,144 @@ export const getCookies = async (profileId, browser) => {
   await randomDelay()
   await cacheCookies(browser, profileId)
   await randomDelay()
+}
+
+export const checkProfiles = async (profileId, page) => {
+  console.log('checkProfiles')
+  // await page.goto('https://twitter.com')
+  // await randomDelay()
+  await page.waitForSelector('div[aria-label="Home timeline"]', {
+    visible: true,
+    timeout: 5000
+  })
+  // aria-label="Profile"
+  // data-testid="AppTabBar_Profile_Link"
+  await page.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]')
+  await page.click('a[data-testid="AppTabBar_Profile_Link"]')
+
+  await randomDelay()
+  await page.waitForSelector('div[aria-label="Home timeline"]', {
+    visible: true,
+    timeout: 5000
+  })
+  // Query for links that contain '/following' in their href
+  let followers = ''
+  let following = ''
+  let verify = false
+  let hrefs = await page.evaluate(() => {
+    const links = Array.from(document.querySelectorAll('a[href*="/following"]'))
+    return links.map((link) => link.href)
+  })
+
+  if (hrefs.length > 0) {
+    console.log('Found links:', hrefs)
+    // You can perform more actions here, like clicking the first link
+    // await page.click('a[href*="/following"]');
+    following = await page.$eval('a[href*="/following"]', (element) => element.textContent)
+  } else {
+    console.log('No links with "/following" in href were found')
+  }
+
+  hrefs = await page.evaluate(() => {
+    const links = Array.from(document.querySelectorAll('a[href*="/verified_followers"]'))
+    return links.map((link) => link.href)
+  })
+
+  if (hrefs.length > 0) {
+    console.log('Found links:', hrefs)
+    // You can perform more actions here, like clicking the first link
+    // await page.click('a[href*="/following"]');
+    followers = await page.$eval('a[href*="/verified_followers"]', (element) => element.textContent)
+  } else {
+    console.log('No links with "/verified_followers" in href were found')
+  }
+
+  hrefs = await page.evaluate(() => {
+    const links = Array.from(
+      document.querySelectorAll('a[aria-label="Provides details about verified accounts."]')
+    )
+    return links.map((link) => link.href)
+  })
+
+  if (hrefs.length > 0) {
+    console.log('Found links:', hrefs)
+    // You can perform more actions here, like clicking the first link
+    // await page.click('a[href*="/following"]');
+    verify = true
+  } else {
+    console.log('No links with verified accounts in href were found')
+  }
+
+  await updateProfileData(profileId, { profile_data: { followers, following, verify } })
+
+  const isSelectorPresent = (await page.$('article[data-testid="tweet"]')) !== null
+
+  await page.waitForSelector('article[data-testid="tweet"]')
+
+  if (isSelectorPresent) {
+    const articles = await page.$$('article[data-testid="tweet"]')
+
+    for (const article of articles) {
+      try {
+        // Using XPath within the article for content
+        const content = await page.evaluate((element) => {
+          const result = document.evaluate(
+            './/div',
+            element,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          )
+          return result.singleNodeValue ? result.singleNodeValue.textContent : ''
+        }, article)
+        console.log(content)
+        // Extracting 'tw_post_id'
+        const linkElementHandle = await page.evaluateHandle((element) => {
+          return document.evaluate(
+            './/div/div/div[2]/div[2]/div[1]/div/div[1]/div/div/div[2]/div/div[3]/a',
+            element,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          ).singleNodeValue
+        }, article)
+        let tw_post_id = ''
+        if (linkElementHandle) {
+          tw_post_id = await linkElementHandle.evaluate((node) => node.href)
+        }
+        console.log(tw_post_id)
+        // Extracting 'view'
+        const viewsElementHandle = await page.evaluateHandle((element) => {
+          return document.evaluate(
+            './/div/div/div[2]/div[2]/div[4]/div/div',
+            element,
+            null,
+            XPathResult.FIRST_ORDERED_NODE_TYPE,
+            null
+          ).singleNodeValue
+        }, article)
+        let view = ''
+        if (viewsElementHandle) {
+          view = await viewsElementHandle.evaluate((node) => node.getAttribute('aria-label'))
+        }
+        console.log(view)
+        // Handling postData
+        const postData = {
+          content: content,
+          tw_post_id: tw_post_id,
+          profile_id: profileId,
+          view: view
+        }
+        await updatePostData(profileId, postData)
+
+        // Dispose handles
+        if (linkElementHandle) await linkElementHandle.dispose()
+        if (viewsElementHandle) await viewsElementHandle.dispose()
+      } catch (error) {
+        console.log('Error processing article:', error)
+      }
+    }
+  } else {
+    console.log('No articles found with the given selector.')
+  }
 }

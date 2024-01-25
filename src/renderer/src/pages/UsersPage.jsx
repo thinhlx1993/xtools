@@ -159,7 +159,7 @@ const UsersPage = () => {
         Add New User
       </Button>
       <Paper style={{ padding: '20px', marginBottom: '20px' }}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>User Name</TableCell>

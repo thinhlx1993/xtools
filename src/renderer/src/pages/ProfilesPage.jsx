@@ -23,6 +23,7 @@ import {
   Tooltip,
   IconButton
 } from '@mui/material'
+import VerifiedIcon from '@mui/icons-material/Verified'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import { useSnackbar } from '../context/SnackbarContext'
@@ -139,7 +140,8 @@ const ProfilesPage = () => {
         console.log(errorData)
         openSnackbar(`Failed to create profile: ${errorData.message}`, 'error')
       } else {
-        openSnackbar(`${profiles.length} Profiles created successfully`, 'success')
+        const data = await response.json()
+        openSnackbar(data.message, 'success')
       }
     } catch (error) {
       openSnackbar(`Error creating profiles`, 'error')
@@ -491,7 +493,7 @@ const ProfilesPage = () => {
       </Grid>
 
       <Paper style={{ padding: '20px', marginBottom: '20px', overflowX: 'auto' }}>
-        <Table>
+        <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
@@ -502,7 +504,9 @@ const ProfilesPage = () => {
                 />
               </TableCell>
               <TableCell>Username</TableCell>
-              <TableCell>User Granted</TableCell>
+              {!isMobile && <TableCell>Followers</TableCell>}
+              {!isMobile && <TableCell>Following</TableCell>}
+              {!isMobile && <TableCell>Created At</TableCell>}
               {!isMobile && <TableCell>Notes</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
@@ -521,20 +525,57 @@ const ProfilesPage = () => {
                   style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   <Tooltip title={profile.username}>
-                    <span>{profile.username}</span>
+                    <span>
+                      {profile.username}
+                      <VerifiedIcon
+                        style={{
+                          marginLeft: '5px',
+                          verticalAlign: 'middle',
+                          color: profile?.profile_data?.verify ? 'blue' : 'gray'
+                        }}
+                      />
+                    </span>
                   </Tooltip>
                 </TableCell>
-                <TableCell
-                  style={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  <Tooltip title={profile.user_access}>
-                    <span>{profile.user_access}</span>
-                  </Tooltip>
-                </TableCell>
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile?.profile_data?.followers}>
+                      <span>{profile?.profile_data?.followers}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile?.profile_data?.following}>
+                      <span>{profile?.profile_data?.following}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile.created_at}>
+                      <span>{profile.created_at}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
                 {!isMobile && (
                   <TableCell
                     style={{
@@ -629,6 +670,7 @@ const ProfilesPage = () => {
         <DialogContent>
           <TextField
             margin="dense"
+            disabled
             label="Username"
             fullWidth
             variant="outlined"

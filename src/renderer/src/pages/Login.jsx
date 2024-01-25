@@ -12,8 +12,8 @@ import { ipcMainConsumer } from '../helpers/api'
 const LoginForm = ({ onLogin }) => {
   const navigate = useNavigate()
   const { openSnackbar } = useSnackbar()
-  const [username, setUsername] = useState('thinhle.ict')
-  const [password, setPassword] = useState('Admin@1234')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
 
   const [deviceId, setDeviceId] = useState('')
 
@@ -35,12 +35,9 @@ const LoginForm = ({ onLogin }) => {
 
       if (userRole) {
         openSnackbar(data.message, 'success')
-        if (userRole === 'admin') {
-          navigate('/admin') // or '/admin' based on the role
-        } else {
-          navigate('/client')
-        }
+        navigate('/admin/profiles')
       } else {
+        navigate('/login')
         openSnackbar(data.message, 'error')
       }
     } else {

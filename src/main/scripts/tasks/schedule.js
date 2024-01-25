@@ -1,5 +1,11 @@
 import { get } from '../services/backend'
-import { openProfileBrowser, startSignIn, getCookies, resolveCaptcha } from './profile'
+import {
+  openProfileBrowser,
+  startSignIn,
+  getCookies,
+  resolveCaptcha,
+  checkProfiles
+} from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
 
 let taskQueue = []
@@ -10,20 +16,26 @@ export const fetchScheduledTasks = async () => {
     console.log('Start worker')
     isStarted = true
     setInterval(async () => {
-      const response = await get('/mission_schedule/')
-      // Add tasks to queue
-      response.schedule.forEach((task) => {
-        taskQueue.push(task)
-      })
+      try {
+        const response = await get('/mission_schedule/')
+        if (response) {
+          // Add tasks to queue
+          response.schedule.forEach((task) => {
+            taskQueue.push(task)
+          })
+        }
+      } catch (error) {
+        console.log(error)
+      }
     }, 5000) // Run every 5 seconds
 
     // worker swamp
-    const response = await get('/settings/')
+    // const response = await get('/settings/')
 
     let threadsNumber = 2 // default 10 threads
-    if (response.settings.settings.Threads) {
-      threadsNumber = response.settings.settings.Threads
-    }
+    // if (response && response.settings) {
+    //   threadsNumber = response.settings.settings.Threads
+    // }
 
     for (let i = 0; i < threadsNumber; i++) {
       console.log(`Start worker: ${i}`)
@@ -69,6 +81,8 @@ const startTaskWorker = async (profileId, taskName) => {
       await getCookies(profileId, page)
     } else if (taskName == TASK_NAME_CONFIG.Captcha) {
       await resolveCaptcha(profileId, page)
+    } else if (taskName === TASK_NAME_CONFIG.CheckProfile) {
+      await checkProfiles(profileId, page)
     }
   } catch (error) {
     console.log('error in Task worker', error)

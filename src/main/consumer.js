@@ -8,7 +8,7 @@ import repository from './database/repository'
 import logger from './logger'
 import trends24Integration from './integration/trends24'
 import { delay } from './scripts/utils'
-import { openProfileBrowser } from './scripts/tasks/profile'
+import { openProfileBrowser, checkProfiles } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
 
 const uuid = require('uuid')
@@ -284,7 +284,8 @@ ipcMain.on('fetchMachineId', async (event) => {
 
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  openProfileBrowser(profile)
+  const [page, browser] = await openProfileBrowser(profile)
+  await checkProfiles(profile, page)
 })
 
 // save access token

@@ -12,6 +12,11 @@ export const updateProfileData = async (profileId, updateData) => {
   return profileData
 }
 
+export const updatePostData = async (profileId, updateData) => {
+  const profileData = post(`/posts/`, updateData)
+  return profileData
+}
+
 export const getScheduleData = async () => {
   const scheduleData = get(`/mission_schedule/`)
   return scheduleData
@@ -23,7 +28,8 @@ const axiosInstance = axios.create({
 
 const getAuthToken = () => {
   // Replace this with your method of retrieving the stored JWT token
-  return store.get(STORE_KEYS.ACCESS_TOKEN)
+  const accessToken = store.get(STORE_KEYS.ACCESS_TOKEN)
+  return accessToken
 }
 
 const handleResponse = (response) => {
@@ -41,13 +47,17 @@ const catchError = (error) => {
 
 export const get = async (url) => {
   try {
-    const response = await axiosInstance.get(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getAuthToken()}`
-      }
-    })
-    return handleResponse(response)
+    const token = getAuthToken()
+    if (token) {
+      const response = await axiosInstance.get(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getAuthToken()}`
+        }
+      })
+      return handleResponse(response)
+    }
+    return null
   } catch (error) {
     catchError(error)
   }

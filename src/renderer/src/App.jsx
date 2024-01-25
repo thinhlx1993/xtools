@@ -18,6 +18,7 @@ import RegistrationPage from './pages/Register'
 import SettingsPage from './pages/SettingsPage'
 import { SnackbarProvider } from './context/SnackbarContext'
 import MissionPage from './pages/missionPage'
+import EventPage from './pages/EventsPage'
 
 const ClientDashboard = () => {
   return (
@@ -155,6 +156,7 @@ const App = () => {
           <Route path="/client" element={<ClientDashboard />} />
           <Route path="/admin" element={<AdminComponent />} />
           <Route path="/admin/profiles" element={<ProfilesPage />} />
+          <Route path="/admin/events" element={<EventPage />} />
           <Route path="/admin/teams" element={<TeamsPage />} />
           <Route path="/admin/groups" element={<GroupsPage />} />
           <Route path="/admin/users" element={<UsersPage />} />
