@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Container } from '@mui/material'
-import Typography from '@mui/material/Typography'
 import Header from './Header'
 import Body from './Body'
 import Footer from './Footer'
 import { ipcMainConsumer, initIpcMainConsumer } from './helpers/api'
 import LoginForm from './pages/Login'
 import AppConfig from './config/enums'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './layouts/nav'
 import AdminComponent from './pages/DefaultAdminPage'
 import TeamsPage from './pages/TeamsPage'
@@ -37,10 +36,10 @@ const App = () => {
 
   useEffect(() => {
     initIpcMainConsumer()
-    ipcMainConsumer.emit('getKeyActivation')
-    ipcMainConsumer.on('replyGetKeyActivation', (event, result) => {
-      setKeyActivation(result.key)
-    })
+    // ipcMainConsumer.emit('getKeyActivation')
+    // ipcMainConsumer.on('replyGetKeyActivation', (event, result) => {
+    //   setKeyActivation(result.key)
+    // })
     console.log('init app')
     // worker for mission schedule
     fetchUserRole()
@@ -120,36 +119,13 @@ const App = () => {
 
   return (
     <SnackbarProvider>
-      <Router>
+      <HashRouter>
         <Navbar
           onLogout={handleLogout}
           userRole={userRole}
           userSuperAdmin={userSuperAdmin}
           updateUserRole={updateUserRole}
         />
-        {/* {!keyActivation.status ? (
-          <Container
-            sx={{
-              flexGrow: 1,
-              textAlign: 'center'
-            }}
-          >
-            <Typography sx={{ mt: 2 }} variant="h5" component="div">
-              Trạng thái Key
-            </Typography>
-            <Typography>{keyActivation.status}</Typography>
-            <Typography>Liên hệ @linhmiu qua Telegram để</Typography>
-            <Typography>kích hoạt key hoặc báo cáo sự cố</Typography>
-            {keyActivation.key && (
-              <>
-                <button onClick={handleCopyKey}>Copy key</button> và gửi cho tôi để kích hoạt hoặc
-                gia hạn
-              </>
-            )}
-          </Container>
-        ) : (
-          
-        )} */}
         <Routes>
           <Route path="/login" element={<LoginForm onLogin={handleLogin} />} />
           <Route path="/registration" element={<RegistrationPage />} />
@@ -163,7 +139,7 @@ const App = () => {
           <Route path="/admin/missions" element={<MissionPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
         </Routes>
-      </Router>
+      </HashRouter>
     </SnackbarProvider>
   )
 }

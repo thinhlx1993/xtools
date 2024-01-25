@@ -273,12 +273,11 @@ ipcMain.on('updateHashTagList', (event, values) => {
 
 // Settings Page consumer
 ipcMain.on('fetchMachineId', async (event) => {
-  let deviceId = store.get(STORE_KEYS.DEVIDE_ID)
-
-  if (!deviceId) {
-    deviceId = `${uuid.v4()}`
-    store.set(STORE_KEYS.DEVIDE_ID, deviceId)
-  }
+  let deviceId = await machineIdSync({ original: true })
+  // if (!deviceId) {
+  //   deviceId = `${uuid.v4()}`
+  //   store.set(STORE_KEYS.DEVIDE_ID, deviceId)
+  // }
   event.reply('replyGetMachineId', deviceId)
 })
 

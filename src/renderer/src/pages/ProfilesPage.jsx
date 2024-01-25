@@ -23,6 +23,7 @@ import {
   Tooltip,
   IconButton
 } from '@mui/material'
+import Papa from 'papaparse'
 import VerifiedIcon from '@mui/icons-material/Verified'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
@@ -72,6 +73,24 @@ const ProfilesPage = () => {
     fetchUsers()
   }, [page, rowsPerPage, searchQuery, selectedGroup])
 
+  const [data, setData] = useState([])
+
+  // const handleFileChange = (event) => {
+  //   const file = event.target.files[0]
+  //   parseCsv(file)
+  // }
+
+  const parseCsv = (file) => {
+    Papa.parse(file, {
+      complete: (result) => {
+        console.log('Parsed CSV:', result.data)
+        setData(result.data)
+      },
+      header: true, // Set to true if your CSV has headers
+      skipEmptyLines: true
+    })
+  }
+
   const fetchProfiles = async () => {
     try {
       const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=desc`
@@ -98,30 +117,52 @@ const ProfilesPage = () => {
   }
 
   const handleCheckProfile = async () => {
-    const input = fileInput ? await fileInput.text() : newProfile
-    const profileEntries = input.split('\n')
-    let profileCreated = 0
+    if (fileInput) {
+      parseCsv(fileInput)
+      openSnackbar(`Found ${data.length} profile`, 'info')
+    } else {
+      const input = newProfile
+      const profileEntries = input.split('\n')
+      let profileCreated = 0
 
-    for (const entry of profileEntries) {
-      const splitter = entry.split('|')
-      if (splitter.length >= 3) {
-        profileCreated = profileCreated + 1
+      for (const entry of profileEntries) {
+        const splitter = entry.split('|')
+        if (splitter.length >= 3) {
+          profileCreated = profileCreated + 1
+        }
       }
+      openSnackbar(`Found ${profileCreated} profile`, 'info')
     }
-
-    openSnackbar(`Found ${profileCreated} profile`, 'info')
   }
 
   const handleCreateProfile = async () => {
     // If a file is uploaded, use its content; otherwise, use text area input
-    const input = fileInput ? await fileInput.text() : newProfile
-    const profileEntries = input.split('\n')
-    openSnackbar('It might be take times, please waiting until the dialog closed', 'info')
     let profiles = []
-    for (const entry of profileEntries) {
-      const [username, password, fa, proxy, gpt_key, cookies, notes] = entry.split('|')
-      profiles.push({ username, password, fa, proxy, gpt_key, cookies, notes })
+    if (fileInput) {
+      await parseCsv(fileInput)
+      profiles = data.map((item) => ({
+        username: item?.username,
+        password: item?.password,
+        fa: item?.fa,
+        proxy: item?.proxy,
+        cookies: item?.cookies,
+        gpt_key: item?.gpt_key,
+        notes: item?.notes
+      }))
+    } else {
+      const input = newProfile
+      const profileEntries = input.split('\n')
+      for (const entry of profileEntries) {
+        const [username, password, fa, proxy, cookies, gpt_key, notes] = entry.split('|')
+        profiles.push({ username, password, fa, proxy, cookies, gpt_key, notes })
+      }
     }
+
+    // const input = fileInput ? parseCsv(fileInput) : newProfile
+    openSnackbar(
+      `Creating ${profiles.length} account. It might be take times, please waiting until the dialog closed`,
+      'info'
+    )
 
     try {
       const response = await fetch(`${AppConfig.BASE_URL}/profiles/`, {
@@ -637,7 +678,7 @@ const ProfilesPage = () => {
             label="Profile Data"
             fullWidth
             variant="outlined"
-            placeholder="username|password|fa|proxy|gpt_key|cookies|notes"
+            placeholder="username|password|fa|proxy|cookies|gpt_key|notes"
             multiline
             rows={4}
             value={newProfile}
@@ -658,7 +699,7 @@ const ProfilesPage = () => {
           <Button onClick={handleCheckProfile} color="info">
             Check
           </Button>
-          <Button onClick={handleCreateProfile} color="primary">
+          <Button disabled={!data && !newProfile} onClick={handleCreateProfile} color="primary">
             Add
           </Button>
         </DialogActions>

@@ -1,13 +1,15 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Grid } from '@mui/material'
 import { Container, Typography, TextField, Button, Paper } from '@mui/material'
 import AppConfig from '../config/enums'
 import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from '../context/SnackbarContext'
+import { ipcMainConsumer } from '../helpers/api'
 
 const RegistrationPage = () => {
   const navigate = useNavigate()
   const { openSnackbar } = useSnackbar()
+  const [deviceId, setDeviceId] = useState('')
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -15,6 +17,15 @@ const RegistrationPage = () => {
     lastName: '',
     teamsName: ''
   })
+
+  useEffect(() => {
+    ipcMainConsumer.emit('fetchMachineId')
+    ipcMainConsumer.on('replyGetMachineId', (event, result) => {
+      if (result) {
+        setDeviceId(result)
+      }
+    })
+  }, [])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -30,7 +41,7 @@ const RegistrationPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const { username, password, firstName, lastName, teamsName } = formData
+    const { username, password, email, teamsName } = formData
 
     try {
       const response = await fetch(`${AppConfig.BASE_URL}/user/registration`, {
@@ -40,10 +51,11 @@ const RegistrationPage = () => {
         },
         body: JSON.stringify({
           username,
-          first_name: firstName,
-          last_name: lastName,
+          email: email,
+          last_name: email,
           password,
-          teams_name: teamsName
+          teams_name: teamsName,
+          device_id: deviceId
         })
       })
 
@@ -96,34 +108,17 @@ const RegistrationPage = () => {
             value={formData.password}
             onChange={handleChange}
           />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                id="firstName"
-                label="First Name"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                variant="outlined"
-                margin="normal"
-                required
-                fullWidth
-                id="lastName"
-                label="Last Name"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-              />
-            </Grid>
-          </Grid>
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
           {/* <TextField
             variant="outlined"
             margin="normal"

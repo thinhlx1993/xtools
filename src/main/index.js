@@ -1,5 +1,5 @@
 import { app, shell, BrowserWindow } from 'electron'
-import { join } from 'path'
+import { join, path } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import system from './system'
@@ -72,15 +72,15 @@ const _cka = async () => {
 }
 
 const createWindow = async () => {
-  const [messageError] = await _cka()
+  // const [messageError] = await _cka()
   const windowSize = {
     width: 800,
     height: 600
   }
-  if (messageError) {
-    windowSize.width = 350
-    windowSize.height = 250
-  }
+  // if (messageError) {
+  //   windowSize.width = 350
+  //   windowSize.height = 250
+  // }
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     ...windowSize,
@@ -95,11 +95,12 @@ const createWindow = async () => {
       sandbox: false
     }
   })
-  store.set(STORE_KEYS.KEY_ACTIVATION_STATUS, messageError || '')
+  // store.set(STORE_KEYS.KEY_ACTIVATION_STATUS, messageError || '')
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
 
+  mainWindow.webContents.openDevTools()
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -126,7 +127,7 @@ const createWindow = async () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  // electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.electron')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

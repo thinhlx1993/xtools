@@ -62,7 +62,7 @@ const LoginForm = ({ onLogin }) => {
       >
         <form onSubmit={handleSubmit} noValidate>
           <Typography variant="h4">Sign in to XGPT tools</Typography>
-
+          <Typography>Node ID: {deviceId}</Typography>
           <Typography variant="body2" sx={{ mt: 2, mb: 5 }} onClick={handleRegistration}>
             Don’t have an account? Register here.
           </Typography>
