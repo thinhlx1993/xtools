@@ -22,6 +22,12 @@ const AccountSchema = new typeorm.EntitySchema({
       length: 255,
       default: ''
     },
+    pass: {
+      name: 'pass',
+      type: 'varchar',
+      length: 255,
+      default: ''
+    },
     displayName: {
       name: 'display_name',
       type: 'text',

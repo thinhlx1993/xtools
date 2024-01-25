@@ -1,4 +1,3 @@
-import puppeteer from 'puppeteer-core'
 
 /**
  * @typedef {puppeteer.Browser} Browser
@@ -89,4 +88,9 @@ import puppeteer from 'puppeteer-core'
  * @property {(true|false)[]} allowLikeAction
  * @property {(true|false)[]} allowCommentAction
  * @property {string} chatOpenAIPrefix
+ */
+
+/**
+ * @typedef {Object} AddPhoneOptions
+ * @property {string} smsPoolToken
  */
