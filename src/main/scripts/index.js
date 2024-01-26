@@ -214,6 +214,8 @@ const init = async (options, callbackFuncUpdateStatus, accountId) => {
       repository.findOneAccount(accountId),
       repository.findFeaturesOptions(accountId)
     ])
+    logger.info(`account: ${JSON.stringify(account)}`)
+    logger.info(`features: ${JSON.stringify(features)}`)
     // get account data
 
     // init browser

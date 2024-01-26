@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { authenticator } from 'otplib'
+import logger from '../../logger'
 
 export const randomDelay = (min = 500, max = 5000) => {
   return new Promise((resolve) => {
@@ -62,4 +63,12 @@ export const sendCapGuruRequest = async (payload) => {
     console.error('Error occurred during the request to capguru')
     return null // or handle the error as appropriate for your application
   }
+}
+
+export const scrollIntoView = async (page, element) => {
+  logger.info('Scroll into view')
+  await page.evaluate((element) => {
+    element.scrollIntoView({ behavior: 'smooth' })
+  }, element)
+  await randomDelay()
 }

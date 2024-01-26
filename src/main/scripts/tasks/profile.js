@@ -12,7 +12,8 @@ import {
   accessToIframe,
   clickIntoNext,
   calculateClicks,
-  sendCapGuruRequest
+  sendCapGuruRequest,
+  scrollIntoView
 } from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
@@ -104,10 +105,10 @@ export const openProfileBrowser = async (profile) => {
       console.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
-      return null
+      return [null, null]
     } else {
       console.error('Error occurred:', error.message)
-      return null
+      return [null, null]
       // Handle other types of errors
     }
   }
@@ -140,7 +141,6 @@ export const setCookies = async (page, profileData) => {
 }
 
 export const resolveCaptcha = async (profileId, page) => {
-  await page.goto('https://twitter.com/')
   await randomDelay()
   try {
     // aria-label="Home timeline"
@@ -349,19 +349,17 @@ export const getCookies = async (profileId, browser) => {
 
 export const checkProfiles = async (profileId, page) => {
   logger.info('checkProfiles')
-  // await page.goto('https://twitter.com')
-  // await randomDelay()
+  await page.goto('https://twitter.com')
+  await randomDelay()
   await page.waitForSelector('div[aria-label="Home timeline"]', {
     visible: true,
     timeout: 5000
   })
-  // aria-label="Profile"
-  // data-testid="AppTabBar_Profile_Link"
   await page.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]')
   await page.click('a[data-testid="AppTabBar_Profile_Link"]')
 
   await randomDelay()
-  await page.waitForSelector('div[aria-label="Home timeline"]', {
+  await page.waitForSelector('a[href*="/following"]', {
     visible: true,
     timeout: 5000
   })
@@ -369,103 +367,81 @@ export const checkProfiles = async (profileId, page) => {
   let followers = ''
   let following = ''
   let verify = false
-  let hrefs = await page.evaluate(() => {
-    const links = Array.from(document.querySelectorAll('a[href*="/following"]'))
-    return links.map((link) => link.href)
-  })
 
-  if (hrefs.length > 0) {
-    logger.info('Found links:', hrefs)
-    // You can perform more actions here, like clicking the first link
-    // await page.click('a[href*="/following"]');
-    following = await page.$eval('a[href*="/following"]', (element) => element.textContent)
-  } else {
-    logger.info('No links with "/following" in href were found')
+  try {
+    let element = await page.waitForSelector('a[href*="/following"]')
+    await scrollIntoView(element)
+    following = await element.evaluate((el) => el.textContent, element)
+    logger.info(`Following ${following}`)
+  } catch (error) {
+    console.error('Error in /following:', error)
   }
 
-  hrefs = await page.evaluate(() => {
-    const links = Array.from(document.querySelectorAll('a[href*="/verified_followers"]'))
-    return links.map((link) => link.href)
-  })
-
-  if (hrefs.length > 0) {
-    logger.info('Found links:', hrefs)
-    // You can perform more actions here, like clicking the first link
-    // await page.click('a[href*="/following"]');
-    followers = await page.$eval('a[href*="/verified_followers"]', (element) => element.textContent)
-  } else {
-    logger.info('No links with "/verified_followers" in href were found')
+  try {
+    let element = await page.waitForSelector('a[href*="/verified_followers"]')
+    await scrollIntoView(element)
+    followers = await element.evaluate((el) => el.textContent, element)
+    logger.info(`Followers ${followers}`)
+  } catch (error) {
+    console.error('Error in /verified_followers:', error)
   }
 
-  hrefs = await page.evaluate(() => {
-    const links = Array.from(
-      document.querySelectorAll('a[aria-label="Provides details about verified accounts."]')
+  try {
+    let element = await page.waitForSelector(
+      'div[aria-label="Provides details about verified accounts."]'
     )
-    return links.map((link) => link.href)
-  })
-
-  if (hrefs.length > 0) {
-    logger.info('Found links:', hrefs)
-    // You can perform more actions here, like clicking the first link
-    // await page.click('a[href*="/following"]');
-    verify = true
-  } else {
-    logger.info('No links with verified accounts in href were found')
+    await scrollIntoView(element)
+    verify = element ? true : false
+    logger.info(`Verify ${verify}`)
+  } catch (error) {
+    console.error('Error in verified accounts:', error)
   }
 
   await updateProfileData(profileId, { profile_data: { followers, following, verify } })
 
   const isSelectorPresent = (await page.$('article[data-testid="tweet"]')) !== null
-
-  await page.waitForSelector('article[data-testid="tweet"]')
-
   if (isSelectorPresent) {
+    await page.waitForSelector('article[data-testid="tweet"]')
     const articles = await page.$$('article[data-testid="tweet"]')
 
     for (const article of articles) {
       try {
-        // Using XPath within the article for content
-        const content = await page.evaluate((element) => {
-          const result = document.evaluate(
-            './/div',
-            element,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-          )
-          return result.singleNodeValue ? result.singleNodeValue.textContent : ''
-        }, article)
-        logger.info(content)
-        // Extracting 'tw_post_id'
-        const linkElementHandle = await page.evaluateHandle((element) => {
-          return document.evaluate(
-            './/div/div/div[2]/div[2]/div[1]/div/div[1]/div/div/div[2]/div/div[3]/a',
-            element,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-          ).singleNodeValue
-        }, article)
+        let content = ''
         let tw_post_id = ''
-        if (linkElementHandle) {
-          tw_post_id = await linkElementHandle.evaluate((node) => node.href)
-        }
-        logger.info(tw_post_id)
-        // Extracting 'view'
-        const viewsElementHandle = await page.evaluateHandle((element) => {
-          return document.evaluate(
-            './/div/div/div[2]/div[2]/div[4]/div/div',
-            element,
-            null,
-            XPathResult.FIRST_ORDERED_NODE_TYPE,
-            null
-          ).singleNodeValue
-        }, article)
         let view = ''
-        if (viewsElementHandle) {
-          view = await viewsElementHandle.evaluate((node) => node.getAttribute('aria-label'))
+        await scrollIntoView(article)
+        try {
+          const element = await article.waitForSelector('div')
+
+          if (element) {
+            content = await element.evaluate((node) => node.textContent)
+          }
+        } catch (error) {
+          logger.error(`Error processing article content: ${error}`)
         }
-        logger.info(view)
+        try {
+          const elementPost = await article.waitForSelector(
+            'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(2) > div > div:nth-child(3) > a'
+          )
+          if (elementPost) {
+            tw_post_id = await elementPost.evaluate((link) => link.href, elementPost)
+          }
+        } catch (error) {
+          logger.error(`Error processing tw_post_id: ${error}`)
+        }
+        try {
+          const viewElement = await article.waitForSelector(
+            'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div > div'
+          )
+          if (viewElement) {
+            view = await viewElement.evaluate(
+              (link) => link.getAttribute('aria-label'),
+              viewElement
+            )
+          }
+        } catch (error) {
+          logger.error(`Error processing view: ${error}`)
+        }
         // Handling postData
         const postData = {
           content: content,
@@ -473,16 +449,11 @@ export const checkProfiles = async (profileId, page) => {
           profile_id: profileId,
           view: view
         }
+        logger.info(`Post data: ${JSON.stringify(postData)}`)
         await updatePostData(profileId, postData)
-
-        // Dispose handles
-        if (linkElementHandle) await linkElementHandle.dispose()
-        if (viewsElementHandle) await viewsElementHandle.dispose()
       } catch (error) {
-        logger.info('Error processing article:', error)
+        logger.error(`Error processing article: ${error}`)
       }
     }
-  } else {
-    logger.info('No articles found with the given selector.')
   }
 }

@@ -1,5 +1,5 @@
-import { BrowserWindow, ipcMain, dialog } from 'electron'
-import { machineId, machineIdSync } from 'node-machine-id'
+import { BrowserWindow, ipcMain } from 'electron'
+import { machineIdSync } from 'node-machine-id'
 import hideMyAcc from './integration/hidemyacc'
 import store from './store'
 import { STORE_KEYS, SCRIPT_STATUS, BROWSER_TYPE } from './constants'
@@ -8,10 +8,9 @@ import repository from './database/repository'
 import logger from './logger'
 import trends24Integration from './integration/trends24'
 import { delay } from './scripts/utils'
-import { openProfileBrowser, checkProfiles } from './scripts/tasks/profile'
+import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
 
-const uuid = require('uuid')
 const dataMemories = {}
 
 // In this file you can include the rest of your app's specific main process
@@ -274,17 +273,12 @@ ipcMain.on('updateHashTagList', (event, values) => {
 // Settings Page consumer
 ipcMain.on('fetchMachineId', async (event) => {
   let deviceId = await machineIdSync({ original: true })
-  // if (!deviceId) {
-  //   deviceId = `${uuid.v4()}`
-  //   store.set(STORE_KEYS.DEVIDE_ID, deviceId)
-  // }
   event.reply('replyGetMachineId', deviceId)
 })
 
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
   const [page, browser] = await openProfileBrowser(profile)
-  await checkProfiles(profile, page)
 })
 
 // save access token
