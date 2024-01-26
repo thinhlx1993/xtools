@@ -32,6 +32,7 @@ export const openProfileBrowser = async (profile) => {
         logger.info(`get data from tz ${tz}`)
         profileData = await getProfileData(profile, tz)
       } catch (error) {
+        logger.error(error)
         await updateProfileData(profile, { status: 'Proxy error' })
         return
       }
@@ -42,6 +43,7 @@ export const openProfileBrowser = async (profile) => {
       if (proxyParts.length === 4) {
         proxyProtected = true
       }
+      logger.info(`Add proxy`)
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
     }
 
@@ -49,6 +51,7 @@ export const openProfileBrowser = async (profile) => {
     if (profileData.settings.folderPath) {
       hideMyAccProfileDir = `${profileData.settings.folderPath}\\${profile}`
     }
+
     if (!fs.existsSync(hideMyAccProfileDir)) {
       fs.cpSync(getAppPath(`\\HMAZeroProfile`), hideMyAccProfileDir, {
         recursive: true
@@ -59,6 +62,7 @@ export const openProfileBrowser = async (profile) => {
     if (profileData.browser_data) {
       args.push(`--hidemyacc-data=${profileData.browser_data}`)
     }
+    logger.info(`hideMyAccProfileDir: ${hideMyAccProfileDir}`)
 
     try {
       // loading 2captcha plugin
@@ -71,7 +75,7 @@ export const openProfileBrowser = async (profile) => {
         // args.push(`--remote-debugging-port=9090`)
       }
     } catch (error) {
-      logger.info(error)
+      logger.error(error)
     }
     const newBrowserOptions = {
       ...defaultPuppeteerOptions,
@@ -81,6 +85,8 @@ export const openProfileBrowser = async (profile) => {
     // logger.info(newBrowserOptions.args)
     const browser = await puppeteer.launch(newBrowserOptions)
     const page = await browser.newPage()
+
+    logger.info(`OK`)
 
     // enter proxy username password
     if (profileData.proxy && proxyProtected) {
@@ -102,12 +108,12 @@ export const openProfileBrowser = async (profile) => {
     return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
-      console.error('Tunnel connection failed. Check your proxy configuration.')
+      logger.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
       return [null, null]
     } else {
-      console.error('Error occurred:', error.message)
+      logger.error(`Error occurred: ${error.message}`)
       return [null, null]
       // Handle other types of errors
     }

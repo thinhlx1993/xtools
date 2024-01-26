@@ -73,19 +73,15 @@ const processTaskQueue = async (queueData) => {
     const tasks = queueData.tasks
     const profileId = queueData.profile_id
     const [page, browser] = await openProfileBrowser(profileId)
-    if (page) {
-      for (let task of tasks) {
-        const taskName = task.tasks.tasks_name
-        const startDate = new Date()
-        logger.info(`${startDate} ${profileId} Worker start ${taskName}`)
-        await processTask(profileId, taskName, page)
-        const endDate = new Date()
-        logger.info(`${endDate} ${profileId} finished ${taskName}`)
-      }
-      if (browser) {
-        await browser.close()
-      }
+    for (let task of tasks) {
+      const taskName = task.tasks.tasks_name
+      const startDate = new Date()
+      logger.info(`${startDate} ${profileId} Worker start ${taskName}`)
+      await processTask(profileId, taskName, page)
+      const endDate = new Date()
+      logger.info(`${endDate} ${profileId} finished ${taskName}`)
     }
+    await browser.close()
   } catch (error) {
     logger.exceptions(error)
   }
