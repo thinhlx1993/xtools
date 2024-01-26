@@ -20,6 +20,8 @@ import { DOMAIN_COOKIE } from '../constants'
 import logger from '../../logger'
 
 export const openProfileBrowser = async (profile) => {
+  let browser = null
+  let page = null
   try {
     let proxyProtected = false
     let args = []
@@ -83,8 +85,8 @@ export const openProfileBrowser = async (profile) => {
       args: [...defaultPuppeteerOptions.args, ...args]
     }
     // logger.info(newBrowserOptions.args)
-    const browser = await puppeteer.launch(newBrowserOptions)
-    const page = await browser.newPage()
+    browser = await puppeteer.launch(newBrowserOptions)
+    page = await browser.newPage()
 
     logger.info(`OK`)
 
@@ -115,12 +117,11 @@ export const openProfileBrowser = async (profile) => {
       logger.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
-      return [null, null]
     } else {
       logger.error(`Error occurred: ${error.message}`)
-      return [null, null]
       // Handle other types of errors
     }
+    return [page, browser]
   }
 }
 

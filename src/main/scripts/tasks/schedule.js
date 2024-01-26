@@ -72,7 +72,7 @@ const processTaskQueue = async (queueData) => {
     // }
     const tasks = queueData.tasks
     const profileId = queueData.profile_id
-    const [page, browser] = await openProfileBrowser(profileId)
+    let [page, browser] = await openProfileBrowser(profileId)
     for (let task of tasks) {
       const taskName = task.tasks.tasks_name
       const startDate = new Date()
@@ -81,9 +81,11 @@ const processTaskQueue = async (queueData) => {
       const endDate = new Date()
       logger.info(`${endDate} ${profileId} finished ${taskName}`)
     }
-    await browser.close()
+    if (browser) {
+      await browser.close()
+    }
   } catch (error) {
-    logger.exceptions(error)
+    logger.error(error)
   }
 }
 
@@ -99,6 +101,6 @@ const processTask = async (profileId, taskName, page) => {
       await checkProfiles(profileId, page)
     }
   } catch (error) {
-    logger.exceptions('error in Task worker', error)
+    logger.error('error in Task worker', error)
   }
 }
