@@ -88,22 +88,26 @@ export const openProfileBrowser = async (profile) => {
 
     logger.info(`OK`)
 
-    // enter proxy username password
-    if (profileData.proxy && proxyProtected) {
-      const proxyParts = profileData.proxy.split(':')
-      // Set up authentication for the proxy
-      await page.authenticate({
-        username: proxyParts[2], // Replace with your proxy username
-        password: proxyParts[3] // Replace with your proxy password
-      })
-    }
-    await page.goto('https://ipfighter.com/')
-    logger.info('Open the browser successfully')
-    // await startSignIn(profile, browser) // test signin
-    // await updateProfileData(profile, { status: signinStatus })
-    // await resolveCaptcha(profile, page)
-    if (profileData.cookies) {
-      await setCookies(page, profileData)
+    try {
+      // enter proxy username password
+      if (profileData.proxy && proxyProtected) {
+        const proxyParts = profileData.proxy.split(':')
+        // Set up authentication for the proxy
+        await page.authenticate({
+          username: proxyParts[2], // Replace with your proxy username
+          password: proxyParts[3] // Replace with your proxy password
+        })
+      }
+      await page.goto('https://ipfighter.com/')
+      logger.info('Open the browser successfully')
+      // await startSignIn(profile, browser) // test signin
+      // await updateProfileData(profile, { status: signinStatus })
+      // await resolveCaptcha(profile, page)
+      if (profileData.cookies) {
+        await setCookies(page, profileData)
+      }
+    } catch (error) {
+      logger.error(error)
     }
     return [page, browser]
   } catch (error) {
