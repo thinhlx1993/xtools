@@ -118,7 +118,7 @@ const ProfilesPage = () => {
 
   const handleCheckProfile = async () => {
     if (fileInput) {
-      parseCsv(fileInput)
+      await parseCsv(fileInput)
       openSnackbar(`Found ${data.length} profile`, 'info')
     } else {
       const input = newProfile
@@ -478,9 +478,9 @@ const ProfilesPage = () => {
 
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
+      {/* <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
         Profiles Management
-      </Typography>
+      </Typography> */}
       <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
         <Grid item>
           <TextField

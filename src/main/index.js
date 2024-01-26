@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
-import { join, path } from 'path'
+import { join } from 'path'
+import { autoUpdater } from 'electron-updater'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import system from './system'
@@ -100,7 +101,7 @@ const createWindow = async () => {
     mainWindow.show()
   })
 
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -126,9 +127,10 @@ const createWindow = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
+  // check for update
+  autoUpdater.checkForUpdatesAndNotify()
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
-
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -162,6 +164,15 @@ app.on('window-all-closed', () => {
   logger.info('appOn__window-all-closed')
   app.quit()
 })
+
+// autoUpdater.on('update-available', () => {
+//   // Notify the user an update is available
+// })
+
+// autoUpdater.on('update-downloaded', () => {
+//   // Notify the user the update will be installed
+//   autoUpdater.quitAndInstall()
+// })
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

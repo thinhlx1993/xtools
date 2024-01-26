@@ -9,26 +9,30 @@ files:
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!electron-builder.env'
 asarUnpack:
   - resources/**
 win:
   executableName: XAutoTool
   icon: build/icon.ico
   target:
-     - target: portable
-       arch:
-         - x64
+    - target: portable
+      arch:
+        - x64
 mac:
   icon: build/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   notarize: false
   target:
-     - target: dmg
-       arch:
-         - x64
+    - target: dmg
+      arch:
+        - x64
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: true
-# publish:
-#   provider: generic
-#   url: https://example.com/auto-updates
+publish:
+  provider: spaces
+  name: xtoolsvn
+  region: sgp1
+  acl: public-read
+asar: true
