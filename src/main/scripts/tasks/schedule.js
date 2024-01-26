@@ -7,13 +7,14 @@ import {
   checkProfiles
 } from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
+import logger from '../../logger'
 
 let taskQueue = []
 let isStarted = false
 
 export const fetchScheduledTasks = async () => {
   if (!isStarted) {
-    console.log('Start worker')
+    logger.info('Start worker')
     isStarted = true
     setInterval(async () => {
       try {
@@ -25,7 +26,7 @@ export const fetchScheduledTasks = async () => {
           })
         }
       } catch (error) {
-        console.log(error)
+        logger.info(error)
       }
     }, 5000) // Run every 5 seconds
 
@@ -38,7 +39,7 @@ export const fetchScheduledTasks = async () => {
     // }
 
     for (let i = 0; i < threadsNumber; i++) {
-      console.log(`Start worker: ${i}`)
+      logger.info(`Start worker: ${i}`)
       // Your code here for each iteration
       await processTaskQueue(i)
       setTimeout(() => {}, 1000) // Delay worker swamp 1 seconds
@@ -57,13 +58,13 @@ const processTaskQueue = async (queueId) => {
           const taskName = task.tasks.tasks_name
           const profileId = queueData.profile_id
           const startDate = new Date()
-          console.log(`${startDate} Worker ${queueId} start ${taskName}`)
+          logger.info(`${startDate} Worker ${queueId} start ${taskName}`)
           await startTaskWorker(profileId, taskName)
           const endDate = new Date()
-          console.log(`${endDate} Worker ${queueId} finished ${taskName}`)
+          logger.info(`${endDate} Worker ${queueId} finished ${taskName}`)
         }
       } catch (error) {
-        console.log(error)
+        logger.info(error)
       }
     }
   }, 2000) // Check every 2 seconds
@@ -85,7 +86,7 @@ const startTaskWorker = async (profileId, taskName) => {
       await checkProfiles(profileId, page)
     }
   } catch (error) {
-    console.log('error in Task worker', error)
+    logger.info('error in Task worker', error)
   }
   await browser.close()
 }

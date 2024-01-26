@@ -219,7 +219,7 @@ const init = async (options, callbackFuncUpdateStatus, accountId) => {
     // init browser
     // const browser = await _createNewBrowser(options, account)
     // new browser here
-    console.log(`Open browser ${account.profileId}`)
+    logger.info(`Open browser ${account.profileId}`)
     const browser = await openProfileBrowser(account.profileId)
     dataMemories[accountId] = { browser }
     callbackFuncUpdateStatus(SCRIPT_STATUS.initSuccess)

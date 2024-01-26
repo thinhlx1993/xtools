@@ -16,18 +16,19 @@ import {
 } from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
+import logger from '../../logger'
 
 export const openProfileBrowser = async (profile) => {
   try {
     let proxyProtected = false
     let args = []
-    console.log(profile)
+    logger.info(profile)
     let profileData = await getProfileData(profile, {})
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
-        console.info(`get data from proxy ${profileData.proxy}`)
+        logger.info(`get data from proxy ${profileData.proxy}`)
         const [tz] = await Promise.all([hideMyAcc.network(splitProxy(profileData.proxy))])
-        console.info(`get data from tz ${tz}`)
+        logger.info(`get data from tz ${tz}`)
         profileData = await getProfileData(profile, tz)
       } catch (error) {
         await updateProfileData(profile, { status: 'Proxy error' })
@@ -62,21 +63,21 @@ export const openProfileBrowser = async (profile) => {
       // loading 2captcha plugin
       const pathToExtension = getAppPath(`\\extentions\\SupportSolvingFunCaptcha`)
       if (fs.existsSync(pathToExtension)) {
-        console.log(`Found extention: ${pathToExtension}`)
+        logger.info(`Found extention: ${pathToExtension}`)
         // puppeteer.use(StealthPlugin())
         args.push(`--disable-extensions-except=${pathToExtension}`)
         args.push(`--load-extension=${pathToExtension}`)
         // args.push(`--remote-debugging-port=9090`)
       }
     } catch (error) {
-      console.log(error)
+      logger.info(error)
     }
     const newBrowserOptions = {
       ...defaultPuppeteerOptions,
       executablePath: profileData.settings.browserPath,
       args: [...defaultPuppeteerOptions.args, ...args]
     }
-    // console.log(newBrowserOptions.args)
+    // logger.info(newBrowserOptions.args)
     const browser = await puppeteer.launch(newBrowserOptions)
     const page = await browser.newPage()
 
@@ -90,13 +91,13 @@ export const openProfileBrowser = async (profile) => {
       })
     }
     await page.goto('https://ipfighter.com/')
-    console.info('Open the browser successfully')
+    logger.info('Open the browser successfully')
     // await startSignIn(profile, browser) // test signin
     // await updateProfileData(profile, { status: signinStatus })
-    await resolveCaptcha(profile, page)
-    // if (profileData.cookies) {
-    //   await setCookies(page, profileData)
-    // }
+    // await resolveCaptcha(profile, page)
+    if (profileData.cookies) {
+      await setCookies(page, profileData)
+    }
     return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
@@ -150,7 +151,7 @@ export const resolveCaptcha = async (profileId, page) => {
     await updateProfileData(profileId, { status: 'ok' })
     return
   } catch (error) {
-    console.log('Cant access to the homepage')
+    logger.info('Cant access to the homepage')
   }
 
   await page.evaluate(() =>
@@ -177,14 +178,14 @@ export const resolveCaptcha = async (profileId, page) => {
       visible: true,
       timeout: 2000
     })
-    console.log('ok found iframe')
+    logger.info('ok found iframe')
     // Access the first level iframe
     const firstLevelFrame = await accessToIframe(page, 'iframe')
     // Access the second level iframe
     const secondLevelFrame = await accessToIframe(firstLevelFrame, 'iframe')
     // Access the third level iframe
     const thirdLevelFrame = await accessToIframe(secondLevelFrame, 'iframe')
-    console.log('ok found iframe 3')
+    logger.info('ok found iframe 3')
     await randomDelay()
     const buttonSelector = 'button[data-theme="home.verifyButton"]' // Replace with the selector for your button
     await thirdLevelFrame.waitForSelector(buttonSelector)
@@ -196,7 +197,7 @@ export const resolveCaptcha = async (profileId, page) => {
       (element) => element.textContent
     )
 
-    console.log(challegingText)
+    logger.info(challegingText)
 
     const regexTaks = /\((\d+) of (\d+)\)/ // Regex pattern to match and capture numbers in the format (X of Y)
 
@@ -215,7 +216,7 @@ export const resolveCaptcha = async (profileId, page) => {
         const inputElement = document.getElementById('Base64ImageCaptcha')
         return inputElement ? inputElement.value : null
       })
-      // console.log(captchaBase64)
+      // logger.info(captchaBase64)
       // Split the string at the comma
       const base64Data = captchaBase64.split(',')[1]
 
@@ -236,11 +237,11 @@ export const resolveCaptcha = async (profileId, page) => {
 
       // Retrieve the solution
       const rt = captchaResponse.split('|')
-      console.log(rt)
+      logger.info(rt)
       const solutionUrl = `http://api.cap.guru/res.php?key=${key}&id=${rt[1]}`
-      console.log(solutionUrl)
+      logger.info(solutionUrl)
       const solutionResponse = await axios.get(solutionUrl)
-      console.log(solutionResponse.data)
+      logger.info(solutionResponse.data)
       if (solutionResponse.data === 'ERROR_CAPTCHA_UNSOLVABLE') {
         await updateProfileData(profileId, { status: 'ERROR_CAPTCHA_UNSOLVABLE' })
         return
@@ -252,9 +253,9 @@ export const resolveCaptcha = async (profileId, page) => {
       let xValue = null
       if (match) {
         xValue = parseInt(match[1], 10) // Convert the captured group to an integer
-        console.log(xValue)
+        logger.info(xValue)
         const numberOfClicks = await calculateClicks(xValue)
-        console.log(`Number clicks ${numberOfClicks}`)
+        logger.info(`Number clicks ${numberOfClicks}`)
         await clickIntoNext(thirdLevelFrame, numberOfClicks)
         await randomDelay()
         // Function to click a button based on its text content
@@ -274,7 +275,7 @@ export const resolveCaptcha = async (profileId, page) => {
     // You've proven you're a human. Continue your action.
     await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
-    console.log(error)
+    logger.info(error)
     await updateProfileData(profileId, { status: 'captcha error' })
   }
 }
@@ -282,6 +283,11 @@ export const resolveCaptcha = async (profileId, page) => {
 export const startSignIn = async (profileId, page) => {
   try {
     let profileData = await getProfileData(profileId, {})
+    if (profileData.cookies) {
+      await setCookies(page, profileData)
+      await updateProfileData(profileId, { status: 'set cookies ok' })
+      return
+    }
     // Start Puppeteer
     await updateProfileData(profileId, { status: 'logging in' })
 
@@ -322,7 +328,7 @@ export const startSignIn = async (profileId, page) => {
     await page.waitForSelector('input[data-testid="ocfEnterTextTextInput"]')
 
     const currentOtp = getOtp(profileData.fa)
-    console.log(profileData.fa)
+    logger.info(profileData.fa)
     await randomDelay()
     await page.type('input[data-testid="ocfEnterTextTextInput"]', currentOtp, { delay: 100 })
     await randomDelay()
@@ -342,7 +348,7 @@ export const getCookies = async (profileId, browser) => {
 }
 
 export const checkProfiles = async (profileId, page) => {
-  console.log('checkProfiles')
+  logger.info('checkProfiles')
   // await page.goto('https://twitter.com')
   // await randomDelay()
   await page.waitForSelector('div[aria-label="Home timeline"]', {
@@ -369,12 +375,12 @@ export const checkProfiles = async (profileId, page) => {
   })
 
   if (hrefs.length > 0) {
-    console.log('Found links:', hrefs)
+    logger.info('Found links:', hrefs)
     // You can perform more actions here, like clicking the first link
     // await page.click('a[href*="/following"]');
     following = await page.$eval('a[href*="/following"]', (element) => element.textContent)
   } else {
-    console.log('No links with "/following" in href were found')
+    logger.info('No links with "/following" in href were found')
   }
 
   hrefs = await page.evaluate(() => {
@@ -383,12 +389,12 @@ export const checkProfiles = async (profileId, page) => {
   })
 
   if (hrefs.length > 0) {
-    console.log('Found links:', hrefs)
+    logger.info('Found links:', hrefs)
     // You can perform more actions here, like clicking the first link
     // await page.click('a[href*="/following"]');
     followers = await page.$eval('a[href*="/verified_followers"]', (element) => element.textContent)
   } else {
-    console.log('No links with "/verified_followers" in href were found')
+    logger.info('No links with "/verified_followers" in href were found')
   }
 
   hrefs = await page.evaluate(() => {
@@ -399,12 +405,12 @@ export const checkProfiles = async (profileId, page) => {
   })
 
   if (hrefs.length > 0) {
-    console.log('Found links:', hrefs)
+    logger.info('Found links:', hrefs)
     // You can perform more actions here, like clicking the first link
     // await page.click('a[href*="/following"]');
     verify = true
   } else {
-    console.log('No links with verified accounts in href were found')
+    logger.info('No links with verified accounts in href were found')
   }
 
   await updateProfileData(profileId, { profile_data: { followers, following, verify } })
@@ -429,7 +435,7 @@ export const checkProfiles = async (profileId, page) => {
           )
           return result.singleNodeValue ? result.singleNodeValue.textContent : ''
         }, article)
-        console.log(content)
+        logger.info(content)
         // Extracting 'tw_post_id'
         const linkElementHandle = await page.evaluateHandle((element) => {
           return document.evaluate(
@@ -444,7 +450,7 @@ export const checkProfiles = async (profileId, page) => {
         if (linkElementHandle) {
           tw_post_id = await linkElementHandle.evaluate((node) => node.href)
         }
-        console.log(tw_post_id)
+        logger.info(tw_post_id)
         // Extracting 'view'
         const viewsElementHandle = await page.evaluateHandle((element) => {
           return document.evaluate(
@@ -459,7 +465,7 @@ export const checkProfiles = async (profileId, page) => {
         if (viewsElementHandle) {
           view = await viewsElementHandle.evaluate((node) => node.getAttribute('aria-label'))
         }
-        console.log(view)
+        logger.info(view)
         // Handling postData
         const postData = {
           content: content,
@@ -473,10 +479,10 @@ export const checkProfiles = async (profileId, page) => {
         if (linkElementHandle) await linkElementHandle.dispose()
         if (viewsElementHandle) await viewsElementHandle.dispose()
       } catch (error) {
-        console.log('Error processing article:', error)
+        logger.info('Error processing article:', error)
       }
     }
   } else {
-    console.log('No articles found with the given selector.')
+    logger.info('No articles found with the given selector.')
   }
 }

@@ -5,12 +5,6 @@ import utils from './utils'
 
 const _formatMeta = (meta) => {
   return meta && Object.keys(meta).length ? JSON.stringify(meta) : ''
-  // const splat = meta[Symbol.for("splat")];
-  // return !splat?.length
-  //   ? ""
-  //   : splat.length === 1
-  //   ? JSON.stringify(splat[0])
-  // : JSON.stringify(splat);
 }
 
 const _customLogFormat = winston.format.printf(
@@ -29,6 +23,7 @@ const _loggerOptions = {
 if (is.dev) {
   _loggerOptions.transports.push(new winston.transports.Console({ level: 'debug' }))
 } else {
+  console.log(`log folder: ${utils.getAppPath('logs')}`)
   _loggerOptions.transports.push(
     new winston.transports.DailyRotateFile({
       dirname: utils.getAppPath('logs'),

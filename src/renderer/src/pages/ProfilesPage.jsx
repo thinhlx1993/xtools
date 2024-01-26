@@ -75,11 +75,6 @@ const ProfilesPage = () => {
 
   const [data, setData] = useState([])
 
-  // const handleFileChange = (event) => {
-  //   const file = event.target.files[0]
-  //   parseCsv(file)
-  // }
-
   const parseCsv = (file) => {
     Papa.parse(file, {
       complete: (result) => {
