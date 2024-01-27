@@ -12,6 +12,15 @@ files:
   - '!electron-builder.env'
 asarUnpack:
   - resources/**
+extraResources:
+  - from: extentions
+    to: extentions
+    filter:
+      - '**/*'
+  - from: HMAZeroProfile
+    to: HMAZeroProfile
+    filter:
+      - '**/*'
 win:
   executableName: XAutoTool
   icon: build/icon.ico
