@@ -27,6 +27,16 @@ const ProfileSchema = new typeorm.EntitySchema({
       type: 'text',
       nullable: true
     },
+    phoneNumber: {
+      name: 'phone_number',
+      type: 'text',
+      nullable: true
+    },
+    pass: {
+      name: 'pass',
+      type: 'text',
+      nullable: true
+    },
     cookie: {
       name: 'cookie',
       type: 'varchar',

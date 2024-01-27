@@ -75,6 +75,61 @@ export const delayRandomByArrayNumberInString = (arrayString, options = {}) => {
   return delay(time);
 };
 
+import fs from 'fs';
+import { getAppPath } from '../utils';
+
+function readJsonFile(subPath) {
+  const filePath = getAppPath(subPath); // Use getAppPath to get the full path
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(data);
+    } else {
+      console.log('JSON file not found. A new file will be created.');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error occurred while reading JSON file:', error);
+    return [];
+  }
+}
+
+// Async function to write JSON file
+async function writeJsonFile(subPath, newData) {
+  const filePath = getAppPath(subPath); // Use getAppPath to get the full path
+  try {
+    let existingData = [];
+
+    // Check if the file exists and read existing data asynchronously
+    try {
+      const fileContents = await fs.promises.readFile(filePath, 'utf8');
+      existingData = JSON.parse(fileContents);
+    } catch (readError) {
+      console.log('JSON file not found or unreadable. Starting with an empty array.');
+    }
+
+    // Remove duplicates based on "username" and "phone" fields
+    const uniqueData = existingData.filter((existingItem) => {
+      const matchingNewData = newData.find((newItem) => {
+        return (
+          existingItem.username === newItem.username &&
+          (existingItem.phone !== "" || newItem.phone === "") // Keep the last entry if phone is not empty
+        );
+      });
+      return matchingNewData === undefined;
+    });
+
+    // Combine unique data with new data
+    const combinedData = [...uniqueData, ...newData];
+
+    // Write the combined data to the file asynchronously
+    await fs.promises.writeFile(filePath, JSON.stringify(combinedData, null, 2), 'utf8');
+    console.log('JSON file updated successfully');
+  } catch (error) {
+    console.error('Error writing JSON file:', error);
+  }
+}
+
 export default {
   delay,
   random,
@@ -82,4 +137,6 @@ export default {
   shuffle,
   randomArrayNumberInString,
   delayRandomByArrayNumberInString,
+  writeJsonFile,
+  readJsonFile
 }

@@ -22,6 +22,12 @@ const AccountSchema = new typeorm.EntitySchema({
       length: 255,
       default: ''
     },
+    phoneNumber: {
+      name: 'phone_number',
+      type: 'varchar',
+      length: 255,
+      default: ''
+    },
     pass: {
       name: 'pass',
       type: 'varchar',

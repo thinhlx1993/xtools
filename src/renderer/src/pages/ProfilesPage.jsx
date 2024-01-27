@@ -1,33 +1,34 @@
-import { useState, useEffect } from 'react'
+/* eslint-disable react/prop-types */
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
+import EditIcon from '@mui/icons-material/Edit'
 import {
   Button,
-  TextField,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  IconButton,
+  Input,
+  MenuItem,
   Paper,
-  Typography,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableHead,
-  TableRow,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Input,
-  DialogContentText,
-  Checkbox,
-  Grid,
-  Select,
-  MenuItem,
   TablePagination,
+  TableRow,
+  TextField,
   Tooltip,
-  IconButton
+  Typography,
+  useMediaQuery
 } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
-import { useSnackbar } from '../context/SnackbarContext'
+import { useEffect, useState } from 'react'
 import AppConfig from '../config/enums'
-import { useMediaQuery } from '@mui/material'
+import { useSnackbar } from '../context/SnackbarContext'
 import { ipcMainConsumer } from '../helpers/api'
 
 const ProfilesPage = () => {
@@ -93,6 +94,31 @@ const ProfilesPage = () => {
     } catch (error) {
       openSnackbar('Error fetching profiles', 'error')
       console.error('Error fetching profiles:', error)
+    }
+  }
+
+  const handleAddPhoneClick = () => {
+    // Step 2 & 3: Filter selected profiles without a phone number
+    const profilesToAddPhone = profiles.filter(
+      (profile) => selectedRows.includes(profile.profile_id) && !profile.phoneNumber
+    )
+
+    // Check if there are any profiles to update
+    if (profilesToAddPhone.length > 0) {
+      // Step 4: Trigger IPC to send profile IDs (pseudo-code, adjust based on your IPC implementation)
+      ipcMainConsumer.send(
+        'addPhoneToProfiles',
+        profilesToAddPhone.map((profile) => profile.profile_id)
+      )
+
+      // Step 5: Notify the user (pseudo-code, adjust based on your notification implementation)
+      openSnackbar('Processing...', 'info')
+    } else {
+      // Notify the user if no profiles need updating
+      openSnackbar(
+        'No profiles selected or all selected profiles already have phone numbers.',
+        'warning'
+      )
     }
   }
 
@@ -486,6 +512,11 @@ const ProfilesPage = () => {
             onClick={handleBatchDeleteClick}
           >
             Delete
+          </Button>
+        </Grid>
+        <Grid item>
+          <Button variant="contained" color="primary" onClick={handleAddPhoneClick}>
+            Add Phone
           </Button>
         </Grid>
       </Grid>

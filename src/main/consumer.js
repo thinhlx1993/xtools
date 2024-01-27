@@ -1,15 +1,15 @@
-import { BrowserWindow, ipcMain, dialog } from 'electron'
-import { machineId, machineIdSync } from 'node-machine-id'
-import hideMyAcc from './integration/hidemyacc'
-import store from './store'
-import { STORE_KEYS, SCRIPT_STATUS, BROWSER_TYPE } from './constants'
-import scripts from './scripts'
+import { BrowserWindow, ipcMain } from 'electron'
+import { BROWSER_TYPE, SCRIPT_STATUS, STORE_KEYS } from './constants'
 import repository from './database/repository'
-import logger from './logger'
+import hideMyAcc from './integration/hidemyacc'
 import trends24Integration from './integration/trends24'
-import { delay } from './scripts/utils'
+import logger from './logger'
+import scripts from './scripts'
+import { addPhone } from './scripts/tasks/phone'
 import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
+import { delay } from './scripts/utils'
+import store from './store'
 
 const uuid = require('uuid')
 const dataMemories = {}
@@ -286,6 +286,12 @@ ipcMain.on('fetchMachineId', async (event) => {
 ipcMain.on('startOpenProfile', async (event, profile) => {
   openProfileBrowser(profile)
 })
+
+// add phone
+ipcMain.on('addPhoneToProfiles', async (event, profiles) => {
+  addPhone(profiles)
+})
+
 
 // save access token
 ipcMain.on('setAccessToken', (event, accessToken) => {

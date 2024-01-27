@@ -42,6 +42,7 @@
  * @property {string} hideMyAccUsername
  * @property {string} hideMyAccProfileDir
  * @property {string} hideMyAccProfileId
+ * @property {string} pass
  */
 
 /**
