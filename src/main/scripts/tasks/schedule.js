@@ -9,6 +9,7 @@ import {
 import { TASK_NAME_CONFIG } from '../../constants'
 import logger from '../../logger'
 import async from 'async'
+import newsFeedStep from '../steps/newsfeed'
 let isStarted = false
 let queue = null
 
@@ -33,20 +34,20 @@ export const fetchScheduledTasks = async () => {
 
     // worker swamp
 
-    let threadsNumber = 2
+    // let threadsNumber = 2
 
-    try {
-      const response = await get('/settings/')
-      if (response && response.settings) {
-        threadsNumber = response.settings.settings.Threads
-      }
-    } catch (error) {
-      logger.error(error)
-    }
+    // try {
+    //   const response = await get('/settings/')
+    //   if (response && response.settings) {
+    //     threadsNumber = response.settings.settings.Threads
+    //   }
+    // } catch (error) {
+    //   logger.error(error)
+    // }
     queue = async.queue(async (task) => {
       // Your task processing function
       await processTaskQueue(task)
-    }, threadsNumber) // 10 is the concurrency limit
+    }, 10) // 10 is the concurrency limit
   }
 }
 
@@ -80,10 +81,11 @@ const processTaskQueue = async (queueData) => {
     let [page, browser] = await openProfileBrowser(profileId)
     for (let task of tasks) {
       const taskName = task.tasks.tasks_name
+      const tasksJson = task.tasks.tasks_json
       const profileTargets = task.tasks.profile_targets ? task.tasks.profile_targets : []
       const startDate = new Date()
       logger.info(`${startDate} ${profileId} Worker start ${taskName}`)
-      await processTask(profileId, profileTargets, taskName, page)
+      await processTask(profileId, profileTargets, taskName, tasksJson, page)
       const endDate = new Date()
       logger.info(`${endDate} ${profileId} finished ${taskName}`)
     }
@@ -95,16 +97,26 @@ const processTaskQueue = async (queueData) => {
   }
 }
 
-const processTask = async (profileId, profileTargets, taskName, page) => {
+const processTask = async (profileId, profileTargets, taskName, tasksJson, page) => {
   try {
-    if (taskName === TASK_NAME_CONFIG.Login) {
-      await startSignIn(profileId, page)
-    } else if (taskName == TASK_NAME_CONFIG.GetCookie) {
-      await getCookies(profileId, page)
-    } else if (taskName == TASK_NAME_CONFIG.Captcha) {
-      await resolveCaptcha(profileId, page)
-    } else if (taskName == TASK_NAME_CONFIG.CheckProfile) {
-      await checkProfiles(profileId, page)
+    switch (taskName) {
+      case TASK_NAME_CONFIG.Login:
+        await startSignIn(profileId, page)
+        break
+      case TASK_NAME_CONFIG.GetCookie:
+        await getCookies(profileId, page)
+        break
+      case TASK_NAME_CONFIG.Captcha:
+        await resolveCaptcha(profileId, page)
+        break
+      case TASK_NAME_CONFIG.CheckProfile:
+        await checkProfiles(profileId, page)
+        break
+      case TASK_NAME_CONFIG.Newsfeed:
+        await newsFeedStep.init(page, profileId, tasksJson)
+        break
+      default:
+        return
     }
     if (profileTargets.length > 0) {
       logger.info(`Create event logs: ${taskName} ${profileId} -> ${profileTargets}`)

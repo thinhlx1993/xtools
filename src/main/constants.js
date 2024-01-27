@@ -96,5 +96,6 @@ export const TASK_NAME_CONFIG = {
   Login: 'Login',
   GetCookie: 'Lấy cookie',
   Captcha: 'Giải Captcha',
-  CheckProfile: 'Check follow'
+  CheckProfile: 'Check follow',
+  Newsfeed: 'newsFeed'
 }

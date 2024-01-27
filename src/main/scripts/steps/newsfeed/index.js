@@ -6,7 +6,8 @@ import utils from '../../utils'
 // eslint-disable-next-line no-unused-vars
 import { Browser, Account, NewsFeedOptions } from '../../define-type'
 import home from './home'
-
+import { randomDelay } from '../../tasks/utils'
+import { getProfileData } from '../../services/backend'
 const dataMemories = {}
 
 /**
@@ -14,9 +15,9 @@ const dataMemories = {}
  * @param {Account} account The Account
  * @param {NewsFeedOptions} featOptions The featOptions object
  */
-const _func = async (browser, account, featOptions) => {
-  const page = await browser.newPage()
-  await authenticateProxy(page, account.proxy)
+const _func = async (page, profileId, featOptions) => {
+  const profileData = await getProfileData(profileId, {})
+  await authenticateProxy(page, profileData.proxy)
   try {
     let totalPosts = 0
     let totalPostsToClose = undefined
@@ -24,6 +25,7 @@ const _func = async (browser, account, featOptions) => {
     switch (featOptions.stopAction) {
       case STOP_ACTION_OPTION.timeout:
         setTimeout(() => {
+          logger.info('Timeout newsfeed')
           timeToClose = true
         }, featOptions.stopActionTimeout * 60000)
         break
@@ -33,7 +35,8 @@ const _func = async (browser, account, featOptions) => {
       default:
         break
     }
-    await home(page, account, featOptions, () => {
+    await randomDelay()
+    await home(page, profileData, featOptions, () => {
       totalPosts += 1
       return (
         timeToClose || (typeof totalPostsToClose === 'number' && totalPosts === totalPostsToClose)
@@ -43,32 +46,22 @@ const _func = async (browser, account, featOptions) => {
   } catch (error) {
     if (!page.isClosed()) {
       logger.error('newsFeed__EXECUTE_FUNC_ERROR', {
-        accountId: account.id,
+        profileId: profileData.profile_id,
         error: mapErrorConstructor(error)
       })
     }
   }
-  // if (dataMemories[account.id]) {
-  //   if (
-  //     featOptions.replayAction === REPLAY_ACTION_OPTION.timeout &&
-  //     featOptions.replayActionTimeout > 0
-  //   ) {
-  //     dataMemories[account.id] = setTimeout(
-  //       () => _func(browser, account, featOptions),
-  //       featOptions.replayActionTimeout * 60000
-  //     )
-  //   }
-  // }
 }
 
 const init = _func
 
 const stop = (accountId) => {
-  clearTimeout(dataMemories[accountId])
-  delete dataMemories[accountId]
+  // clearTimeout(dataMemories[accountId])
+  // delete dataMemories[accountId]
+  logger.info(`stop ${accountId}`)
 }
 
 export default {
   init,
-  stop,
+  stop
 }

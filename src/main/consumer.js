@@ -10,7 +10,6 @@ import trends24Integration from './integration/trends24'
 import { delay } from './scripts/utils'
 import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
-
 const dataMemories = {}
 
 // In this file you can include the rest of your app's specific main process
