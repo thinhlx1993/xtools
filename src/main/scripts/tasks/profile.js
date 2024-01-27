@@ -48,14 +48,14 @@ export const openProfileBrowser = async (profile) => {
       logger.info(`Add proxy`)
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
     }
-
+    logger.info(`Current dir: ${getAppPath('')}`)
     let hideMyAccProfileDir = getAppPath(`\\profiles\\${profile}`)
     if (profileData.settings.folderPath) {
       hideMyAccProfileDir = `${profileData.settings.folderPath}\\${profile}`
     }
 
     if (!fs.existsSync(hideMyAccProfileDir)) {
-      fs.cpSync(getAppPath(`\\resources\\HMAZeroProfile`), hideMyAccProfileDir, {
+      fs.cpSync(getAppPath(`\\HMAZeroProfile`), hideMyAccProfileDir, {
         recursive: true
       })
     }
@@ -68,7 +68,7 @@ export const openProfileBrowser = async (profile) => {
 
     try {
       // loading 2captcha plugin
-      const pathToExtension = getAppPath(`\\resources\\extentions\\SupportSolvingFunCaptcha`)
+      const pathToExtension = getAppPath(`\\extentions\\SupportSolvingFunCaptcha`)
       if (fs.existsSync(pathToExtension)) {
         logger.info(`Found extention: ${pathToExtension}`)
         // puppeteer.use(StealthPlugin())

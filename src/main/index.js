@@ -183,10 +183,12 @@ app.whenReady().then(async () => {
     }
   })
 
-  // check for update
-  setInterval(() => {
-    autoUpdater.checkForUpdatesAndNotify()
-  }, 30000) // Run every 30 seconds
+  if (!is.dev) {
+    // check for update
+    setInterval(() => {
+      autoUpdater.checkForUpdatesAndNotify()
+    }, 30000) // Run every 30 seconds
+  }
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

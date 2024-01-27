@@ -45,3 +45,8 @@ publish:
   region: sgp1
   acl: public-read
 asar: true
+nsis:
+  perMachine: true
+  allowElevation: true
+  oneClick: false
+  allowToChangeInstallationDirectory: true
