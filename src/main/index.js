@@ -72,6 +72,35 @@ const _cka = async () => {
   }
 }
 
+autoUpdater.on('checking-for-update', () => {
+  logger.info('checking-for-update')
+})
+
+autoUpdater.on('update-available', (info) => {
+  logger.info(`update-available ${info}`)
+})
+
+autoUpdater.on('update-not-available', (info) => {
+  logger.info(`update-not-available ${info}`)
+})
+
+autoUpdater.on('error', (err) => {
+  logger.info(err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  logger.info(
+    `download: ${JSON.stringify({
+      event: 'download-progress',
+      progress: progressObj
+    })}`
+  )
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  logger.info(`update-downloaded ${info}`)
+})
+
 const createWindow = async () => {
   // const [messageError] = await _cka()
   const windowSize = {
@@ -101,7 +130,6 @@ const createWindow = async () => {
     mainWindow.show()
   })
 
-  mainWindow.webContents.openDevTools()
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -111,6 +139,7 @@ const createWindow = async () => {
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -127,10 +156,8 @@ const createWindow = async () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  // check for update
-  autoUpdater.checkForUpdatesAndNotify()
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('tw.auto-tools')
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -155,6 +182,11 @@ app.whenReady().then(async () => {
       })
     }
   })
+
+  // check for update
+  setInterval(() => {
+    autoUpdater.checkForUpdatesAndNotify()
+  }, 30000) // Run every 30 seconds
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

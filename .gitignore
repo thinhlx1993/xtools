@@ -5,3 +5,6 @@ out
 .env
 build
 electron-builder.env
+captcha
+extentions
+HMAZeroProfile
