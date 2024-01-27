@@ -473,10 +473,15 @@ const ProfilesPage = () => {
 
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
-      {/* <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
-        Profiles Management
-      </Typography> */}
-      <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
+      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+        {/* Event Logs Title */}
+        <Grid item xs>
+          <Typography variant="h4" gutterBottom>
+            Profiles
+          </Typography>
+        </Grid>
+
+        {/* Search Field */}
         <Grid item>
           <TextField
             label="Search by Username, User"
@@ -485,28 +490,12 @@ const ProfilesPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </Grid>
-        {/* <Grid item>
-          <Select
-            label="Filter by Group"
-            variant="outlined"
-            value={selectedGroup}
-            onChange={(e) => setSelectedGroup(e.target.value)}
-          >
-            <MenuItem value="All">All</MenuItem>
-            {groups.map((group) => (
-              <MenuItem key={group.group_id} value={group.group_id}>
-                {group.group_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid> */}
-        <Grid item></Grid>
-        <Grid item>
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
             Import
           </Button>
         </Grid>
-        <Grid item>
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="primary"
@@ -516,7 +505,7 @@ const ProfilesPage = () => {
             Share
           </Button>
         </Grid>
-        <Grid item>
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="error"
@@ -527,6 +516,9 @@ const ProfilesPage = () => {
           </Button>
         </Grid>
       </Grid>
+      {/* <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
+        Profiles Management
+      </Typography> */}
 
       <Paper style={{ padding: '20px', marginBottom: '20px', overflowX: 'auto' }}>
         <Table stickyHeader size="small">

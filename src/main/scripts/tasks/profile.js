@@ -296,6 +296,10 @@ export const startSignIn = async (profileId, page) => {
     let profileData = await getProfileData(profileId, {})
     if (profileData.cookies) {
       await setCookies(page, profileData)
+      for (let index = 0; index < 2; index++) {
+        await tryAgain(page)
+        await randomDelay()
+      }
       await updateProfileData(profileId, { status: 'set cookies ok' })
       return
     }
@@ -349,6 +353,20 @@ export const startSignIn = async (profileId, page) => {
     await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
+  }
+}
+
+const tryAgain = async (page) => {
+  try {
+    await page.evaluate(() =>
+      document
+        .querySelector('span')
+        ?.innerText?.includes('Something went wrong, but don’t fret — let’s give it another shot.')
+    )
+    await page.waitForSelector('button[type="submit"]')
+    await page.click('button[type="submit"]')
+  } catch (error) {
+    logger.error(error)
   }
 }
 

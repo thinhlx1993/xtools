@@ -51,16 +51,15 @@ const EventPage = () => {
 
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
-        Events Logs
-      </Typography>
-      <Grid
-        container
-        spacing={2}
-        alignItems="center"
-        justifyContent="flex-end"
-        style={{ marginTop: '20px' }}
-      >
+      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+        {/* Event Logs Title */}
+        <Grid item xs>
+          <Typography variant="h4" gutterBottom>
+            Events Logs
+          </Typography>
+        </Grid>
+
+        {/* Refresh Button */}
         <Grid item>
           <Tooltip title="Refresh" onClick={fetchEvents}>
             <IconButton>
@@ -68,15 +67,18 @@ const EventPage = () => {
             </IconButton>
           </Tooltip>
         </Grid>
+
+        {/* Search Field */}
         <Grid item>
           <TextField
-            label="Search by issues, type"
+            label="Search by action, notes"
             variant="outlined"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </Grid>
       </Grid>
+
       <Box sx={{ width: '100%' }}>
         <Paper
           sx={{ width: '100%', mb: 2 }}
@@ -85,17 +87,19 @@ const EventPage = () => {
           <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Description</TableCell>
-                <TableCell>Username</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell>Issue</TableCell>
+                <TableCell>Action</TableCell>
+                <TableCell>User Receiver</TableCell>
+                <TableCell>User Giver</TableCell>
+                <TableCell>Day Issue</TableCell>
+                <TableCell>Notes</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {events.map((event) => (
                 <TableRow key={event.event_id}>
                   <TableCell>{event.event_type}</TableCell>
-                  <TableCell>{event.profile_data}</TableCell>
+                  <TableCell>{event.receiver.username}</TableCell>
+                  <TableCell>{event.giver.username}</TableCell>
                   <TableCell>{event.created_at}</TableCell>
                   <TableCell
                     style={{

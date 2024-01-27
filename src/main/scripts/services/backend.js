@@ -1,6 +1,7 @@
 import axios from 'axios'
 import store from '../../store'
 import { STORE_KEYS, BACKEND_BASE_URL } from '../../constants'
+import logger from '../../logger'
 
 export const getProfileData = async (profileId, tz) => {
   const profileData = post(`/profiles/${profileId}/browserdata`, tz)
@@ -20,6 +21,15 @@ export const updatePostData = async (profileId, updateData) => {
 export const getScheduleData = async () => {
   const scheduleData = get(`/mission_schedule/`)
   return scheduleData
+}
+
+export const createEventLogs = async (data) => {
+  try {
+    const response = post(`/events/`, data)
+    return response
+  } catch (error) {
+    logger.error(error)
+  }
 }
 
 const axiosInstance = axios.create({

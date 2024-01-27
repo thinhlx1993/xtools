@@ -1,4 +1,4 @@
-import { get } from '../services/backend'
+import { get, createEventLogs } from '../services/backend'
 import {
   openProfileBrowser,
   startSignIn,
@@ -32,11 +32,16 @@ export const fetchScheduledTasks = async () => {
     }, 5000) // Run every 5 seconds
 
     // worker swamp
-    const response = await get('/settings/')
 
     let threadsNumber = 2
-    if (response && response.settings) {
-      threadsNumber = response.settings.settings.Threads
+
+    try {
+      const response = await get('/settings/')
+      if (response && response.settings) {
+        threadsNumber = response.settings.settings.Threads
+      }
+    } catch (error) {
+      logger.error(error)
     }
     queue = async.queue(async (task) => {
       // Your task processing function
@@ -75,9 +80,10 @@ const processTaskQueue = async (queueData) => {
     let [page, browser] = await openProfileBrowser(profileId)
     for (let task of tasks) {
       const taskName = task.tasks.tasks_name
+      const profileTargets = task.tasks.profile_targets ? task.tasks.profile_targets : []
       const startDate = new Date()
       logger.info(`${startDate} ${profileId} Worker start ${taskName}`)
-      await processTask(profileId, taskName, page)
+      await processTask(profileId, profileTargets, taskName, page)
       const endDate = new Date()
       logger.info(`${endDate} ${profileId} finished ${taskName}`)
     }
@@ -89,7 +95,7 @@ const processTaskQueue = async (queueData) => {
   }
 }
 
-const processTask = async (profileId, taskName, page) => {
+const processTask = async (profileId, profileTargets, taskName, page) => {
   try {
     if (taskName === TASK_NAME_CONFIG.Login) {
       await startSignIn(profileId, page)
@@ -100,7 +106,30 @@ const processTask = async (profileId, taskName, page) => {
     } else if (taskName == TASK_NAME_CONFIG.CheckProfile) {
       await checkProfiles(profileId, page)
     }
+    if (profileTargets.length > 0) {
+      logger.info(`Create event logs: ${taskName} ${profileId} -> ${profileTargets}`)
+      for (let profileTarget of profileTargets) {
+        await createEventLogs({
+          event_type: taskName,
+          profile_id: profileId,
+          profile_id_interact: profileTarget,
+          issue: 'OK'
+        })
+      }
+    } else {
+      logger.info(`Create event logs: ${taskName} ${profileId}`)
+      await createEventLogs({
+        event_type: taskName,
+        profile_id: profileId,
+        issue: 'OK'
+      })
+    }
   } catch (error) {
-    logger.error('error in Task worker', error)
+    await createEventLogs({
+      event_type: taskName,
+      profile_id: profileId,
+      issue: `${error}`
+    })
+    logger.error(`Error in process Task worker ${error}`)
   }
 }
