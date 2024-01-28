@@ -19,6 +19,7 @@ import {
 import CachedIcon from '@mui/icons-material/Cached'
 import { useSnackbar } from '../context/SnackbarContext'
 import { getRequest } from '../helpers/backend'
+import { convertToLocalDateTime } from '../helpers/format-date'
 
 const EventPage = () => {
   const { openSnackbar } = useSnackbar()
@@ -119,7 +120,7 @@ const EventPage = () => {
                   <TableCell>{event.event_type}</TableCell>
                   <TableCell>{event.receiver.username}</TableCell>
                   <TableCell>{event.giver.username}</TableCell>
-                  <TableCell>{event.created_at} UTC</TableCell>
+                  <TableCell>{convertToLocalDateTime(event.created_at)}</TableCell>
                   <TableCell
                     style={{
                       maxWidth: '150px',

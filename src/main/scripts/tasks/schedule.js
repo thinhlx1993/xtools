@@ -30,7 +30,7 @@ export const fetchScheduledTasks = async () => {
       } catch (error) {
         logger.info(error)
       }
-    }, 5000) // Run every 5 seconds
+    }, 5000) // Run every 60 seconds
 
     // worker swamp
 
