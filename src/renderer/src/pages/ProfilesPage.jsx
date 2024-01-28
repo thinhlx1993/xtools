@@ -45,7 +45,8 @@ const ProfilesPage = () => {
     gpt_key: '',
     cookies: '',
     notes: '',
-    status: ''
+    status: '',
+    main_profile: false
   }) // State for storing new profile data
   const [dialogOpen, setDialogOpen] = useState(false) // State for add/edit dialog visibility
   const [editDialogOpen, setEditDialogOpen] = useState(false) // State for edit dialog visibility
@@ -205,7 +206,8 @@ const ProfilesPage = () => {
       cookies: profile.cookies,
       proxy: profile.proxy,
       gpt_key: profile.gpt_key,
-      notes: profile.notes
+      notes: profile.notes,
+      main_profile: profile.main_profile
     })
   }
 
@@ -496,7 +498,7 @@ const ProfilesPage = () => {
             Import
           </Button>
         </Grid>
-        <Grid item style={{ marginLeft: '20px' }}>
+        {/* <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="primary"
@@ -505,7 +507,7 @@ const ProfilesPage = () => {
           >
             Share
           </Button>
-        </Grid>
+        </Grid> */}
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
@@ -761,6 +763,19 @@ const ProfilesPage = () => {
             value={newProfileData.gpt_key}
             onChange={(e) => setNewProfileData({ ...newProfileData, gpt_key: e.target.value })}
           />
+          <div>
+            <Checkbox
+              checked={newProfileData.main_profile}
+              onChange={(e) =>
+                setNewProfileData({
+                  ...newProfileData,
+                  main_profile: e.target.checked // Use 'checked', not 'value'
+                })
+              }
+              inputProps={{ 'aria-label': 'primary checkbox' }}
+            />
+            Don&apos;t allow comment, like
+          </div>
           {/* Add TextFields for other profile attributes like password, FA, proxy, etc. */}
         </DialogContent>
         <DialogActions>
