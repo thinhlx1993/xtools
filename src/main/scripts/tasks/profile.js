@@ -485,4 +485,26 @@ export const checkProfiles = async (profileId, page) => {
       }
     }
   }
+
+  // check momentizable
+  await page.goto('https://twitter.com/settings/monetization')
+  await randomDelay()
+  let monetizable = false
+  try {
+    await page.evaluate(() =>
+      document
+        .querySelector('section[aria-label="Section details"][aria-labelledby="detail-header"]')
+        ?.innerText?.includes('Not yet eligible')
+    )
+
+    await updateProfileData(profileId, {
+      profile_data: { followers, following, verify, monetizable }
+    })
+  } catch (error) {
+    monetizable = true
+    await updateProfileData(profileId, {
+      profile_data: { followers, following, verify, monetizable }
+    })
+    logger.info('Not found Not yet eligible')
+  }
 }

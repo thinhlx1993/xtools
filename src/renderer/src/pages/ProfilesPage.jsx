@@ -26,6 +26,7 @@ import {
 import Papa from 'papaparse'
 import VerifiedIcon from '@mui/icons-material/Verified'
 import EditIcon from '@mui/icons-material/Edit'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import { useSnackbar } from '../context/SnackbarContext'
 import AppConfig from '../config/enums'
@@ -560,6 +561,13 @@ const ProfilesPage = () => {
                           marginLeft: '5px',
                           verticalAlign: 'middle',
                           color: profile?.profile_data?.verify ? 'blue' : 'gray'
+                        }}
+                      />
+                      <AttachMoneyIcon
+                        style={{
+                          marginLeft: '5px',
+                          verticalAlign: 'middle',
+                          color: profile?.profile_data?.monetizable ? 'green' : 'gray'
                         }}
                       />
                     </span>

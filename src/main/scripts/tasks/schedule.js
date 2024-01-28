@@ -53,7 +53,7 @@ export const fetchScheduledTasks = async () => {
 
 const processTaskQueue = async (queueData) => {
   try {
-    // queueData {
+    // {
     //   schedule_id: '8f74ef78-52ec-46ff-b88a-d93bd1ae9ea5',
     //   group_id: null,
     //   profile_id: 'c8a1754f-3769-4816-9c61-f791d7bbddab',
@@ -78,20 +78,29 @@ const processTaskQueue = async (queueData) => {
     // }
     const tasks = queueData.tasks
     const profileId = queueData.profile_id
-    let [page, browser] = await openProfileBrowser(profileId)
+    const profileIdReceiver = queueData.profile_id_receiver
+    // let [page, browser] = await openProfileBrowser(profileId)
     for (let task of tasks) {
+      logger.info(`Task: ${JSON.stringify(task)}`)
       const taskName = task.tasks.tasks_name
       const tasksJson = task.tasks.tasks_json
-      const profileTargets = task.tasks.profile_targets ? task.tasks.profile_targets : []
+      // const profileTargets = task.tasks.profile_targets ? task.tasks.profile_targets : []
       const startDate = new Date()
       logger.info(`${startDate} ${profileId} Worker start ${taskName}`)
-      await processTask(profileId, profileTargets, taskName, tasksJson, page)
+      // await processTask(profileId, profileTargets, taskName, tasksJson, page)
+      await createEventLogs({
+        event_type: taskName,
+        profile_id: profileId,
+        profile_id_interact: profileIdReceiver,
+        issue: 'OK'
+      })
+
       const endDate = new Date()
       logger.info(`${endDate} ${profileId} finished ${taskName}`)
     }
-    if (browser) {
-      await browser.close()
-    }
+    // if (browser) {
+    //   await browser.close()
+    // }
   } catch (error) {
     logger.error(error)
   }
