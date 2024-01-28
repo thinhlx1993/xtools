@@ -26,16 +26,19 @@ const EventPage = () => {
   const [resultCount, setResultCount] = useState(0)
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchGiver, setSearchGiver] = useState('')
+  const [searchReceiver, setSearchReceiver] = useState('')
   const [rowsPerPage, setRowsPerPage] = useState(25) // Rows per page
 
   useEffect(() => {
     fetchEvents()
-  }, [page, rowsPerPage, searchQuery])
+  }, [page, rowsPerPage, searchQuery, searchReceiver, searchGiver])
 
   const fetchEvents = async () => {
     const response = await getRequest(
-      `/events/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}`
+      `/events/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&receiver=${searchReceiver}&giver=${searchGiver}`
     )
+    openSnackbar(`Get events success`, 'success')
     setResultCount(response.data.result_count)
     setEvents(response.data.data)
   }
@@ -54,13 +57,13 @@ const EventPage = () => {
       <Grid container alignItems="center" style={{ marginTop: '20px' }}>
         {/* Event Logs Title */}
         <Grid item xs>
-          <Typography variant="h4" gutterBottom>
+          {/* <Typography variant="h4" gutterBottom>
             Events Logs
-          </Typography>
+          </Typography> */}
         </Grid>
 
         {/* Refresh Button */}
-        <Grid item>
+        <Grid item style={{ marginRight: '20px' }}>
           <Tooltip title="Refresh" onClick={fetchEvents}>
             <IconButton>
               <CachedIcon />
@@ -69,7 +72,23 @@ const EventPage = () => {
         </Grid>
 
         {/* Search Field */}
-        <Grid item>
+        <Grid item style={{ marginRight: '20px' }}>
+          <TextField
+            label="Search by Receiver"
+            variant="outlined"
+            value={searchReceiver}
+            onChange={(e) => setSearchReceiver(e.target.value)}
+          />
+        </Grid>
+        <Grid item style={{ marginRight: '20px' }}>
+          <TextField
+            label="Search by Giver"
+            variant="outlined"
+            value={searchGiver}
+            onChange={(e) => setSearchGiver(e.target.value)}
+          />
+        </Grid>
+        <Grid item style={{ marginRight: '20px' }}>
           <TextField
             label="Search by action, notes"
             variant="outlined"
@@ -100,7 +119,7 @@ const EventPage = () => {
                   <TableCell>{event.event_type}</TableCell>
                   <TableCell>{event.receiver.username}</TableCell>
                   <TableCell>{event.giver.username}</TableCell>
-                  <TableCell>{event.created_at}</TableCell>
+                  <TableCell>{event.created_at} UTC</TableCell>
                   <TableCell
                     style={{
                       maxWidth: '150px',
