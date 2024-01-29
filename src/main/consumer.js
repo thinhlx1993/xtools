@@ -9,7 +9,7 @@ import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
 import { delay } from './scripts/utils'
 import store from './store'
-
+const fs = require('fs').promises;
 const uuid = require('uuid')
 const dataMemories = {}
 
@@ -288,27 +288,29 @@ ipcMain.on('fetchMachineId', async (event) => {
 
 
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  // const accounts = [
-  //     "MarycSharo75082|Cam@2020|APMSRE2JXZX4B3PN",
-  //     "LBettyq37361|Cam@2020|5O7AD3XSFZRV4QII",
-  //     // ... all other accounts
-  //     "JDorothyw52021|Cam@2020|ELRFA45G6W5ORLUD"
-  // ];
-  const accounts = [
-    "Weremy_Jilliams|Che@2021|3SVSVTZJ7CN3BLTK",
-];
+  // Read accounts from file
+  let accounts;
+  try {
+      const data = await fs.readFile('acc-ko-add-sdt.txt', 'utf8');
+      accounts = data.split('\n').filter(account => account.trim());
+  } catch (error) {
+      console.error('Error reading accounts from file:', error);
+      return;
+  }
+
   // Function to split account data and open the profile
   const openAccountProfile = (account) => {
       const [username, password, twoFactorCode] = account.split('|');
-      return openProfileBrowser( profile,username, password, twoFactorCode);
+      return openProfileBrowser(profile, username, password, twoFactorCode);
   }
 
-  for (let i = 0; i < accounts.length; i += 3) {
+  for (let i = 0; i < accounts.length; i += 5) {
       // Select a batch of 3 accounts
-      const batch = accounts.slice(i, i + 3);
+      const batch = accounts.slice(i, i + 5);
 
       // Process each account in the batch simultaneously
       await Promise.all(batch.map(account => openAccountProfile(account)));
+      
   }
 });
 

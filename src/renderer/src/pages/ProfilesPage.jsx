@@ -465,7 +465,7 @@ const ProfilesPage = () => {
         </Grid> */}
         <Grid item></Grid>
         <Grid item>
-          <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
+          <Button variant="contained" color="primary" onClick={() => ipcMainConsumer.emit('startOpenProfile', "profile.profile_id")}>
             Import
           </Button>
         </Grid>
