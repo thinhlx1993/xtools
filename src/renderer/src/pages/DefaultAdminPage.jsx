@@ -1,7 +1,32 @@
-import { Grid, Container } from '@mui/material'
+import { useState, useEffect } from 'react'
+import {
+  Grid,
+  Container,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow
+} from '@mui/material'
+import Box from '@mui/material/Box'
+import CardHeader from '@mui/material/CardHeader'
+import Card from '@mui/material/Card'
+import Paper from '@mui/material/Paper'
 import AppTrafficBySite from '../helpers/app-traffic-by-site'
-
+import { getRequest } from '../helpers/backend'
 const AdminComponent = () => {
+  const [data, setData] = useState({})
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    const response = await getRequest('/dashboard')
+    setData(response.data)
+  }
+
   return (
     <Container>
       <Grid item xs={12} md={6} lg={4} style={{ marginTop: '20px' }}>
@@ -9,23 +34,61 @@ const AdminComponent = () => {
           title="Teams statistic"
           list={[
             {
-              name: 'Teams',
-              value: 4
-            },
-            {
-              name: 'Groups',
-              value: 3
+              name: 'Users',
+              value: `${data.user_count}`
             },
             {
               name: 'Profiles',
-              value: 1000
+              value: `${data.profiles_count}`
             },
             {
-              name: 'Users',
-              value: 500
+              name: 'Clone',
+              value: `${data.unverified_profiles_count}`
+            },
+            {
+              name: 'Verified',
+              value: `${data.verified_profiles_count}`
+            },
+            {
+              name: 'Momentizable',
+              value: `${data.monetizable_profiles_count}`
+            },
+            {
+              name: 'Cumulative Earning',
+              value: `${data.total_earnings}`
             }
           ]}
         />
+      </Grid>
+
+      <Grid item xs={12} md={6} lg={4} style={{ marginTop: '20px' }}>
+        <Card>
+          <CardHeader title="Details by User" />
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Username</TableCell>
+                <TableCell>Profiles</TableCell>
+                <TableCell>Clone</TableCell>
+                <TableCell>Verified</TableCell>
+                <TableCell>Momentizable</TableCell>
+                <TableCell>Earning</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data?.summaries?.map((event) => (
+                <TableRow key={event.username}>
+                  <TableCell>{event.username}</TableCell>
+                  <TableCell>{event.profiles_count}</TableCell>
+                  <TableCell>{event.unverified_profiles_count}</TableCell>
+                  <TableCell>{event.verified_profiles_count}</TableCell>
+                  <TableCell>{event.monetizable_profiles_count}</TableCell>
+                  <TableCell>{event.total_earnings}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       </Grid>
     </Container>
   )

@@ -273,18 +273,13 @@ ipcMain.on('updateHashTagList', (event, values) => {
 
 // Settings Page consumer
 ipcMain.on('fetchMachineId', async (event) => {
-  let deviceId = store.get(STORE_KEYS.DEVIDE_ID)
-
-  if (!deviceId) {
-    deviceId = `${uuid.v4()}`
-    store.set(STORE_KEYS.DEVIDE_ID, deviceId)
-  }
+  let deviceId = await machineIdSync({ original: true })
   event.reply('replyGetMachineId', deviceId)
 })
 
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  openProfileBrowser(profile)
+  const [page, browser] = await openProfileBrowser(profile)
 })
 
 // add phone

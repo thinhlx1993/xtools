@@ -8,16 +8,16 @@ import { handleResponseHomeTimeline, windowScrollBy } from '../../helpers'
 import { Page, Account, NewsFeedOptions } from '../../define-type'
 import scrollAction from '../../actions/scroll'
 import interactAction from '../../actions/interact'
-
+import { randomDelay } from '../../tasks/utils'
 /**
  *
  * @param {NewsFeedOptions} featOptions
  * @returns
  */
-const _getDelayTimeAction = (featOptions) =>
-  utils.delayRandomByArrayNumberInString(featOptions.randomDelayTimeActions, {
-    unit: 'second'
-  })
+// const _getDelayTimeAction = (featOptions) =>
+//   randomDelayByArrayNumberInString(featOptions.randomDelayTimeActions, {
+//     unit: 'second'
+//   })
 
 /**
  *
@@ -26,12 +26,13 @@ const _getDelayTimeAction = (featOptions) =>
  * @param {NewsFeedOptions} featOptions
  * @param {() => boolean} callbackDoneEntry
  */
-export default async (page, account, featOptions, callbackDoneEntry) => {
-  console.log(`newsFeed__home_start`)
+export default async (page, profileData, featOptions, callbackDoneEntry) => {
+  logger.info(`newsFeed__home_start`)
   const entries = []
+  await randomDelay()
   handleResponseHomeTimeline(page, ({ addEntries }) => entries.push(...addEntries))
   await page.goto(PAGE_URL.home)
-  console.log('done goto')
+  logger.info(`done goto ${PAGE_URL.home}`)
   await page
     .waitForSelector(commonPathSelector.timelineSection, {
       visible: true,
@@ -40,20 +41,21 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
     .catch(() => {
       logger.info('profileAds__WAIT_TIME_LINE_SECTION_TIMEOUT')
     })
-  await utils.delayRandom()
-  console.log('done wait timeline section')
+  await randomDelay()
+  logger.info(`done wait timeline section ${entries.length}`)
   while (entries.length) {
     const entry = entries[0]
     if (!entry) {
-      console.log('not found entry post')
-      await utils.delayRandom()
+      logger.info('not found entry post')
+      await randomDelay()
       return
     }
+    logger.info(`process entry ${entry}`)
     entries.shift()
     const entryType = entry.content.entryType
     if (entryType === ENTRY_TYPE.module) {
       await windowScrollBy(page, 300)
-      await _getDelayTimeAction(featOptions)
+      await randomDelay()
       continue
     }
     if (entryType !== ENTRY_TYPE.item) {
@@ -62,7 +64,7 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
     const subEntryItems = mapper.mapTweetDetail(entry)
     for (let index = 0; index < subEntryItems.length; index++) {
       const subEntryItem = subEntryItems[index]
-      console.log('subEntryItem', subEntryItem)
+      logger.info('subEntryItem', subEntryItem.authorId)
       await Promise.resolve(
         subEntryItem.isAds
           ? page.waitForXPath(tweetXPath.entryAds(subEntryItem.authorId, subEntryItem.entryId), {
@@ -74,7 +76,7 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
               timeout: 5000
             })
       ).catch(() => {
-        console.log('waitForEntryItemTimeout')
+        logger.info('waitForEntryItemTimeout')
       })
       const elementHandle = await page
         .$x(
@@ -84,11 +86,11 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
         )
         .then((res) => res[0])
       if (!elementHandle) {
-        console.log('!elementHandle')
+        logger.info('!elementHandle')
         continue
       }
       await scrollAction.scrollToEntry(page, elementHandle)
-      await _getDelayTimeAction(featOptions)
+      await randomDelay()
       if (subEntryItem.isRePost || subEntryItem.isAds) {
         continue
       }
@@ -105,21 +107,21 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
       const elementHover = utils.random(elementsHover.filter(Boolean))
       if (elementHover) {
         await elementHover.hover()
-        await utils.delayRandom()
+        await randomDelay()
         await page.mouse.reset()
       }
-      await _getDelayTimeAction(featOptions)
+      await randomDelay()
       await scrollAction.scrollToEntryAction(page, elementHandle)
-      await _getDelayTimeAction(featOptions)
+      await randomDelay()
       const funcActions = utils.shuffle(
         [
           utils.random(featOptions.allowCommentAction) &&
             !subEntryItem.limitedActions.reply &&
-            account.chatOpenAIKey &&
+            profileData.gpt_key &&
             featOptions.chatOpenAIPrefix &&
             (() =>
               interactAction.commentEntryWithChatGPT(page, elementHandle, subEntryItem.fullText, {
-                key: account.chatOpenAIKey,
+                key: profileData.gpt_key,
                 prefix: featOptions.chatOpenAIPrefix,
                 maxRetryTime: 2
               })),
@@ -131,13 +133,13 @@ export default async (page, account, featOptions, callbackDoneEntry) => {
       for (let funcActionIndex = 0; funcActionIndex < funcActions.length; funcActionIndex++) {
         const funcAction = funcActions[funcActionIndex]
         await funcAction()
-        await _getDelayTimeAction(featOptions)
+        await randomDelay()
       }
       if (callbackDoneEntry()) {
-        console.log('newsFeed__home_close')
+        logger.info('newsFeed__home_close')
         return
       }
     }
   }
-  console.log(`newsFeed__home_end`)
+  logger.info(`newsFeed__home_end`)
 }

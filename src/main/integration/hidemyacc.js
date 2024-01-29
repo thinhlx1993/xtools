@@ -161,6 +161,10 @@ const network = (proxy) =>
       proxy
     })
     .then((res) => res.data)
+    .catch((error) => {
+      // Handle the error or rethrow
+      throw error
+    })
 
 /**
  *

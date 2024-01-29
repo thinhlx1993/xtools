@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { autoUpdater } from 'electron-updater'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import system from './system'
@@ -71,16 +72,45 @@ const _cka = async () => {
   }
 }
 
+autoUpdater.on('checking-for-update', () => {
+  logger.info('checking-for-update')
+})
+
+autoUpdater.on('update-available', (info) => {
+  logger.info(`update-available ${info}`)
+})
+
+autoUpdater.on('update-not-available', (info) => {
+  logger.info(`update-not-available ${info}`)
+})
+
+autoUpdater.on('error', (err) => {
+  logger.info(err)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  logger.info(
+    `download: ${JSON.stringify({
+      event: 'download-progress',
+      progress: progressObj
+    })}`
+  )
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  logger.info(`update-downloaded ${info}`)
+})
+
 const createWindow = async () => {
-  const [messageError] = await _cka()
+  // const [messageError] = await _cka()
   const windowSize = {
     width: 800,
     height: 600
   }
-  if (messageError) {
-    windowSize.width = 350
-    windowSize.height = 250
-  }
+  // if (messageError) {
+  //   windowSize.width = 350
+  //   windowSize.height = 250
+  // }
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     ...windowSize,
@@ -95,7 +125,7 @@ const createWindow = async () => {
       sandbox: false
     }
   })
-  store.set(STORE_KEYS.KEY_ACTIVATION_STATUS, messageError || '')
+  // store.set(STORE_KEYS.KEY_ACTIVATION_STATUS, messageError || '')
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
@@ -109,6 +139,7 @@ const createWindow = async () => {
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -126,8 +157,7 @@ const createWindow = async () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  // electronApp.setAppUserModelId('com.electron')
-
+  electronApp.setAppUserModelId('tw.auto-tools')
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -152,6 +182,13 @@ app.whenReady().then(async () => {
       })
     }
   })
+
+  if (!is.dev) {
+    // check for update
+    setInterval(() => {
+      autoUpdater.checkForUpdatesAndNotify()
+    }, 30000) // Run every 30 seconds
+  }
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -161,6 +198,15 @@ app.on('window-all-closed', () => {
   logger.info('appOn__window-all-closed')
   app.quit()
 })
+
+// autoUpdater.on('update-available', () => {
+//   // Notify the user an update is available
+// })
+
+// autoUpdater.on('update-downloaded', () => {
+//   // Notify the user the update will be installed
+//   autoUpdater.quitAndInstall()
+// })
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

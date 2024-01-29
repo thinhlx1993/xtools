@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import EditIcon from '@mui/icons-material/Edit'
+import VerifiedIcon from '@mui/icons-material/Verified'
 import {
   Button,
   Checkbox,
@@ -26,7 +28,7 @@ import {
   Typography,
   useMediaQuery
 } from '@mui/material'
-import { useEffect, useState } from 'react'
+import Papa from 'papaparse'
 import AppConfig from '../config/enums'
 import { useSnackbar } from '../context/SnackbarContext'
 import { ipcMainConsumer } from '../helpers/api'
@@ -43,7 +45,8 @@ const ProfilesPage = () => {
     gpt_key: '',
     cookies: '',
     notes: '',
-    status: ''
+    status: '',
+    main_profile: false
   }) // State for storing new profile data
   const [dialogOpen, setDialogOpen] = useState(false) // State for add/edit dialog visibility
   const [editDialogOpen, setEditDialogOpen] = useState(false) // State for edit dialog visibility
@@ -71,6 +74,19 @@ const ProfilesPage = () => {
     fetchGroups()
     fetchUsers()
   }, [page, rowsPerPage, searchQuery, selectedGroup])
+
+  const [data, setData] = useState([])
+
+  const parseCsv = (file) => {
+    Papa.parse(file, {
+      complete: (result) => {
+        console.log('Parsed CSV:', result.data)
+        setData(result.data)
+      },
+      header: true, // Set to true if your CSV has headers
+      skipEmptyLines: true
+    })
+  }
 
   const fetchProfiles = async () => {
     try {
@@ -123,30 +139,52 @@ const ProfilesPage = () => {
   }
 
   const handleCheckProfile = async () => {
-    const input = fileInput ? await fileInput.text() : newProfile
-    const profileEntries = input.split('\n')
-    let profileCreated = 0
+    if (fileInput) {
+      await parseCsv(fileInput)
+      openSnackbar(`Found ${data.length} profile`, 'info')
+    } else {
+      const input = newProfile
+      const profileEntries = input.split('\n')
+      let profileCreated = 0
 
-    for (const entry of profileEntries) {
-      const splitter = entry.split('|')
-      if (splitter.length >= 3) {
-        profileCreated = profileCreated + 1
+      for (const entry of profileEntries) {
+        const splitter = entry.split('|')
+        if (splitter.length >= 3) {
+          profileCreated = profileCreated + 1
+        }
       }
+      openSnackbar(`Found ${profileCreated} profile`, 'info')
     }
-
-    openSnackbar(`Found ${profileCreated} profile`, 'info')
   }
 
   const handleCreateProfile = async () => {
     // If a file is uploaded, use its content; otherwise, use text area input
-    const input = fileInput ? await fileInput.text() : newProfile
-    const profileEntries = input.split('\n')
-    openSnackbar('It might be take times, please waiting until the dialog closed', 'info')
     let profiles = []
-    for (const entry of profileEntries) {
-      const [username, password, fa, proxy, gpt_key, cookies, notes] = entry.split('|')
-      profiles.push({ username, password, fa, proxy, gpt_key, cookies, notes })
+    if (fileInput) {
+      await parseCsv(fileInput)
+      profiles = data.map((item) => ({
+        username: item?.username,
+        password: item?.password,
+        fa: item?.fa,
+        proxy: item?.proxy,
+        cookies: item?.cookies,
+        gpt_key: item?.gpt_key,
+        notes: item?.notes
+      }))
+    } else {
+      const input = newProfile
+      const profileEntries = input.split('\n')
+      for (const entry of profileEntries) {
+        const [username, password, fa, proxy, cookies, gpt_key, notes] = entry.split('|')
+        profiles.push({ username, password, fa, proxy, cookies, gpt_key, notes })
+      }
     }
+
+    // const input = fileInput ? parseCsv(fileInput) : newProfile
+    openSnackbar(
+      `Creating ${profiles.length} account. It might be take times, please waiting until the dialog closed`,
+      'info'
+    )
 
     try {
       const response = await fetch(`${AppConfig.BASE_URL}/profiles/`, {
@@ -165,7 +203,8 @@ const ProfilesPage = () => {
         console.log(errorData)
         openSnackbar(`Failed to create profile: ${errorData.message}`, 'error')
       } else {
-        openSnackbar(`${profiles.length} Profiles created successfully`, 'success')
+        const data = await response.json()
+        openSnackbar(data.message, 'success')
       }
     } catch (error) {
       openSnackbar(`Error creating profiles`, 'error')
@@ -192,7 +231,8 @@ const ProfilesPage = () => {
       cookies: profile.cookies,
       proxy: profile.proxy,
       gpt_key: profile.gpt_key,
-      notes: profile.notes
+      notes: profile.notes,
+      main_profile: profile.main_profile
     })
   }
 
@@ -461,10 +501,15 @@ const ProfilesPage = () => {
 
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
-        Profiles Management
-      </Typography>
-      <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
+      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+        {/* Event Logs Title */}
+        <Grid item xs>
+          <Typography variant="h4" gutterBottom>
+            Profiles
+          </Typography>
+        </Grid>
+
+        {/* Search Field */}
         <Grid item>
           <TextField
             label="Search by Username, User"
@@ -473,38 +518,22 @@ const ProfilesPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </Grid>
-        {/* <Grid item>
-          <Select
-            label="Filter by Group"
-            variant="outlined"
-            value={selectedGroup}
-            onChange={(e) => setSelectedGroup(e.target.value)}
-          >
-            <MenuItem value="All">All</MenuItem>
-            {groups.map((group) => (
-              <MenuItem key={group.group_id} value={group.group_id}>
-                {group.group_name}
-              </MenuItem>
-            ))}
-          </Select>
-        </Grid> */}
-        <Grid item></Grid>
-        <Grid item>
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
             Import
           </Button>
         </Grid>
-        <Grid item>
+        {/* <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="primary"
             disabled={selectedRows.length === 0}
             onClick={() => setMoveDialogOpen(true)}
           >
-            Grant Access
+            Share
           </Button>
-        </Grid>
-        <Grid item>
+        </Grid> */}
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="error"
@@ -520,9 +549,12 @@ const ProfilesPage = () => {
           </Button>
         </Grid>
       </Grid>
+      {/* <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
+        Profiles Management
+      </Typography> */}
 
       <Paper style={{ padding: '20px', marginBottom: '20px', overflowX: 'auto' }}>
-        <Table>
+        <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
@@ -533,7 +565,9 @@ const ProfilesPage = () => {
                 />
               </TableCell>
               <TableCell>Username</TableCell>
-              <TableCell>User Granted</TableCell>
+              {!isMobile && <TableCell>Followers</TableCell>}
+              {!isMobile && <TableCell>Following</TableCell>}
+              {!isMobile && <TableCell>Created At</TableCell>}
               {!isMobile && <TableCell>Notes</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
@@ -552,20 +586,64 @@ const ProfilesPage = () => {
                   style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 >
                   <Tooltip title={profile.username}>
-                    <span>{profile.username}</span>
+                    <span>
+                      {profile.username}
+                      <VerifiedIcon
+                        style={{
+                          marginLeft: '5px',
+                          verticalAlign: 'middle',
+                          color: profile?.profile_data?.verify ? 'blue' : 'gray'
+                        }}
+                      />
+                      <AttachMoneyIcon
+                        style={{
+                          marginLeft: '5px',
+                          verticalAlign: 'middle',
+                          color: profile?.profile_data?.monetizable ? 'green' : 'gray'
+                        }}
+                      />
+                    </span>
                   </Tooltip>
                 </TableCell>
-                <TableCell
-                  style={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  <Tooltip title={profile.user_access}>
-                    <span>{profile.user_access}</span>
-                  </Tooltip>
-                </TableCell>
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile?.profile_data?.followers}>
+                      <span>{profile?.profile_data?.followers}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile?.profile_data?.following}>
+                      <span>{profile?.profile_data?.following}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <Tooltip title={profile.created_at}>
+                      <span>{profile.created_at}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
                 {!isMobile && (
                   <TableCell
                     style={{
@@ -627,7 +705,7 @@ const ProfilesPage = () => {
             label="Profile Data"
             fullWidth
             variant="outlined"
-            placeholder="username|password|fa|proxy|gpt_key|cookies|notes"
+            placeholder="username|password|fa|proxy|cookies|gpt_key|notes"
             multiline
             rows={4}
             value={newProfile}
@@ -648,7 +726,7 @@ const ProfilesPage = () => {
           <Button onClick={handleCheckProfile} color="info">
             Check
           </Button>
-          <Button onClick={handleCreateProfile} color="primary">
+          <Button disabled={!data && !newProfile} onClick={handleCreateProfile} color="primary">
             Add
           </Button>
         </DialogActions>
@@ -660,6 +738,7 @@ const ProfilesPage = () => {
         <DialogContent>
           <TextField
             margin="dense"
+            disabled
             label="Username"
             fullWidth
             variant="outlined"
@@ -714,6 +793,19 @@ const ProfilesPage = () => {
             value={newProfileData.gpt_key}
             onChange={(e) => setNewProfileData({ ...newProfileData, gpt_key: e.target.value })}
           />
+          <div>
+            <Checkbox
+              checked={newProfileData.main_profile}
+              onChange={(e) =>
+                setNewProfileData({
+                  ...newProfileData,
+                  main_profile: e.target.checked // Use 'checked', not 'value'
+                })
+              }
+              inputProps={{ 'aria-label': 'primary checkbox' }}
+            />
+            Don&apos;t allow comment, like
+          </div>
           {/* Add TextFields for other profile attributes like password, FA, proxy, etc. */}
         </DialogContent>
         <DialogActions>

@@ -97,10 +97,10 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
         await updateUserRole()
         if (localStorage.getItem('access_token')) {
           const userRole = localStorage.getItem('userRole')
-          if (userRole === 'admin') {
-            navigate('/admin') // or '/admin' based on the role
-          } else if (userRole === 'user') {
-            navigate('/client')
+          if (userRole) {
+            navigate('/admin/profiles') // or '/admin' based on the role
+          } else {
+            navigate('/login')
           }
         }
       } else {
@@ -176,9 +176,14 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Groups" />
             </ListItem>
           )} */}
-          {userRole === 'admin' && (
+          {userRole && (
             <ListItem button component={Link} to="/admin/profiles">
               <ListItemText primary="Profiles" />
+            </ListItem>
+          )}
+          {userRole && (
+            <ListItem button component={Link} to="/admin/events">
+              <ListItemText primary="Events" />
             </ListItem>
           )}
           {userRole === 'admin' && (
@@ -186,9 +191,9 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Users" />
             </ListItem>
           )}
-          <ListItem button component={Link} to="/client">
+          {/* <ListItem button component={Link} to="/client">
             <ListItemText primary="XGPT Client" />
-          </ListItem>
+          </ListItem> */}
           {userRole && (
             <ListItem button component={Link} to="/admin/settings">
               <ListItemText primary="Settings" />

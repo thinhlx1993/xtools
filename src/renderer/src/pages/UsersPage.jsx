@@ -16,7 +16,8 @@ import {
   DialogTitle,
   DialogContentText,
   IconButton,
-  MenuItem
+  MenuItem,
+  Grid
 } from '@mui/material'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AppConfig from '../config/enums'
@@ -147,19 +148,29 @@ const UsersPage = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
-        Users Management
-      </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpenAddUserDialog}
-        style={{ marginBottom: '20px' }}
-      >
-        Add New User
-      </Button>
+      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+        {/* Event Logs Title */}
+        <Grid item xs>
+          <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
+            Users Management
+          </Typography>
+        </Grid>
+
+        {/* Search Field */}
+
+        <Grid item style={{ marginLeft: '20px' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenAddUserDialog}
+            style={{ marginBottom: '20px' }}
+          >
+            Add New User
+          </Button>
+        </Grid>
+      </Grid>
       <Paper style={{ padding: '20px', marginBottom: '20px' }}>
-        <Table>
+        <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>User Name</TableCell>

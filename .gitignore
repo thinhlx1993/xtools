@@ -2,3 +2,9 @@ node_modules
 dist
 out
 *.log*
+.env
+build
+electron-builder.env
+captcha
+extentions
+HMAZeroProfile
