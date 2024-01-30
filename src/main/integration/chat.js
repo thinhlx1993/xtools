@@ -1,5 +1,5 @@
-import OpenAI from "openai"
-const OPEN_AI_MODEL = "gpt-3.5-turbo";
+import OpenAI from 'openai'
+const OPEN_AI_MODEL = 'gpt-3.5-turbo'
 
 /**
  *
@@ -8,19 +8,24 @@ const OPEN_AI_MODEL = "gpt-3.5-turbo";
  * @return {Promise<string>}
  */
 const getCompletion = async (apiKey, content) => {
-  const openai = new OpenAI({ apiKey });
+  const openai = new OpenAI({ apiKey })
   const completion = await openai.chat.completions.create({
     model: OPEN_AI_MODEL,
     messages: [
       {
-        role: "user",
-        content,
+        role: 'system',
+        content:
+          'Hi there, I want you give a comment for the content below, please keep the length in aroud 30-50 words'
       },
-    ],
-  });
-  return completion.choices[0].message.content;
-};
+      {
+        role: 'user',
+        content
+      }
+    ]
+  })
+  return completion.choices[0].message.content
+}
 
 export default {
-  getCompletion,
+  getCompletion
 }

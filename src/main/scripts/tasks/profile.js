@@ -88,8 +88,6 @@ export const openProfileBrowser = async (profile) => {
     browser = await puppeteer.launch(newBrowserOptions)
     page = await browser.newPage()
 
-    logger.info(`OK`)
-
     try {
       // enter proxy username password
       if (profileData.proxy && proxyProtected) {
@@ -105,9 +103,9 @@ export const openProfileBrowser = async (profile) => {
       // await startSignIn(profile, browser) // test signin
       // await updateProfileData(profile, { status: signinStatus })
       // await resolveCaptcha(profile, page)
-      if (profileData.cookies) {
-        await setCookies(page, profileData)
-      }
+      // if (profileData.cookies) {
+      //   await setCookies(page, profileData)
+      // }
     } catch (error) {
       logger.error(error)
     }
@@ -308,6 +306,30 @@ export const startSignIn = async (profileId, page) => {
 
     await page.goto('https://twitter.com')
     await randomDelay()
+
+    // check if profile is already logged in
+    try {
+      await page.waitForSelector('div[aria-label="Home timeline"]', {
+        visible: true,
+        timeout: 5000
+      })
+      await cacheCookies(page, profileId)
+      await updateProfileData(profileId, { status: 'ok' })
+      return
+    } catch (error) {
+      logger.info('Not found home page')
+    }
+
+    try {
+      const acceptAllCookies =
+        "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Accept all cookies')]"
+      await page.waitForXPath(acceptAllCookies)
+      const nextButtons = await page.$x(acceptAllCookies)
+      await nextButtons[0].click()
+    } catch (error) {
+      logger.info(`Not found accept cookies`)
+    }
+
     await page.waitForSelector('a[href="/login"][data-testid="loginButton"]')
     await page.click('a[href="/login"][data-testid="loginButton"]')
     await randomDelay()
@@ -351,6 +373,8 @@ export const startSignIn = async (profileId, page) => {
     await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     await randomDelay()
     await updateProfileData(profileId, { status: 'ok' })
+    await cacheCookies(page, profileId)
+    await randomDelay(5000, 15000)
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
   }
@@ -370,9 +394,9 @@ const tryAgain = async (page) => {
   }
 }
 
-export const getCookies = async (profileId, browser) => {
+export const getCookies = async (profileId, page) => {
   await randomDelay()
-  await cacheCookies(browser, profileId)
+  await cacheCookies(page, profileId)
   await randomDelay()
 }
 
@@ -491,20 +515,15 @@ export const checkProfiles = async (profileId, page) => {
   await randomDelay()
   let monetizable = false
   try {
-    await page.evaluate(() =>
-      document
-        .querySelector('section[aria-label="Section details"][aria-labelledby="detail-header"]')
-        ?.innerText?.includes('Not yet eligible')
-    )
-
-    await updateProfileData(profileId, {
-      profile_data: { followers, following, verify, monetizable }
-    })
+    const adsEnable = await page.waitForSelector('a[href="/settings/ad_rev_share_dashboard"]')
+    if (adsEnable) {
+      monetizable = true
+      logger.info('Ads Eligible')
+    }
   } catch (error) {
-    monetizable = true
-    await updateProfileData(profileId, {
-      profile_data: { followers, following, verify, monetizable }
-    })
     logger.info('Not found Not yet eligible')
   }
+  await updateProfileData(profileId, {
+    profile_data: { followers, following, verify, monetizable }
+  })
 }

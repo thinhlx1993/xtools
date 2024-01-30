@@ -1,16 +1,10 @@
 import { PAGE_URL } from '../../constants'
 import utils from '../../utils'
-import { Page, Account, FairInteractOptions } from '../../define-type'
 import { regHttp, regTwDomain, regXDomain, regParamEntryDetailUrl } from '../../regex'
 import interact from './interact'
+import logger from '../../../logger'
 
-/**
- *
- * @param {Page} page
- * @param {Account} account
- * @param {FairInteractOptions} featOptions
- */
-export default async (page, account, featOptions) => {
+export default async (page, profileReceiverData, featOptions) => {
   const interactedUsername = []
   let entryUrls = featOptions.entryDetailUrls
     .split('\n')
@@ -29,7 +23,7 @@ export default async (page, account, featOptions) => {
   for (let index = 0; index < entryUrls.length; index++) {
     await Promise.all([
       page.goto(PAGE_URL.subpath(entryUrls[index])),
-      interact(page, account, featOptions, interactedUsername)
+      interact(page, profileReceiverData, featOptions, interactedUsername)
     ])
     await utils.delayRandom()
   }

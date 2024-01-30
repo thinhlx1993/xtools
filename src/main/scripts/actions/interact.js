@@ -281,7 +281,7 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
       .flat()
   ).then((res) => res.filter(Boolean))
   if (!linkElements.length) {
-    logger.error('NOT_FOUND_LINK_ADS')
+    logger.info('NOT_FOUND_LINK_ADS')
 
     const adsLinkElements = await entryElementHandle.$$(tweetDetailPathSelector.linkAdsBlank)
     if (adsLinkElements.length) {

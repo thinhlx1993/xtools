@@ -4,18 +4,12 @@ import mapper from '../../mapper'
 import { commonPathSelector } from '../../path-selector'
 import { tweetXPath } from '../../x-path'
 import { ENTRY_TYPE, PAGE_URL } from '../../constants'
-import { Page, Account, FairInteractOptions } from '../../define-type'
 import scrollAction from '../../actions/scroll'
 import navAction from '../../actions/nav'
 import interact from './interact'
+import logger from '../../../logger'
 
-/**
- *
- * @param {Page} page
- * @param {Account} account
- * @param {FairInteractOptions} featOptions
- */
-export default async (page, account, featOptions) => {
+export default async (page, profileReceiverData, featOptions) => {
   console.log('profileInteraction__start')
   let totalCount = 0
   let pinEntryAdded = false
@@ -29,7 +23,7 @@ export default async (page, account, featOptions) => {
     }
     entries.push(...addEntries)
   })
-  await page.goto(PAGE_URL.profile(account.screenName))
+  await page.goto(PAGE_URL.profile(profileReceiverData.username))
   await page.waitForSelector(commonPathSelector.primaryColumn, {
     visible: true,
     timeout: 30000
@@ -75,8 +69,12 @@ export default async (page, account, featOptions) => {
     }
     await entryUrl.hover()
     await utils.delayRandom()
-    await Promise.all([interact(page, account, featOptions, interactedUsername), entryUrl.click()])
+    await Promise.all([
+      interact(page, profileReceiverData, featOptions, interactedUsername),
+      entryUrl.click()
+    ])
     totalCount += 1
+    logger.info(`totalCount: ${totalCount}`)
     await navAction.back(page)
     if (totalCount >= featOptions.totalPosts) {
       await utils.delayRandom()

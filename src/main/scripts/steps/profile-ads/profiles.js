@@ -29,8 +29,9 @@ const _getDelayTimeAction = (featOptions) =>
  * @param {InteractAdsOptions} featOptions
  * @param {string} profileId
  */
-export default async (page, account, featOptions, profileId) => {
-  console.log(`start view news feed ${profileId}`)
+export default async (page, giverData, featOptions, receiverData) => {
+  logger.info(`start view news feed ${giverData.username}`)
+  logger.info(featOptions)
   const totalPosts = utils.randomArrayNumberInString(featOptions.randomTotalPostsForInteractAds)
   let totalCount = 0
   let pinEntryAdded = false
@@ -42,8 +43,8 @@ export default async (page, account, featOptions, profileId) => {
     }
     entries.push(...addEntries)
   })
-  await page.goto(PAGE_URL.profile(profileId))
-  console.log('done goto')
+  await page.goto(PAGE_URL.profile(receiverData.username))
+  logger.info(`done goto ${receiverData.username}`)
   await page
     .waitForSelector(commonPathSelector.timelineSection, {
       visible: true,
@@ -53,11 +54,11 @@ export default async (page, account, featOptions, profileId) => {
       logger.info('profileAds__WAIT_TIME_LINE_SECTION_TIMEOUT')
     })
   await utils.delayRandom()
-  console.log('done wait timeline section')
+  logger.info('done wait timeline section')
   while (entries.length) {
     const entry = entries[0]
     if (!entry) {
-      console.log('not found entry post')
+      logger.info('not found entry post')
       await utils.delayRandom()
       return
     }
@@ -72,7 +73,7 @@ export default async (page, account, featOptions, profileId) => {
       continue
     }
     const entryItem = mapper.mapUserTweet(entry)
-    console.log('entryItem', entryItem)
+    logger.info('entryItem', entryItem)
     await Promise.resolve(
       entryItem.isAds
         ? page.waitForXPath(tweetXPath.entryAds(entryItem.authorProfileId, entryItem.postId), {
@@ -84,7 +85,7 @@ export default async (page, account, featOptions, profileId) => {
             timeout: 5000
           })
     ).catch(() => {
-      console.log('waitForEntryItemTimeout')
+      logger.info('waitForEntryItemTimeout')
     })
     const elementHandle = await page
       .$x(
@@ -94,7 +95,7 @@ export default async (page, account, featOptions, profileId) => {
       )
       .then((res) => res[0])
     if (!elementHandle) {
-      console.log('!elementHandle')
+      logger.info('!elementHandle')
       continue
     }
     await scrollAction.scrollToEntry(page, elementHandle)
@@ -120,7 +121,7 @@ export default async (page, account, featOptions, profileId) => {
     await entryUrl.hover()
     await utils.delayRandom()
     await Promise.all([
-      postDetail(page, account, featOptions, {
+      postDetail(page, giverData, featOptions, {
         entryId: entryItem.postId,
         username: entryItem.authorProfileId,
         limitedActions: entryItem.limitedActions,
@@ -132,9 +133,9 @@ export default async (page, account, featOptions, profileId) => {
     await navAction.back(page)
     if (totalCount >= totalPosts) {
       await _getDelayTimeAction(featOptions)
-      console.log(`view news feed done with totalPosts ${profileId}`)
+      logger.info(`view news feed done with totalPosts ${receiverData.username}`)
       return
     }
   }
-  console.log(`view news feed done ${profileId}`)
+  logger.info(`view news feed done ${receiverData.username}`)
 }

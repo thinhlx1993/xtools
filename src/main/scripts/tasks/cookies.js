@@ -55,8 +55,7 @@ export const handleCookies = async (browser, account) => {
  * @param {puppeteer.Page} page
  * @param {string} accountId
  */
-export const cacheCookies = async (browser, accountId) => {
-  const page = await browser.newPage()
+export const cacheCookies = async (page, accountId) => {
   await page.goto('https://twitter.com')
   const buttons = await page.$$(loginPathSelector.layerBottomBarUseCookieBtn)
   if (buttons.length === 2) {

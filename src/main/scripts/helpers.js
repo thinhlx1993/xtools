@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer-core')
 import utils from './utils'
 import { regGraphAPIUserTws, regGraphAPITwDetail, regGraphAPIHomeTimeline } from './regex'
 import { TWEET_INSTRUCTION_TYPE } from './constants'
+import logger from '../logger'
 
 /**
  *
@@ -126,6 +127,7 @@ const _handleResponse = (page, regex, callback) => {
  */
 export const handleResponseUserTweets = (page, callback) =>
   _handleResponse(page, regGraphAPIUserTws, (responseBody) => {
+    logger.info(`Handle response user tweets`)
     const pinEntry = responseBody.data.user.result.timeline_v2.timeline.instructions.find(
       (instruction) => instruction.type === TWEET_INSTRUCTION_TYPE.timeLinePin
     )?.entry
