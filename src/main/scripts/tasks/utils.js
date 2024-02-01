@@ -43,15 +43,9 @@ export const clickIntoNext = async (thirdLevelFrame, clicks) => {
   }
 }
 
-export const calculateClicks = async (xValue) => {
-  if (xValue > 200) {
-    if (xValue <= 400) return 1
-    if (xValue <= 600) return 2
-    if (xValue <= 800) return 3
-    if (xValue < 1000) return 4
-    return 5 // For xValue >= 1000
-  }
-  return 0 // No clicks if xValue <= 200
+export const calculateClicks = (xValue) => {
+  if (xValue <= 200) return 0
+  return Math.floor((xValue - 201) / 200) + 1
 }
 
 // Cap guru request

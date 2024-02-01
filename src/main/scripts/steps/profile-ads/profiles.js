@@ -118,8 +118,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     }
 
     if (!entryItem.isAds) {
-      // const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
-      const actionType = 'comment'
+      const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
       const userEventLogs = await getEventsLogs(receiverData.username, actionType)
       // maximum 5 comment likes per user per day
       const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
@@ -127,7 +126,12 @@ export default async (page, giverData, featOptions, receiverData) => {
         logger.info(
           `${receiverData.username} today have ${userEventLogs.result_count} ${actionType}`
         )
-
+        await createEventLogs({
+          event_type: actionType,
+          profile_id: receiverData.profile_id,
+          profile_id_interact: giverData.profile_id,
+          issue: 'OK'
+        })
         if (
           actionType === 'comment' &&
           featOptions.allowCommentAction &&
@@ -142,22 +146,10 @@ export default async (page, giverData, featOptions, receiverData) => {
             prefix: chosenOption,
             maxRetryTime: 2
           })
-          await createEventLogs({
-            event_type: actionType,
-            profile_id: receiverData.profile_id,
-            profile_id_interact: giverData.profile_id,
-            issue: 'OK'
-          })
         } else if (actionType === 'like' && featOptions.allowLikeAction) {
           await utils.delayRandom()
           logger.info(`${receiverData.username} favoriteEntry`)
           await interactAction.favoriteEntry(page, elementHandle)
-          await createEventLogs({
-            event_type: actionType,
-            profile_id: receiverData.profile_id,
-            profile_id_interact: giverData.profile_id,
-            issue: 'OK'
-          })
         }
       }
     }
@@ -165,22 +157,27 @@ export default async (page, giverData, featOptions, receiverData) => {
     await _getDelayTimeAction(featOptions)
     await entryUrl.hover()
     await utils.delayRandom()
-    await Promise.all([
-      postDetail(page, giverData, featOptions, {
-        entryId: entryItem.postId,
-        username: entryItem.authorProfileId,
-        limitedActions: entryItem.limitedActions,
-        fullText: entryItem.fullText
-      }),
-      entryUrl.click().then(() => page.mouse.reset())
-    ])
-    totalCount += 1
-    await navAction.back(page)
+
+    const userEventLogs = await getEventsLogs(receiverData.username, 'clickAds')
+    if (userEventLogs.result_count < 350) {
+      await Promise.all([
+        postDetail(page, giverData, receiverData, featOptions, {
+          entryId: entryItem.postId,
+          username: entryItem.authorProfileId,
+          limitedActions: entryItem.limitedActions,
+          fullText: entryItem.fullText
+        }),
+        entryUrl.click().then(() => page.mouse.reset())
+      ])
+      totalCount += 1
+      await navAction.back(page)
+    }
+
     if (totalCount >= totalPosts) {
       await _getDelayTimeAction(featOptions)
-      logger.info(`view news feed done with totalPosts ${receiverData.username}`)
+      logger.info(`click ads done with totalPosts ${receiverData.username}`)
       return
     }
   }
-  logger.info(`view news feed done ${receiverData.username}`)
+  logger.info(`click ads feed done ${receiverData.username}`)
 }

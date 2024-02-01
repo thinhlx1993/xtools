@@ -135,13 +135,13 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         return
     }
     await getCookies(profileIdGiver, page)
-    logger.info(`Create event logs: ${taskName} ${profileIdGiver}`)
-    await createEventLogs({
-      event_type: taskName,
-      profile_id: profileIdReceiver,
-      profile_id_interact: profileIdGiver,
-      issue: 'OK'
-    })
+    // logger.info(`Create event logs: ${taskName} ${profileIdGiver}`)
+    // await createEventLogs({
+    //   event_type: taskName,
+    //   profile_id: profileIdReceiver,
+    //   profile_id_interact: profileIdGiver,
+    //   issue: 'OK'
+    // })
   } catch (error) {
     // await createEventLogs({
     //   event_type: taskName,

@@ -3,12 +3,11 @@ import utils from '../../utils'
 import mapper from '../../mapper'
 import { tweetXPath } from '../../x-path'
 import { ENTRY_TYPE, ITEM_CONTENT_TYPE } from '../../constants'
-import { Page, Account, InteractAdsOptions } from '../../define-type'
 import scrollAction from '../../actions/scroll'
 import interactAction from '../../actions/interact'
 import tweetDetailAction from '../../actions/tweet-detail'
 import logger from '../../../logger'
-
+import { createEventLogs } from '../../services/backend'
 /**
  *
  * @param {InteractAdsOptions} featOptions
@@ -33,7 +32,7 @@ const _getDelayTimeAction = (featOptions) =>
  *  fullText: string;
  * }} postEntry
  */
-export default async (page, giverData, featOptions, postEntry) => {
+export default async (page, giverData, receiverData, featOptions, postEntry) => {
   logger.info(`${giverData.username} start view post detail`)
   const entries = []
   let adsInteracted = false
@@ -84,21 +83,25 @@ export default async (page, giverData, featOptions, postEntry) => {
           .then((res) => res[0])
       let elementHandle = await getElementHandle()
       if (!elementHandle) {
-        // logger.info('!elementHandle__first')
         await utils.delayRandom()
         elementHandle = await getElementHandle()
         if (!elementHandle) {
-          // logger.info('!elementHandle__second')
           continue
         }
       }
       await scrollAction.scrollToEntry(page, elementHandle)
       await _getDelayTimeAction(featOptions)
-      // logger.info('done_waitAfter_scrollToEntry')
       if (subEntryItem.isAds) {
         await scrollAction.scrollToEntryMedia(page, elementHandle)
         await _getDelayTimeAction(featOptions)
+        await createEventLogs({
+          event_type: 'clickAds',
+          profile_id: receiverData.profile_id,
+          profile_id_interact: giverData.profile_id,
+          issue: 'OK'
+        })
         await interactAction.interactAdsEntry(page, elementHandle, subEntryItem)
+        logger.info(`interactAdsEntry OK from ${giverData.username} -> ${receiverData.username}`)
         await page.mouse.reset()
         adsInteracted = true
       }

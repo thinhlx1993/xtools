@@ -86,6 +86,8 @@ export const defaultPuppeteerOptions = {
     height: 750
   },
   args: [
+    '--single-process',
+    '--no-zygote',
     '--disable-notifications',
     '--disable-setuid-sandbox',
     '--lang=en-US',
