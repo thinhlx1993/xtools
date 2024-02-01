@@ -3,7 +3,7 @@ import store from '../../store'
 import { STORE_KEYS, BACKEND_BASE_URL } from '../../constants'
 import logger from '../../logger'
 
-export const getProfileData = async (profileId, tz) => {
+export const getProfileData = async (profileId, tz = {}) => {
   const profileData = post(`/profiles/${profileId}/browserdata`, tz)
   return profileData
 }
@@ -24,12 +24,13 @@ export const getScheduleData = async () => {
 }
 
 export const createEventLogs = async (data) => {
-  try {
-    const response = post(`/events/`, data)
-    return response
-  } catch (error) {
-    logger.error(error)
-  }
+  const response = post(`/events/`, data)
+  return response
+}
+
+export const getEventsLogs = async (reciverUsername, eventType) => {
+  const response = get(`/events/?receiver=${reciverUsername}&search=${eventType}`)
+  return response
 }
 
 const axiosInstance = axios.create({
@@ -50,8 +51,12 @@ const handleResponse = (response) => {
 }
 
 const catchError = (error) => {
+  const token = getAuthToken()
   // Handle the error as needed (e.g., logging, displaying messages)
-  console.error('API call error:', error.response ? error.response.data : error.message)
+  logger.error(
+    `Backend API call error ${error.response ? JSON.stringify(error.response.data) : error.message}`
+  )
+  logger.error(`Access Token: ${token}`)
   throw error
 }
 

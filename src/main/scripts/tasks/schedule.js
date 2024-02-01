@@ -1,4 +1,4 @@
-import { get, createEventLogs, updateProfileData } from '../services/backend'
+import { get, createEventLogs, updateProfileData, getProfileData } from '../services/backend'
 import {
   openProfileBrowser,
   startSignIn,
@@ -12,13 +12,14 @@ import async from 'async'
 import newsFeedStep from '../steps/newsfeed'
 import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
-let isStarted = false
-const concurrencyLimit = 15
+import { killChrome, checkPort, handleNewPage } from './utils'
+import { mapErrorConstructor } from '../../helpers'
 
-let taskQueue = async.queue(async (task, done) => {
+let isStarted = false
+const concurrencyLimit = 10
+let taskQueue = async.queue(async (task) => {
   await processTaskQueue(task)
-  done()
-}, 15) // 1 is the concurrency limit
+}, concurrencyLimit) // 1 is the concurrency limit
 
 const fetchAndProcessTask = async () => {
   while (true) {
@@ -31,11 +32,11 @@ const fetchAndProcessTask = async () => {
             taskQueue.push(task)
           })
         } else {
-          logger.info(`No tasks found. Waiting for new tasks.`)
+          // logger.info(`No tasks found. Waiting for new tasks.`)
           await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before checking for new tasks
         }
       } else {
-        logger.info(`Waiting for tasks in queue.`)
+        // logger.info(`Waiting for tasks in queue.`)
         await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before checking the queue again
       }
     } catch (error) {
@@ -49,48 +50,72 @@ export const fetchScheduledTasks = async () => {
   if (!isStarted) {
     logger.info('Starting task fetching and processing')
     isStarted = true
-
-    for (let i = 0; i < concurrencyLimit; i++) {
-      fetchAndProcessTask() // Start task fetching and processing
-    }
+    await killChrome()
+    fetchAndProcessTask() // Start task fetching and processing
   }
 }
 
-const processTaskQueue = async (queueData, workerId) => {
+const processTaskQueue = async (queueData) => {
   try {
     const tasks = queueData.tasks
     const profileIdGiver = queueData.profile_id
-    const profileIdReceiver = queueData.profile_id_receiver
+    let profileIdReceiver = queueData.profile_id_receiver
+    let profileData = await getProfileData(queueData.profile_id, {})
+
+    if (!profileIdReceiver) {
+      profileIdReceiver = profileIdGiver
+    }
+
+    const debuggerPort = profileData.debugger_port
+    await checkPort(debuggerPort).then((isPortInUse) => {
+      if (isPortInUse) {
+        logger.info(`Port ${debuggerPort} is in use.`)
+        return
+        // Add your Puppeteer code here if the port is in use
+      } else {
+        // logger.info(`Port ${debuggerPort} is free.`)
+        // Handle the case when the port is not in use
+      }
+    })
+
     let [page, browser] = await openProfileBrowser(profileIdGiver)
+
     if (browser) {
+      // close blank page
+      // await closeBlankPage(browser)
+      browser.on('targetcreated', handleNewPage)
+
       for (let task of tasks) {
-        logger.info(`Task: ${JSON.stringify(task)}`)
+        // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
         await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
         const tasksJson = task.tasks.tasks_json
         const startDate = new Date()
-        logger.info(`${startDate} ${profileIdGiver} Worker ${workerId} start ${taskName}`)
+        logger.info(`${startDate} ${profileIdGiver} Worker start ${taskName}`)
         await processTask(profileIdGiver, profileIdReceiver, taskName, tasksJson, page)
         const endDate = new Date()
-        logger.info(`${endDate} ${profileIdGiver} Worker ${workerId} finished ${taskName}`)
+        logger.info(`${endDate} ${profileIdGiver} Worker finished ${taskName}`)
       }
       await updateProfileData(profileIdGiver, { status: `ok` })
       await browser.close()
     }
   } catch (error) {
-    logger.error(error)
+    logger.error('processTaskQueue_error', {
+      error: mapErrorConstructor(error)
+    })
   }
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
+    await startSignIn(profileIdGiver, page)
     switch (taskName) {
-      case TASK_NAME_CONFIG.Login:
-        await startSignIn(profileIdGiver, page)
-        break
-      case TASK_NAME_CONFIG.GetCookie:
-        await getCookies(profileIdGiver, page)
-        break
+      // case TASK_NAME_CONFIG.Login:
+      //   await startSignIn(profileIdGiver, page)
+      //   break
+      // case TASK_NAME_CONFIG.GetCookie:
+      //   await getCookies(profileIdGiver, page)
+      //   break
       case TASK_NAME_CONFIG.Captcha:
         await resolveCaptcha(profileIdGiver, page)
         break
@@ -101,39 +126,31 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         await newsFeedStep.init(page, profileIdGiver, tasksJson)
         break
       case TASK_NAME_CONFIG.ClickAds:
-        logger.info(`Found clicks ads`)
         await profileAdsStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)
         break
       case TASK_NAME_CONFIG.fairInteract:
-        await newsFeedStep.init(page, profileIdGiver, tasksJson)
         await fairInteractStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)
         break
       default:
         return
     }
+    await getCookies(profileIdGiver, page)
     logger.info(`Create event logs: ${taskName} ${profileIdGiver}`)
-    if (profileIdReceiver) {
-      // profile_id is the reciver
-      // profile_id_interact is the user giver
-      await createEventLogs({
-        event_type: taskName,
-        profile_id: profileIdReceiver,
-        profile_id_interact: profileIdGiver,
-        issue: 'OK'
-      })
-    } else {
-      await createEventLogs({
-        event_type: taskName,
-        profile_id_interact: profileIdGiver,
-        issue: 'OK'
-      })
-    }
-  } catch (error) {
     await createEventLogs({
       event_type: taskName,
+      profile_id: profileIdReceiver,
       profile_id_interact: profileIdGiver,
-      issue: `${error}`
+      issue: 'OK'
     })
-    logger.error(`Error in process Task worker ${error}`)
+  } catch (error) {
+    // await createEventLogs({
+    //   event_type: taskName,
+    //   profile_id: profileIdReceiver,
+    //   profile_id_interact: profileIdGiver,
+    //   issue: `processTaskWorker_error ${error}`
+    // })
+    logger.error('processTaskWorker_error', {
+      error: mapErrorConstructor(error)
+    })
   }
 }

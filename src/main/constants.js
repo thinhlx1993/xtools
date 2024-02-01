@@ -69,8 +69,14 @@ export const BACKEND_BASE_URL = 'http://157.230.192.238/api/v1'
 export const API_CAP_GURU = 'https://api.cap.guru/'
 
 export const DEFAULT_WINDOWS_SIZE = {
-  width: 500,
-  height: 500
+  width: 640,
+  height: 540
+}
+
+export const getRandomPosition = () => {
+  const randomPositions = ['0,0', '640,0', '1280,0', '0,540', '640,540', '1280,540']
+  const randomIndex = Math.floor(Math.random() * randomPositions.length)
+  return randomPositions[randomIndex]
 }
 
 export const defaultPuppeteerOptions = {

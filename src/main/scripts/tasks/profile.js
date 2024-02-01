@@ -1,11 +1,12 @@
 import fs from 'fs'
 import axios from 'axios'
 import { getProfileData, updateProfileData, updatePostData } from '../services/backend'
-import { defaultPuppeteerOptions } from '../../constants'
+import { defaultPuppeteerOptions, getRandomPosition } from '../../constants'
 import puppeteer from 'puppeteer-extra'
 import { getAppPath } from '../../utils'
-import { splitProxy } from '../../helpers'
+import { splitProxy, mapErrorConstructor } from '../../helpers'
 import hideMyAcc from '../../integration/hidemyacc'
+
 import {
   randomDelay,
   getOtp,
@@ -24,17 +25,21 @@ export const openProfileBrowser = async (profile) => {
   let page = null
   try {
     let proxyProtected = false
-    let args = []
-    logger.info(profile)
+    const randomPos = getRandomPosition()
+    let args = [`--window-position=${randomPos}`]
     let profileData = await getProfileData(profile, {})
+    const debuggerPort = profileData.debugger_port
+    if (debuggerPort) {
+      args.push(`--remote-debugging-port=${debuggerPort}`)
+    }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
-        logger.info(`get data from proxy ${profileData.proxy}`)
-        const [tz] = await Promise.all([hideMyAcc.network(splitProxy(profileData.proxy))])
-        logger.info(`get data from tz ${tz}`)
+        const tz = await hideMyAcc.network(splitProxy(profileData.proxy))
         profileData = await getProfileData(profile, tz)
       } catch (error) {
-        logger.error(error)
+        logger.error('Get proxy data error', {
+          error: mapErrorConstructor(error)
+        })
         await updateProfileData(profile, { status: 'Proxy error' })
         return
       }
@@ -74,10 +79,11 @@ export const openProfileBrowser = async (profile) => {
         // puppeteer.use(StealthPlugin())
         args.push(`--disable-extensions-except=${pathToExtension}`)
         args.push(`--load-extension=${pathToExtension}`)
-        // args.push(`--remote-debugging-port=9090`)
       }
     } catch (error) {
-      logger.error(error)
+      logger.error('Load extentions error', {
+        error: mapErrorConstructor(error)
+      })
     }
     const newBrowserOptions = {
       ...defaultPuppeteerOptions,
@@ -88,27 +94,17 @@ export const openProfileBrowser = async (profile) => {
     browser = await puppeteer.launch(newBrowserOptions)
     page = await browser.newPage()
 
-    try {
-      // enter proxy username password
-      if (profileData.proxy && proxyProtected) {
-        const proxyParts = profileData.proxy.split(':')
-        // Set up authentication for the proxy
-        await page.authenticate({
-          username: proxyParts[2], // Replace with your proxy username
-          password: proxyParts[3] // Replace with your proxy password
-        })
-      }
-      await page.goto('https://ipfighter.com/')
-      logger.info('Open the browser successfully')
-      // await startSignIn(profile, browser) // test signin
-      // await updateProfileData(profile, { status: signinStatus })
-      // await resolveCaptcha(profile, page)
-      // if (profileData.cookies) {
-      //   await setCookies(page, profileData)
-      // }
-    } catch (error) {
-      logger.error(error)
+    // enter proxy username password
+    if (profileData.proxy && proxyProtected) {
+      const proxyParts = profileData.proxy.split(':')
+      // Set up authentication for the proxy
+      await page.authenticate({
+        username: proxyParts[2], // Replace with your proxy username
+        password: proxyParts[3] // Replace with your proxy password
+      })
     }
+    await page.goto('https://ipfighter.com/')
+    logger.info('Open the browser successfully')
     return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
@@ -116,10 +112,12 @@ export const openProfileBrowser = async (profile) => {
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
     } else {
-      logger.error(`Error occurred: ${error.message}`)
+      logger.error('Error occurred when open profiles: ', {
+        error: mapErrorConstructor(error)
+      })
       // Handle other types of errors
     }
-    return [page, browser]
+    throw error
   }
 }
 
@@ -294,10 +292,10 @@ export const startSignIn = async (profileId, page) => {
     let profileData = await getProfileData(profileId, {})
     if (profileData.cookies) {
       await setCookies(page, profileData)
-      for (let index = 0; index < 2; index++) {
-        await tryAgain(page)
-        await randomDelay()
-      }
+      // for (let index = 0; index < 2; index++) {
+      //   await tryAgain(page)
+      //   await randomDelay()
+      // }
       await updateProfileData(profileId, { status: 'set cookies ok' })
       return
     }
@@ -311,7 +309,7 @@ export const startSignIn = async (profileId, page) => {
     try {
       await page.waitForSelector('div[aria-label="Home timeline"]', {
         visible: true,
-        timeout: 5000
+        timeout: 2000
       })
       await cacheCookies(page, profileId)
       await updateProfileData(profileId, { status: 'ok' })
@@ -387,7 +385,10 @@ const tryAgain = async (page) => {
         .querySelector('span')
         ?.innerText?.includes('Something went wrong, but don’t fret — let’s give it another shot.')
     )
-    await page.waitForSelector('button[type="submit"]')
+    await page.waitForSelector('button[type="submit"]', {
+      visible: true,
+      timeout: 1000
+    })
     await page.click('button[type="submit"]')
   } catch (error) {
     logger.error(error)

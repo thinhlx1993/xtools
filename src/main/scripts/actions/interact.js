@@ -44,7 +44,7 @@ const favoriteEntry = async (page, entryElementHandle) => {
 const commentEntry = async (page, entryElementHandle, content) => {
   const commentBtn = await entryElementHandle.$(profilePathSelector.commentBtn)
   if (!commentBtn) {
-    console.log('NOT_FOUND_COMMENT_BTN')
+    logger.info('NOT_FOUND_COMMENT_BTN')
     // logging
     return
   }
@@ -56,7 +56,7 @@ const commentEntry = async (page, entryElementHandle, content) => {
         timeout: 30000
       })
       .catch((error) => {
-        console.log('CLOSE_DIALOG_COMMENT', error)
+        logger.info('CLOSE_DIALOG_COMMENT', error)
         return null
       })
   await commentBtn.hover()
@@ -68,7 +68,7 @@ const commentEntry = async (page, entryElementHandle, content) => {
       timeout: 60000
     })
     .catch((error) => {
-      console.log('NOT_FOUND_DIALOG_COMMENT', error)
+      logger.info('NOT_FOUND_DIALOG_COMMENT', error)
       return null
     })
   if (!dialog) {
@@ -80,12 +80,12 @@ const commentEntry = async (page, entryElementHandle, content) => {
       timeout: 60000
     })
     .catch((error) => {
-      console.log('WAIT_EDITOR_INPUT_TIMEOUT', error)
+      logger.info('WAIT_EDITOR_INPUT_TIMEOUT', error)
       return null
     })
   const inputContent = await dialog.$(profilePathSelector.input)
   if (!inputContent) {
-    console.log('NOT_FOUND_EDITOR_INPUT')
+    logger.info('NOT_FOUND_EDITOR_INPUT')
     // logging
     return
   }
@@ -100,7 +100,7 @@ const commentEntry = async (page, entryElementHandle, content) => {
   await utils.delay(utils.randomArrayNumberInString('30,50') * 100)
   const closeDialog = async () => {
     if (!closeDialogBtn) {
-      console.log('NOT_FOUND_CLOSE_DIALOG_BTN')
+      logger.info('NOT_FOUND_CLOSE_DIALOG_BTN')
       // logging
       return
     }
@@ -132,7 +132,7 @@ const commentEntry = async (page, entryElementHandle, content) => {
   }
 
   if (!submitBtn) {
-    console.log('NOT_FOUND_SUBMIT_BTN')
+    logger.info('NOT_FOUND_SUBMIT_BTN')
     return closeDialog()
   }
   const enableSubmitBtnValue = await submitBtn.evaluate(
@@ -143,7 +143,7 @@ const commentEntry = async (page, entryElementHandle, content) => {
   // )
   await utils.delayRandom()
   if (!enableSubmitBtnValue || enableSubmitBtnValue < 0) {
-    console.log('value error')
+    logger.info('value error')
     return closeDialog()
   }
   await submitBtn.click()
@@ -189,6 +189,7 @@ const commentEntryWithChatGPT = async (page, entryElementHandle, entryContent, c
   if (!commentContent) {
     return
   }
+  logger.info(`ChatGPT return content ${commentContent}`)
   return await commentEntry(page, entryElementHandle, commentContent)
 }
 
@@ -202,24 +203,24 @@ const commentEntryWithChatGPT = async (page, entryElementHandle, entryContent, c
  * }} video
  */
 const watchVideo = async (page, entryElementHandle, video) => {
-  console.log('watchVideo')
+  logger.info('watchVideo')
   const videoLayout = await entryElementHandle.$(tweetDetailPathSelector.videoLayout)
-  console.log('videoLayout', videoLayout)
+  logger.info('videoLayout', videoLayout)
   if (videoLayout) {
     await videoLayout.hover()
-    console.log('delay_videoLayout.hover')
+    logger.info('delay_videoLayout.hover')
     await utils.delayRandomByArrayNumberInString('500,1000')
-    console.log('click_videoLayout.hover')
+    logger.info('click_videoLayout.hover')
     await videoLayout.click()
   }
   let timeDelay =
     video.durationMilliseconds +
     (video.durationMilliseconds * utils.randomArrayNumberInString('5,15')) / 100
   if (timeDelay >= 30000) {
-    console.log('videoTimeMoreThan30')
+    logger.info('videoTimeMoreThan30')
     timeDelay = 30000
   }
-  console.log('waiting_video', timeDelay)
+  logger.info('waiting_video', timeDelay)
   await utils.delay(timeDelay)
   await videoLayout.hover()
   await videoLayout.click()
@@ -233,7 +234,7 @@ const watchVideo = async (page, entryElementHandle, video) => {
     await videoLayout.click()
   }
   await page.mouse.reset()
-  console.log('watchVideo__done')
+  logger.info('watchVideo__done')
 }
 
 /**
@@ -271,7 +272,7 @@ const viewImage = async (page, entryElementHandle) => {
  * @param {string[]} expandedUrls
  */
 const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
-  console.log('clickLinkAds')
+  logger.info('clickLinkAds')
   const linkElements = await Promise.all(
     expandedUrls
       .map((expandedUrl) => [
@@ -302,7 +303,7 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
   }
   await page.mouse.reset()
   await utils.delayRandom()
-  console.log('clickLinkAds__done')
+  logger.info('clickLinkAds__done')
 }
 
 /**
@@ -331,7 +332,7 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
  * }} entryItem
  */
 const interactAdsEntry = async (page, entryElementHandle, entryItem) => {
-  logger.info('interactAdsEntry_NOT_FOUND_LINK_ADS', { entryItem })
+  logger.info('interactAdsEntry_PROCESS_LINK_ADS')
   const video = entryItem.entities.media.find((media) => media.type === TWEET_MEDIA_TYPE.video)
   const unifiedCardVideo = entryItem.unifiedCard.media.find(
     (media) => media.type === TWEET_MEDIA_TYPE.video
@@ -352,11 +353,12 @@ const interactAdsEntry = async (page, entryElementHandle, entryItem) => {
   adsUrls = adsUrls.filter((url) => !regTwDomain.test(url) && !regXDomain.test(url))
   adsUrls = [...new Set(adsUrls)]
   if (adsUrls.length) {
-    console.log('adsUrls', adsUrls)
+    logger.info('adsUrls', adsUrls)
     await clickLinkAds(page, entryElementHandle, adsUrls)
+    await utils.delayRandom()
   }
   await utils.delayRandom()
-  console.log('interactAds__done')
+  logger.info('interactAds__done')
 }
 
 export default {

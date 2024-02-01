@@ -40,7 +40,7 @@ export const testRegHttpEvent = (reg, event) => {
  * @param {number} scrollHeight
  */
 export const windowScrollBy = async (page, scrollHeight) => {
-  console.log('windowScrollBy')
+  // console.log('windowScrollBy')
   const scrollAmount = 50
   let currentScroll = 0
   while (currentScroll < Math.floor(scrollHeight)) {
@@ -62,7 +62,7 @@ export const windowScrollBy = async (page, scrollHeight) => {
     await utils.delayRandom([80, 90, 100, 110, 120, 130])
     currentScroll += topValue
   }
-  console.log('windowScrollBy__done')
+  // console.log('windowScrollBy__done')
 }
 
 /**

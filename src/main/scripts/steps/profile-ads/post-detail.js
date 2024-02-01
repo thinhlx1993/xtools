@@ -7,6 +7,7 @@ import { Page, Account, InteractAdsOptions } from '../../define-type'
 import scrollAction from '../../actions/scroll'
 import interactAction from '../../actions/interact'
 import tweetDetailAction from '../../actions/tweet-detail'
+import logger from '../../../logger'
 
 /**
  *
@@ -33,7 +34,7 @@ const _getDelayTimeAction = (featOptions) =>
  * }} postEntry
  */
 export default async (page, giverData, featOptions, postEntry) => {
-  console.log(`${giverData.username} start view post detail`)
+  logger.info(`${giverData.username} start view post detail`)
   const entries = []
   let adsInteracted = false
   handleResponseTweetDetail(page, ({ addEntries }) => {
@@ -49,7 +50,7 @@ export default async (page, giverData, featOptions, postEntry) => {
   while (entries) {
     const entry = entries[0]
     if (!entry) {
-      console.log('not found entry comment')
+      logger.info('not found entry comment')
       await utils.delayRandom()
       return
     }
@@ -60,7 +61,7 @@ export default async (page, giverData, featOptions, postEntry) => {
       entry.content.itemContent.itemType === ITEM_CONTENT_TYPE.cursor
     ) {
       if (entries.length) {
-        console.log('skip cursor view more')
+        logger.info('skip cursor view more')
       } else {
         await utils.delayRandom()
         await tweetDetailAction.clickViewMore(page)
@@ -69,8 +70,9 @@ export default async (page, giverData, featOptions, postEntry) => {
     }
     const subEntryItems = mapper.mapTweetDetail(entry)
     for (let index = 0; index < subEntryItems.length; index++) {
+      await page.bringToFront()
       const subEntryItem = subEntryItems[index]
-      console.log('subEntryItem', subEntryItem)
+      // logger.info('subEntryItem', subEntryItem)
       const username = subEntryItem.authorId
       const getElementHandle = () =>
         page
@@ -82,17 +84,17 @@ export default async (page, giverData, featOptions, postEntry) => {
           .then((res) => res[0])
       let elementHandle = await getElementHandle()
       if (!elementHandle) {
-        console.log('!elementHandle__first')
+        // logger.info('!elementHandle__first')
         await utils.delayRandom()
         elementHandle = await getElementHandle()
         if (!elementHandle) {
-          console.log('!elementHandle__second')
+          // logger.info('!elementHandle__second')
           continue
         }
       }
       await scrollAction.scrollToEntry(page, elementHandle)
       await _getDelayTimeAction(featOptions)
-      console.log('done_waitAfter_scrollToEntry')
+      // logger.info('done_waitAfter_scrollToEntry')
       if (subEntryItem.isAds) {
         await scrollAction.scrollToEntryMedia(page, elementHandle)
         await _getDelayTimeAction(featOptions)
@@ -115,5 +117,5 @@ export default async (page, giverData, featOptions, postEntry) => {
   if (!postElement) {
     return
   }
-  console.log(`${giverData.username} end view post detail`)
+  logger.info(`${giverData.username} end view post detail`)
 }

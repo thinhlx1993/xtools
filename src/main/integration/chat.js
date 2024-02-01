@@ -14,8 +14,7 @@ const getCompletion = async (apiKey, content) => {
     messages: [
       {
         role: 'system',
-        content:
-          'Hi there, I want you give a comment for the content below, please keep the length in aroud 30-50 words'
+        content: 'How can I reply to the post below? Keep it under 20 words'
       },
       {
         role: 'user',

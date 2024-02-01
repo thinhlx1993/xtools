@@ -32,6 +32,7 @@ import { useSnackbar } from '../context/SnackbarContext'
 import AppConfig from '../config/enums'
 import { useMediaQuery } from '@mui/material'
 import { ipcMainConsumer } from '../helpers/api'
+import CachedIcon from '@mui/icons-material/Cached'
 
 const ProfilesPage = () => {
   const { openSnackbar } = useSnackbar()
@@ -482,6 +483,14 @@ const ProfilesPage = () => {
           <Typography variant="h4" gutterBottom>
             Profiles
           </Typography>
+        </Grid>
+
+        <Grid item style={{ marginRight: '20px' }}>
+          <Tooltip title="Refresh" onClick={fetchProfiles}>
+            <IconButton>
+              <CachedIcon />
+            </IconButton>
+          </Tooltip>
         </Grid>
 
         {/* Search Field */}

@@ -17,6 +17,7 @@ const _func = async (page, profileGiver, profileReceiver, featOptions) => {
   dataMemories[profileGiver] = {}
   const profileGiverData = await getProfileData(profileGiver, {})
   const profileReceiverData = await getProfileData(profileReceiver, {})
+
   try {
     await profile(page, profileGiverData, featOptions, profileReceiverData)
   } catch (error) {

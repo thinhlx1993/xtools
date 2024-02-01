@@ -11,7 +11,7 @@ import scrollAction from '../../actions/scroll'
 import navAction from '../../actions/nav'
 import interactAction from '../../actions/interact'
 import postDetail from './post-detail'
-
+import { getEventsLogs, createEventLogs } from '../../services/backend'
 /**
  *
  * @param {InteractAdsOptions} featOptions
@@ -31,7 +31,6 @@ const _getDelayTimeAction = (featOptions) =>
  */
 export default async (page, giverData, featOptions, receiverData) => {
   logger.info(`start view news feed ${giverData.username}`)
-  logger.info(featOptions)
   const totalPosts = utils.randomArrayNumberInString(featOptions.randomTotalPostsForInteractAds)
   let totalCount = 0
   let pinEntryAdded = false
@@ -117,6 +116,52 @@ export default async (page, giverData, featOptions, receiverData) => {
     if (!entryUrl) {
       continue
     }
+
+    if (!entryItem.isAds) {
+      // const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
+      const actionType = 'comment'
+      const userEventLogs = await getEventsLogs(receiverData.username, actionType)
+      // maximum 5 comment likes per user per day
+      const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
+      if (userEventLogs.result_count < maxCommentLike) {
+        logger.info(
+          `${receiverData.username} today have ${userEventLogs.result_count} ${actionType}`
+        )
+
+        if (
+          actionType === 'comment' &&
+          featOptions.allowCommentAction &&
+          giverData.gpt_key &&
+          featOptions.chatOpenAIPrefix
+        ) {
+          const choices = featOptions.chatOpenAIPrefix.split('|')
+          const chosenOption = choices[Math.floor(Math.random() * choices.length)]
+          logger.info(`${receiverData.username} commentEntryWithChatGPT`)
+          await interactAction.commentEntryWithChatGPT(page, elementHandle, entryItem.fullText, {
+            key: giverData.gpt_key,
+            prefix: chosenOption,
+            maxRetryTime: 2
+          })
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'OK'
+          })
+        } else if (actionType === 'like' && featOptions.allowLikeAction) {
+          await utils.delayRandom()
+          logger.info(`${receiverData.username} favoriteEntry`)
+          await interactAction.favoriteEntry(page, elementHandle)
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'OK'
+          })
+        }
+      }
+    }
+
     await _getDelayTimeAction(featOptions)
     await entryUrl.hover()
     await utils.delayRandom()
