@@ -12,14 +12,15 @@ import async from 'async'
 import newsFeedStep from '../steps/newsfeed'
 import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
-import { killChrome, checkPort, handleNewPage } from './utils'
+import { killChrome, checkPort, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
-import { cpuMonitoring } from './utils'
+import { cpuMonitoring, killPID } from './utils'
 let isStarted = false
-const concurrencyLimit = 2
+const concurrencyLimit = 15
 let taskQueue = async.queue(async (task) => {
   await processTaskQueue(task)
 }, concurrencyLimit) // 1 is the concurrency limit
+let openBrowser = []
 
 const fetchAndProcessTask = async () => {
   while (true) {
@@ -31,15 +32,10 @@ const fetchAndProcessTask = async () => {
           response.schedule.forEach((task) => {
             taskQueue.push(task)
           })
-        } else {
-          // logger.info(`No tasks found. Waiting for new tasks.`)
-          await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before checking for new tasks
         }
-      } else {
-        // logger.info(`Waiting for tasks in queue.`)
-        await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before checking the queue again
       }
-      await cpuMonitoring()
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+      // await cpuMonitoring()
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before retrying in case of error
@@ -57,9 +53,15 @@ export const fetchScheduledTasks = async () => {
 }
 
 const processTaskQueue = async (queueData) => {
+  const profileIdGiver = queueData?.profile_id
+  if (openBrowser.includes(profileIdGiver)) {
+    return
+  }
+
+  openBrowser.push(profileIdGiver)
   try {
+    await randomDelay()
     const tasks = queueData.tasks
-    const profileIdGiver = queueData.profile_id
     let profileIdReceiver = queueData.profile_id_receiver
     let profileData = await getProfileData(queueData.profile_id, {})
 
@@ -82,7 +84,19 @@ const processTaskQueue = async (queueData) => {
     let [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
+      page.on('error', async () => {
+        // throw err; // catch don't work (issue: 6330, 5928, 1454, 6277, 3709)
+        await browser.close()
+      })
       browser.on('targetcreated', handleNewPage)
+      browser.on('disconnected', async () => {
+        if (browser.process() != null) {
+          logger.info(`KILL APPLICATION ${browser.process()}`)
+          // await killPID(browser.process())
+          browser.process().kill('SIGINT')
+          // logger.info(`KILL APPLICATION ${browser.process()} OK`)
+        }
+      })
 
       for (let task of tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
@@ -103,6 +117,7 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
+  openBrowser = openBrowser.filter((id) => id !== queueData.profile_id)
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {

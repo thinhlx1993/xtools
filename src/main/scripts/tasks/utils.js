@@ -178,3 +178,20 @@ export const cpuMonitoring = async () => {
       logger.error(`cpuMonitoring Error ${err}`)
     })
 }
+
+export const killPID = async (procesPID) => {
+  // This command depends on the operating system
+  const command = `taskkill /F /PID ${procesPID}`
+
+  exec(command, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error: ${error.message}`)
+      return
+    }
+    if (stderr) {
+      console.error(`Stderr: ${stderr}`)
+      return
+    }
+    logger.info(`Chrome ${procesPID} killed successfully`)
+  })
+}

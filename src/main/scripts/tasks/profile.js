@@ -30,7 +30,7 @@ export const openProfileBrowser = async (profile) => {
     let profileData = await getProfileData(profile, {})
     const debuggerPort = profileData.debugger_port
     if (debuggerPort) {
-      args.push(`--remote-debugging-port=${debuggerPort}`)
+      args.push(`--remote-debugging-port=0`)
     }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
@@ -114,12 +114,10 @@ export const openProfileBrowser = async (profile) => {
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'proxy failed' })
     } else {
-      logger.error('Error occurred when open profiles: ', {
-        error: mapErrorConstructor(error)
-      })
+      logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors
     }
-    throw error
+    return [null, null]
   }
 }
 
