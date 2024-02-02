@@ -14,9 +14,9 @@ import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
 import { killChrome, checkPort, handleNewPage } from './utils'
 import { mapErrorConstructor } from '../../helpers'
-
+import { cpuMonitoring } from './utils'
 let isStarted = false
-const concurrencyLimit = 10
+const concurrencyLimit = 2
 let taskQueue = async.queue(async (task) => {
   await processTaskQueue(task)
 }, concurrencyLimit) // 1 is the concurrency limit
@@ -24,8 +24,8 @@ let taskQueue = async.queue(async (task) => {
 const fetchAndProcessTask = async () => {
   while (true) {
     try {
-      if (taskQueue.length() < 15) {
-        const response = await get('/mission_schedule/')
+      if (taskQueue.length() < 10) {
+        const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
           // Add tasks to queue
           response.schedule.forEach((task) => {
@@ -39,8 +39,9 @@ const fetchAndProcessTask = async () => {
         // logger.info(`Waiting for tasks in queue.`)
         await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before checking the queue again
       }
+      await cpuMonitoring()
     } catch (error) {
-      logger.error(`Error: ${error}`)
+      logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before retrying in case of error
     }
   }
@@ -81,8 +82,6 @@ const processTaskQueue = async (queueData) => {
     let [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
-      // close blank page
-      // await closeBlankPage(browser)
       browser.on('targetcreated', handleNewPage)
 
       for (let task of tasks) {
@@ -108,7 +107,6 @@ const processTaskQueue = async (queueData) => {
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
-    await startSignIn(profileIdGiver, page)
     switch (taskName) {
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)
