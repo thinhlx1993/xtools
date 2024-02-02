@@ -138,10 +138,10 @@ const createWindow = async () => {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#v${app.getVersion()}`)
     mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadURL(join(__dirname, `../renderer/index.html#v${app.getVersion()}`))
   }
 
   mainWindow.on('close', () => {
@@ -187,7 +187,7 @@ app.whenReady().then(async () => {
     // check for update
     setInterval(() => {
       autoUpdater.checkForUpdatesAndNotify()
-    }, 30000) // Run every 30 seconds
+    }, 60000) // Run every 60 seconds
   }
 })
 

@@ -23,5 +23,11 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      let version = window.location.hash.substring(1)
+      if (version) {
+        document.title = `XAutoTool - ${version}`
+      }
+    </script>
   </body>
 </html>

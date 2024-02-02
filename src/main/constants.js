@@ -63,8 +63,8 @@ export const CHROME_URLS = ['chrome-error://chromewebdata/']
 
 export const HIDE_MY_ACC_API_ROOT = 'https://api-tuan.hidemyacc.com'
 
-export const BACKEND_BASE_URL = 'http://157.230.192.238/api/v1'
-// export const BACKEND_BASE_URL = 'http://127.0.0.1:8080/api/v1'
+// export const BACKEND_BASE_URL = 'http://157.230.192.238/api/v1'
+export const BACKEND_BASE_URL = 'http://127.0.0.1:8080/api/v1'
 
 export const API_CAP_GURU = 'https://api.cap.guru/'
 
@@ -86,8 +86,8 @@ export const defaultPuppeteerOptions = {
     height: 750
   },
   args: [
-    '--single-process',
-    '--no-zygote',
+    '--disable-3d-apis',
+    '--disable-gpu',
     '--disable-notifications',
     '--disable-setuid-sandbox',
     '--lang=en-US',

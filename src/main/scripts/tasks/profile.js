@@ -105,6 +105,8 @@ export const openProfileBrowser = async (profile) => {
     }
     await page.goto('https://ipfighter.com/')
     logger.info('Open the browser successfully')
+    await randomDelay()
+    await startSignIn(profile, page)
     return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {

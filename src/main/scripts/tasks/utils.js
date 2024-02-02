@@ -1,3 +1,4 @@
+import pidusage from 'pidusage'
 import axios from 'axios'
 import { authenticator } from 'otplib'
 import logger from '../../logger'
@@ -24,7 +25,7 @@ export const accessToIframe = async (container, nameOrSelector) => {
 
 export const clickIntoNext = async (thirdLevelFrame, clicks) => {
   for (let i = 0; i < clicks; i++) {
-    console.log(`click next button ${i}`)
+    logger.info(`click next button ${i}`)
     // Function to perform the click
     // Replace 'YOUR_BUTTON_SELECTOR' with the actual selector of the button
     await thirdLevelFrame.evaluate(() => {
@@ -53,7 +54,7 @@ export const sendCapGuruRequest = async (payload) => {
   try {
     const captchaResponse = await axios.post('http://api.cap.guru/in.php', payload)
     // If the request is successful, the result is in captchaResponse
-    console.log(captchaResponse.data)
+    logger.info(captchaResponse.data)
     return captchaResponse.data // or return whatever you need from the response
   } catch (error) {
     // Handle the error here. The error object contains details about what went wrong.
@@ -76,15 +77,15 @@ export const killChrome = async () => {
 
   if (process.platform === 'win32') {
     // Windows command to kill all instances of Chrome
-    command = 'taskkill /F /IM chrome.exe /T'
+    command = 'taskkill /F /IM macro.exe /T'
   } else if (process.platform === 'darwin') {
     // macOS command to kill all instances of Chrome
-    command = 'pkill -f "Google Chrome"'
+    command = 'pkill -f "Marco"'
   } else if (process.platform === 'linux') {
     // Linux command to kill all instances of Chrome
-    command = 'pkill chrome'
+    command = 'pkill marco'
   } else {
-    console.log('Unsupported platform')
+    logger.info('Unsupported platform')
     return
   }
 
@@ -97,7 +98,7 @@ export const killChrome = async () => {
       console.error(`Stderr: ${stderr}`)
       return
     }
-    console.log('Chrome killed successfully')
+    logger.info('Chrome killed successfully')
   })
 }
 
@@ -126,15 +127,14 @@ export const closeBlankPage = async (browser) => {
 }
 
 export const handleNewPage = async (target) => {
-  const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
   try {
-    console.log('targetcreated')
+    const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
     const newPage = await target.page()
     if (!newPage) {
       return
     }
     const pageUrl = newPage.url()
-    console.log('pageUrl', pageUrl)
+    logger.info('pageUrl', pageUrl)
     if (pageUrl === 'about:blank') {
       await newPage.close()
       return
@@ -149,17 +149,32 @@ export const handleNewPage = async (target) => {
     }
     try {
       const pageUrlSecond = newPage.url()
-      console.log('pageUrlSecond', pageUrlSecond)
+      logger.info('pageUrlSecond', pageUrlSecond)
       await randomDelay()
       if (isTwUrl(pageUrlSecond)) {
         return
       }
     } catch (error) {
-      console.log('targetcreated__closed')
+      logger.info('targetcreated__closed')
       return
     }
     await newPage.close()
   } catch (error) {
-    // logger.error(`handleNewPage_ERROR ${error}`)
+    logger.error(`handleNewPage_ERROR ${error}`)
   }
+}
+
+export const cpuMonitoring = async () => {
+  pidusage(process.pid)
+    .then((stats) => {
+      // const memoryUsageInGB = stats.memory / 1024 ** 3
+      // logger.info(`Memory Usage (GB): ${memoryUsageInGB.toFixed(2)}`)
+      if (stats.cpu > 99) {
+        logger.info(`High CPU Usage (%): ${stats.cpu}`)
+        killChrome()
+      }
+    })
+    .catch((err) => {
+      logger.error(`cpuMonitoring Error ${err}`)
+    })
 }
