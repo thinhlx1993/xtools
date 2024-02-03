@@ -115,7 +115,6 @@ const SettingsPage = () => {
               label="Browser Type"
             >
               <MenuItem value={BROWSER_TYPE.hideMyAcc}>HideMyAcc</MenuItem>
-              <MenuItem value={BROWSER_TYPE.chrome}>Chrome</MenuItem>
             </Select>
           </FormControl>
         </Grid>

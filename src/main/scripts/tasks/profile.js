@@ -60,7 +60,7 @@ export const openProfileBrowser = async (profile) => {
     }
 
     if (!fs.existsSync(hideMyAccProfileDir)) {
-      fs.cpSync(getAppPath(`\\HMAZeroProfile`), hideMyAccProfileDir, {
+      fs.cpSync('C:\\Program Files\\XAutoTool\\resources\\HMAZeroProfile', hideMyAccProfileDir, {
         recursive: true
       })
     }
@@ -73,7 +73,8 @@ export const openProfileBrowser = async (profile) => {
 
     try {
       // loading 2captcha plugin
-      const pathToExtension = getAppPath(`\\extentions\\SupportSolvingFunCaptcha`)
+      const pathToExtension =
+        'C:\\Program Files\\XAutoTool\\resources\\extentions\\SupportSolvingFunCaptcha'
       if (fs.existsSync(pathToExtension)) {
         logger.info(`Found extention: ${pathToExtension}`)
         // puppeteer.use(StealthPlugin())
