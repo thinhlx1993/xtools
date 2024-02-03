@@ -25,6 +25,7 @@ import {
 } from '@mui/material'
 import Papa from 'papaparse'
 import VerifiedIcon from '@mui/icons-material/Verified'
+import PaidIcon from '@mui/icons-material/Paid'
 import EditIcon from '@mui/icons-material/Edit'
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
@@ -69,12 +70,14 @@ const ProfilesPage = () => {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [targetGroup, setTargetGroup] = useState('')
   const [targetUser, setTargetUser] = useState('')
+  const [filterByType, setFilterByType] = useState('all')
+  const [newProfileDefaultType, setNewProfileDefaultType] = useState(false)
 
   useEffect(() => {
     fetchProfiles()
     fetchGroups()
     fetchUsers()
-  }, [page, rowsPerPage, searchQuery, selectedGroup])
+  }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
 
   const [data, setData] = useState([])
 
@@ -91,7 +94,7 @@ const ProfilesPage = () => {
 
   const fetchProfiles = async () => {
     try {
-      const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=desc`
+      const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=desc&filter=${filterByType}`
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -115,22 +118,29 @@ const ProfilesPage = () => {
   }
 
   const handleCheckProfile = async () => {
+    let profiles = []
     if (fileInput) {
       await parseCsv(fileInput)
-      openSnackbar(`Found ${data.length} profile`, 'info')
-    } else {
+      profiles = data.map((item) => ({
+        username: item?.username,
+        password: item?.password,
+        fa: item?.fa,
+        proxy: item?.proxy,
+        cookies: item?.cookies,
+        gpt_key: item?.gpt_key,
+        notes: item?.notes,
+        main_profile: newProfileDefaultType
+      }))
+    }
+    if (newProfile) {
       const input = newProfile
       const profileEntries = input.split('\n')
-      let profileCreated = 0
-
       for (const entry of profileEntries) {
-        const splitter = entry.split('|')
-        if (splitter.length >= 3) {
-          profileCreated = profileCreated + 1
-        }
+        const [username, password, fa, proxy, cookies, gpt_key, notes] = entry.split('|')
+        profiles.push({ username, password, fa, proxy, cookies, gpt_key, notes })
       }
-      openSnackbar(`Found ${profileCreated} profile`, 'info')
     }
+    openSnackbar(`Found ${profiles.length} account`, 'info')
   }
 
   const handleCreateProfile = async () => {
@@ -145,14 +155,18 @@ const ProfilesPage = () => {
         proxy: item?.proxy,
         cookies: item?.cookies,
         gpt_key: item?.gpt_key,
-        notes: item?.notes
+        notes: item?.notes,
+        main_profile: newProfileDefaultType
       }))
-    } else {
+    }
+    if (newProfile) {
       const input = newProfile
+      const main_profile = newProfileDefaultType
       const profileEntries = input.split('\n')
+      // username|password|fa|proxy|gpt_key|cookies
       for (const entry of profileEntries) {
-        const [username, password, fa, proxy, cookies, gpt_key, notes] = entry.split('|')
-        profiles.push({ username, password, fa, proxy, cookies, gpt_key, notes })
+        const [username, password, fa, proxy, gpt_key, cookies] = entry.split('|')
+        profiles.push({ username, password, fa, proxy, gpt_key, cookies, main_profile })
       }
     }
 
@@ -191,6 +205,7 @@ const ProfilesPage = () => {
     // Refresh the profiles list and reset input fields
     fetchProfiles()
     setNewProfile('')
+    setFilterByType('all')
     setFileInput(null)
     setDialogOpen(false)
   }
@@ -494,6 +509,16 @@ const ProfilesPage = () => {
         </Grid>
 
         {/* Search Field */}
+        <Grid item style={{ marginRight: '20px' }}>
+          <Select value={filterByType} onChange={(e) => setFilterByType(e.target.value)}>
+            <MenuItem key="all" value="all">
+              All Account
+            </MenuItem>
+            <MenuItem key="main_account" value="main_account">
+              Main Account
+            </MenuItem>
+          </Select>
+        </Grid>
         <Grid item>
           <TextField
             label="Search by Username, User"
@@ -544,8 +569,10 @@ const ProfilesPage = () => {
                 />
               </TableCell>
               <TableCell>Username</TableCell>
+              {!isMobile && <TableCell>Type</TableCell>}
               {!isMobile && <TableCell>Followers</TableCell>}
               {!isMobile && <TableCell>Following</TableCell>}
+              {!isMobile && <TableCell>Payouts</TableCell>}
               {!isMobile && <TableCell>Created At</TableCell>}
               {!isMobile && <TableCell>Notes</TableCell>}
               <TableCell>Status</TableCell>
@@ -574,7 +601,7 @@ const ProfilesPage = () => {
                           color: profile?.profile_data?.verify ? 'blue' : 'gray'
                         }}
                       />
-                      <AttachMoneyIcon
+                      <PaidIcon
                         style={{
                           marginLeft: '5px',
                           verticalAlign: 'middle',
@@ -592,6 +619,18 @@ const ProfilesPage = () => {
                       textOverflow: 'ellipsis'
                     }}
                   >
+                    <span>{profile.main_profile ? 'Main Account' : ''}</span>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 50
+                    }}
+                  >
                     <Tooltip title={profile?.profile_data?.followers}>
                       <span>{profile?.profile_data?.followers}</span>
                     </Tooltip>
@@ -602,7 +641,8 @@ const ProfilesPage = () => {
                     style={{
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
+                      maxWidth: 50
                     }}
                   >
                     <Tooltip title={profile?.profile_data?.following}>
@@ -615,7 +655,22 @@ const ProfilesPage = () => {
                     style={{
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
+                      maxWidth: 100
+                    }}
+                  >
+                    <Tooltip title={profile?.profile_data?.payouts}>
+                      <span>{profile?.profile_data?.payouts?.join('\n')}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 50
                     }}
                   >
                     <Tooltip title={profile.created_at}>
@@ -675,7 +730,7 @@ const ProfilesPage = () => {
             Hãy chú ý nhập đúng định dạng
           </Typography>
           <Typography variant="subtitle1" color="textSecondary">
-            Các trường bắt buộc phải có username|password|2fa|proxy
+            Các trường bắt buộc phải có username|password|2fa|proxy|gpt_key
           </Typography>
 
           <TextField
@@ -684,7 +739,7 @@ const ProfilesPage = () => {
             label="Profile Data"
             fullWidth
             variant="outlined"
-            placeholder="username|password|fa|proxy|cookies|gpt_key|notes"
+            placeholder="username|password|fa|proxy|gpt_key|cookies"
             multiline
             rows={4}
             value={newProfile}
@@ -697,6 +752,14 @@ const ProfilesPage = () => {
             Upload File
             <Input type="file" hidden onChange={handleFileChange} />
           </Button>
+          <div style={{ marginTop: 20 }}>
+            <Checkbox
+              checked={newProfileDefaultType}
+              onChange={(e) => setNewProfileDefaultType(e.target.checked)}
+              inputProps={{ 'aria-label': 'primary checkbox' }}
+            />
+            Set as Main account. Don&apos;t allow comment, like, click Ads
+          </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)} color="info">
@@ -772,7 +835,7 @@ const ProfilesPage = () => {
             value={newProfileData.gpt_key}
             onChange={(e) => setNewProfileData({ ...newProfileData, gpt_key: e.target.value })}
           />
-          <div>
+          <div style={{ marginTop: 20 }}>
             <Checkbox
               checked={newProfileData.main_profile}
               onChange={(e) =>
@@ -783,7 +846,7 @@ const ProfilesPage = () => {
               }
               inputProps={{ 'aria-label': 'primary checkbox' }}
             />
-            Don&apos;t allow comment, like
+            Set as Main account. Don&apos;t allow comment, like, click Ads
           </div>
           {/* Add TextFields for other profile attributes like password, FA, proxy, etc. */}
         </DialogContent>

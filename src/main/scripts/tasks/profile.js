@@ -41,7 +41,7 @@ export const openProfileBrowser = async (profile) => {
           error: mapErrorConstructor(error)
         })
         await updateProfileData(profile, { status: 'Proxy error' })
-        return
+        return [page, browser]
       }
     }
 
@@ -94,19 +94,23 @@ export const openProfileBrowser = async (profile) => {
     browser = await puppeteer.launch(newBrowserOptions)
     page = await browser.newPage()
 
-    // enter proxy username password
-    if (profileData.proxy && proxyProtected) {
-      const proxyParts = profileData.proxy.split(':')
-      // Set up authentication for the proxy
-      await page.authenticate({
-        username: proxyParts[2], // Replace with your proxy username
-        password: proxyParts[3] // Replace with your proxy password
-      })
-    }
-    await page.goto('https://ipfighter.com/')
-    logger.info('Open the browser successfully')
-    await randomDelay()
-    await startSignIn(profile, page)
+    try {
+      // enter proxy username password
+      if (profileData.proxy && proxyProtected) {
+        const proxyParts = profileData.proxy.split(':')
+        // Set up authentication for the proxy
+        await page.authenticate({
+          username: proxyParts[2], // Replace with your proxy username
+          password: proxyParts[3] // Replace with your proxy password
+        })
+      }
+
+      await page.goto('https://ipfighter.com/')
+      logger.info('Open the browser successfully')
+      await randomDelay()
+      await startSignIn(profile, page)
+    } catch (error) {}
+
     return [page, browser]
   } catch (error) {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
@@ -117,7 +121,7 @@ export const openProfileBrowser = async (profile) => {
       logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors
     }
-    return [null, null]
+    return [page, browser]
   }
 }
 
@@ -403,6 +407,7 @@ export const getCookies = async (profileId, page) => {
 
 export const checkProfiles = async (profileId, page) => {
   logger.info('checkProfiles')
+  const profileData = await getProfileData(profileId, {})
   await page.goto('https://twitter.com')
   await randomDelay()
   await page.waitForSelector('div[aria-label="Home timeline"]', {
@@ -417,11 +422,15 @@ export const checkProfiles = async (profileId, page) => {
     visible: true,
     timeout: 5000
   })
-  // Query for links that contain '/following' in their href
-  let followers = ''
-  let following = ''
-  let verify = false
 
+  let followers = profileData.followers ? profileData.followers : ''
+  let following = profileData.following ? profileData.following : ''
+  let verify = profileData.verify ? profileData.verify : false
+  let payouts = profileData.payouts ? profileData.payouts : []
+  let monetizable = profileData.monetizable ? profileData.monetizable : false
+  let impressions = profileData.impressions ? profileData.impressions : ''
+
+  // Query for links that contain '/following' in their href
   try {
     let element = await page.waitForSelector('a[href*="/following"]')
     await scrollIntoView(element)
@@ -514,7 +523,7 @@ export const checkProfiles = async (profileId, page) => {
   // check momentizable
   await page.goto('https://twitter.com/settings/monetization')
   await randomDelay()
-  let monetizable = false
+
   try {
     const adsEnable = await page.waitForSelector('a[href="/settings/ad_rev_share_dashboard"]')
     if (adsEnable) {
@@ -524,7 +533,29 @@ export const checkProfiles = async (profileId, page) => {
   } catch (error) {
     logger.info('Not found Not yet eligible')
   }
+
+  if (monetizable) {
+    try {
+      await page.click('a[href="/settings/ad_rev_share_dashboard"]')
+      // section[aria-label="Section details"] > div > div > ul > div > div > li > div
+      try {
+        const revenueElement = await page.waitForSelector(
+          'section[aria-label="Section details"] > div > div > ul > div > div > li > div'
+        )
+
+        if (revenueElement) {
+          const payout = await revenueElement.evaluate((node) => node.textContent)
+          if (!payouts.includes(payout)) {
+            payouts.push(payout)
+          }
+        }
+      } catch (error) {
+        logger.error(`Error processing article content: ${error}`)
+      }
+    } catch (error) {}
+  }
+
   await updateProfileData(profileId, {
-    profile_data: { followers, following, verify, monetizable }
+    profile_data: { followers, following, verify, monetizable, payouts }
   })
 }

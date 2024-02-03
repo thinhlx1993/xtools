@@ -27,6 +27,7 @@ const UsersPage = () => {
   const [users, setUsers] = useState([])
   const [newUserName, setNewUserName] = useState('') // Initialize newUserName
   const [newUserRole, setNewUserRole] = useState('')
+  const [newUserExpiredDate, setNewUserExpiredDate] = useState(90)
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false)
   const { openSnackbar } = useSnackbar()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -210,6 +211,18 @@ const UsersPage = () => {
             name="username"
             value={newUserName}
             onChange={(e) => setNewUserName(e.target.value)}
+          />
+          <TextField
+            autoFocus
+            number
+            margin="normal"
+            required
+            fullWidth
+            id="new-user-expired"
+            label="number of days user will expire. Setting the value to 0 is never expire."
+            name="expired_date"
+            value={newUserExpiredDate}
+            onChange={(e) => setNewUserExpiredDate(e.target.value)}
           />
           <TextField
             select

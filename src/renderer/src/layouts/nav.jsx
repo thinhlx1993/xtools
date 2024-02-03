@@ -166,7 +166,7 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Teams" />
             </ListItem>
           )}
-          {userRole === 'admin' && (
+          {userRole && (
             <ListItem button component={Link} to="/admin/missions">
               <ListItemText primary="Missions" />
             </ListItem>
@@ -199,7 +199,7 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Settings" />
             </ListItem>
           )}
-          {(userRole === 'admin' || userRole === 'user') && (
+          {userRole && (
             <ListItem button onClick={handleLogout}>
               <ListItemText primary="Logout" />
             </ListItem>

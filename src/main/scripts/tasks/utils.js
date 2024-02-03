@@ -143,9 +143,9 @@ export const handleNewPage = async (target) => {
       return
     }
     try {
-      await newPage.waitForNavigation({ waitUntil: 'networkidle0' })
+      await newPage.waitForNavigation({ waitUntil: 'networkidle0', timeout: 0 })
     } catch (error) {
-      // logger.error(`handleNewPage_ERROR ${error}`)
+      logger.error(`handleNewPage_waitForNavigation_ERROR ${error}`)
     }
     try {
       const pageUrlSecond = newPage.url()
@@ -179,19 +179,32 @@ export const cpuMonitoring = async () => {
     })
 }
 
-export const killPID = async (procesPID) => {
-  // This command depends on the operating system
-  const command = `taskkill /F /PID ${procesPID}`
+/**
+ * Kills a process given its PID.
+ * @param {number} pid - The PID of the process to kill.
+ */
+export const killPID = async (pid) => {
+  if (!pid) {
+    console.error('No PID provided')
+    return
+  }
 
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`Error: ${error.message}`)
-      return
+  if (process.platform === 'win32') {
+    // Windows requires using taskkill
+    exec(`taskkill /PID ${pid} /F`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error killing process ${pid}: ${error}`)
+        return
+      }
+      console.log(`Process ${pid} killed successfully.`)
+    })
+  } else {
+    // Unix-like systems can use process.kill
+    try {
+      process.kill(pid, 'SIGTERM') // Attempt a graceful shutdown
+      console.log(`Process ${pid} killed successfully.`)
+    } catch (error) {
+      console.error(`Error killing process ${pid}: ${error}`)
     }
-    if (stderr) {
-      console.error(`Stderr: ${stderr}`)
-      return
-    }
-    logger.info(`Chrome ${procesPID} killed successfully`)
-  })
+  }
 }

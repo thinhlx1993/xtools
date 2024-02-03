@@ -15,12 +15,16 @@ import fairInteractStep from '../steps/fair-interact'
 import { killChrome, checkPort, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
 import { cpuMonitoring, killPID } from './utils'
+
 let isStarted = false
 const concurrencyLimit = 15
 let taskQueue = async.queue(async (task) => {
-  await processTaskQueue(task)
+  try {
+    await processTaskQueue(task)
+  } catch (error) {
+    logger.error(`processTaskQueue ERROR ${error}`)
+  }
 }, concurrencyLimit) // 1 is the concurrency limit
-let openBrowser = []
 
 const fetchAndProcessTask = async () => {
   while (true) {
@@ -54,50 +58,22 @@ export const fetchScheduledTasks = async () => {
 
 const processTaskQueue = async (queueData) => {
   const profileIdGiver = queueData?.profile_id
-  if (openBrowser.includes(profileIdGiver)) {
-    return
-  }
-
-  openBrowser.push(profileIdGiver)
+  let processPID = null
   try {
     await randomDelay()
     const tasks = queueData.tasks
     let profileIdReceiver = queueData.profile_id_receiver
-    let profileData = await getProfileData(queueData.profile_id, {})
 
     if (!profileIdReceiver) {
       profileIdReceiver = profileIdGiver
     }
 
-    const debuggerPort = profileData.debugger_port
-    await checkPort(debuggerPort).then((isPortInUse) => {
-      if (isPortInUse) {
-        logger.info(`Port ${debuggerPort} is in use.`)
-        return
-        // Add your Puppeteer code here if the port is in use
-      } else {
-        // logger.info(`Port ${debuggerPort} is free.`)
-        // Handle the case when the port is not in use
-      }
-    })
-
     let [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
-      page.on('error', async () => {
-        // throw err; // catch don't work (issue: 6330, 5928, 1454, 6277, 3709)
-        await browser.close()
-      })
+      page.setDefaultNavigationTimeout(0)
+      processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
-      browser.on('disconnected', async () => {
-        if (browser.process() != null) {
-          logger.info(`KILL APPLICATION ${browser.process()}`)
-          // await killPID(browser.process())
-          browser.process().kill('SIGINT')
-          // logger.info(`KILL APPLICATION ${browser.process()} OK`)
-        }
-      })
-
       for (let task of tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
@@ -117,7 +93,7 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
-  openBrowser = openBrowser.filter((id) => id !== queueData.profile_id)
+  await killPID(processPID)
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
@@ -156,12 +132,12 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
     //   issue: 'OK'
     // })
   } catch (error) {
-    // await createEventLogs({
-    //   event_type: taskName,
-    //   profile_id: profileIdReceiver,
-    //   profile_id_interact: profileIdGiver,
-    //   issue: `processTaskWorker_error ${error}`
-    // })
+    await createEventLogs({
+      event_type: taskName,
+      profile_id: profileIdReceiver,
+      profile_id_interact: profileIdGiver,
+      issue: `processTaskWorker_error ${error}`
+    })
     logger.error('processTaskWorker_error', {
       error: mapErrorConstructor(error)
     })

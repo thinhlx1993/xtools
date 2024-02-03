@@ -49,4 +49,4 @@ nsis:
   perMachine: true
   allowElevation: true
   oneClick: false
-  allowToChangeInstallationDirectory: true
+  allowToChangeInstallationDirectory: false
