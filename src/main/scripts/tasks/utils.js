@@ -189,22 +189,11 @@ export const killPID = async (pid) => {
     return
   }
 
-  if (process.platform === 'win32') {
-    // Windows requires using taskkill
-    exec(`taskkill /PID ${pid} /F`, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error killing process ${pid}: ${error}`)
-        return
-      }
-      console.log(`Process ${pid} killed successfully.`)
-    })
-  } else {
-    // Unix-like systems can use process.kill
-    try {
-      process.kill(pid, 'SIGTERM') // Attempt a graceful shutdown
-      console.log(`Process ${pid} killed successfully.`)
-    } catch (error) {
-      console.error(`Error killing process ${pid}: ${error}`)
-    }
+  // Unix-like systems can use process.kill
+  try {
+    process.kill(pid, 'SIGKILL') // Attempt a graceful shutdown
+    console.log(`Process ${pid} killed successfully.`)
+  } catch (error) {
+    console.error(`Error killing process ${pid}: ${error}`)
   }
 }
