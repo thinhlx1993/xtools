@@ -171,6 +171,7 @@ const SettingsPage = () => {
               <MenuItem value="117">117</MenuItem>
               <MenuItem value="118">118</MenuItem>
               <MenuItem value="119">119</MenuItem>
+              <MenuItem value="120">120</MenuItem>
             </Select>
           </FormControl>
         </Grid>
@@ -187,6 +188,7 @@ const SettingsPage = () => {
           <TextField
             label="HideMyAcc Password"
             name="hideMyAccPassword"
+            type="password"
             value={settings.hideMyAccPassword}
             onChange={handleChange}
             fullWidth
@@ -217,6 +219,7 @@ const SettingsPage = () => {
         <Grid item xs={12}>
           <TextField
             label="capguruKey"
+            type="password"
             name="capguruKey"
             value={settings.capguruKey}
             onChange={handleChange}
@@ -226,6 +229,7 @@ const SettingsPage = () => {
         <Grid item xs={12}>
           <TextField
             label="smsPoolKey"
+            type="password"
             name="smsPoolKey"
             value={settings.smsPoolKey}
             onChange={handleChange}

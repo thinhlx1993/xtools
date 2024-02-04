@@ -11,6 +11,7 @@ import { TWEET_MEDIA_TYPE, PAGE_URL } from '../constants'
 import utils from '../utils'
 import { composeTweetPathSelector } from '../path-selector'
 import mapper from '../mapper'
+import { getProfileData, getTop3PostSaved, softDeletePost } from '../services/backend'
 
 /**
  * @typedef {Object} FeatOptions
@@ -28,11 +29,13 @@ const getContentReUp = (chatOpenAIKey, content, tryTime = 0) => {
     logger.error('WAIT_CHAT_GPT_RESPONSE_LONG_TIME')
     return
   }
-  return chatIntegration.getCompletion(chatOpenAIKey, content).catch(async (error) => {
-    logger.error('GET_CONTENT_RE_UP_ERROR', error?.error || error)
-    await utils.delayRandom([3500, 4000, 4500, 5000, 5500])
-    return getContentReUp(chatOpenAIKey, content, tryTime + 1)
-  })
+  return chatIntegration
+    .getCompletion(chatOpenAIKey, content, 'Can you please paraphase the text bellow')
+    .catch(async (error) => {
+      logger.error('GET_CONTENT_RE_UP_ERROR', error?.error || error)
+      await utils.delayRandom([3500, 4000, 4500, 5000, 5500])
+      return getContentReUp(chatOpenAIKey, content, tryTime + 1)
+    })
 }
 
 /**
@@ -48,17 +51,24 @@ const dataMemories = {}
  *   reUpWithImage: boolean;
  *   reUpWithVideo: boolean;
  * }} openAIConfig
- * @param {{id: number; profileId: string; entry: object}} twPost
+ * @param {{
+ * post_id: 198a356d-2601-4e90-a124-cbd8cf890ee2;
+ * content: object,
+ * tw_post_id: tweet-1754103757909147779
+ * profile_crawl: MartinH69784686
+ * }} twPost
  */
 const _base = async (page, openAIConfig, twPost) => {
-  const profileId = twPost.profileId
-  // console.log(`start reup post ${profileId}`);
-  const oldestPost = JSON.parse(twPost.entry)
+  logger.info(`${JSON.stringify(twPost)}`)
+  const profileCrawl = twPost.profile_crawl
+  logger.info(`start reup post ${profileCrawl}`)
+  const oldestPost = JSON.parse(twPost.content)
   try {
     /** */
     const reMapped = mapper.mapUserTweet(oldestPost)
     if (!reMapped || reMapped.isAds || reMapped.isRePost) {
-      await repository.softDeletePostsReUp(twPost.id)
+      await softDeletePost(twPost.tw_post_id, { is_deleted: true })
+      logger.info(`Cancel reup post ${profileCrawl}`)
       return
     }
     // prepare post
@@ -145,15 +155,15 @@ const _base = async (page, openAIConfig, twPost) => {
       visible: false,
       timeout: 5000
     })
-    await repository.softDeletePostsReUp(twPost.id)
-    console.log('success')
+    await softDeletePost(twPost.tw_post_id, { is_deleted: true })
+    logger.info('success')
   } catch (error) {
     logger.error('REUP_POST_ERROR', {
       error: mapErrorConstructor(error),
-      id: twPost.id
+      tw_post_id: twPost.tw_post_id
     })
   } finally {
-    console.log(`reup post done ${profileId}`)
+    logger.info(`reup post done ${profileCrawl}`)
   }
 }
 
@@ -167,72 +177,62 @@ const _base = async (page, openAIConfig, twPost) => {
  * }} account The Account
  * @param {FeatOptions} featOptions The featOptions object
  */
-const _func = async (browser, account, featOptions) => {
-  console.log('startReUpPosts')
-  if (!featOptions.chatOpenAIPrefix) {
-    console.log('reUpPostsCancel')
+const _func = async (page, profileId, featOptions) => {
+  const profileData = await getProfileData(profileId, {})
+
+  logger.info('startReUpPosts')
+  if (!profileData.gpt_key) {
+    logger.info('reUpPostsCancel')
     return
   }
-  const page = await browser.newPage()
-  await authenticateProxy(page, account.proxy)
   const total = utils.randomArrayNumberInString(featOptions.randomTotalPostsReUp || '1,1')
-  console.log('totalPostsReUp', total)
-  const posts = await repository.getPostsReUp(account.id, total)
-  const postsLength = posts.length
-  for (let index = 0; index < postsLength; index++) {
-    await page.goto(PAGE_URL.createPost, { waitUntil: 'domcontentloaded' })
-    const post = posts[index]
-    await _base(
-      page,
-      {
-        chatOpenAIKey: account.chatOpenAIKey,
-        chatOpenAIPrefix: featOptions.chatOpenAIPrefix,
-        reUpWithImage: featOptions.reUpWithImage,
-        reUpWithVideo: featOptions.reUpWithVideo
-      },
-      post
-    )
-    if (index === postsLength - 1) {
-      continue
-    }
-    await utils.delayRandom()
-    // const randomDelayTimesReUp = utils.randomArrayNumberInString(
-    //   featOptions.randomDelayTimesReUp
-    // );
-    // await utils.delay(randomDelayTimesReUp);
-  }
-  await page.close()
-  console.log('reUpPostsSuccess')
+  logger.info('totalPostsReUp', total)
+  const posts = await getTop3PostSaved(profileData.profile_id)
+  // Assuming posts.data contains the array of posts
+  const postsLength = posts.data.length
+
+  // Pick a random index
+  const randomIndex = Math.floor(Math.random() * postsLength)
+
+  // Select a random post
+  const post = posts.data[randomIndex]
+
+  // Navigate to the page to create a post
+  await page.goto(PAGE_URL.createPost, { waitUntil: 'domcontentloaded' })
+
+  // Process the randomly selected post
+  // {
+  //   "post_id": "198a356d-2601-4e90-a124-cbd8cf890ee2",
+  //   "title": null,
+  //   "content": ""
+  //   "like": "760",
+  //   "comment": "163",
+  //   "share": "56",
+  //   "view": null,
+  //   "username": "crazyclipsonly",
+  //   "tw_post_id": "tweet-1754103757909147779",
+  //   "post_date": "Sun Feb 04 11:25:00 +0000 2024",
+  //   "profile_crawl": "MartinH69784686",
+  //   "user_crawl": "admin",
+  //   "created_at": "04-02-2024 12:31"
+  // }
+  await _base(
+    page,
+    {
+      chatOpenAIKey: profileData.gpt_key,
+      chatOpenAIPrefix: featOptions.chatOpenAIPrefix,
+      reUpWithImage: featOptions.reUpWithImage,
+      reUpWithVideo: featOptions.reUpWithVideo
+    },
+    post
+  )
+
+  // Optionally wait after processing the post, if necessary
+  await utils.delayRandom()
+  logger.info('reUpPostsSuccess')
 }
 
-/**
- *
- * @param {puppeteer.Browser} browser the Puppeteer Browser
- * @param {{
- *   id: number;
- *   proxy: string;
- *   chatOpenAIKey: string;
- * }} account The Account
- * @param {FeatOptions} featOptions The featOptions object
- */
-const init = (browser, account, featOptions) => {
-  const timesReUpPosts = featOptions.timesReUp.split(',')
-  dataMemories[account.id] = timesReUpPosts
-    .map((time) => {
-      const [hour, minute] = time.split(':')
-      console.log('hour, minute', hour, minute)
-      if (hour && minute) {
-        return CronJob.from({
-          cronTime: `0 ${minute} ${hour} * * *`,
-          onTick: _func.bind(this, browser, account, featOptions),
-          start: true,
-          timeZone: 'Asia/Ho_Chi_Minh'
-        })
-      }
-      return
-    })
-    .filter(Boolean)
-}
+const init = _func
 
 const stop = (accountId) => {
   clearTimeout(dataMemories[accountId])

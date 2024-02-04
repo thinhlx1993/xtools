@@ -7,25 +7,28 @@ import { regGraphAPIUserTws } from '../regex'
 import utils from '../utils'
 import mapper from '../mapper'
 import repository from '../../database/repository'
-
+import { getProfileData, getLastPostSaved, createAnewPost } from '../services/backend'
 const dataMemories = {}
 
 /**
  *
- * @param {string} profileId
- * @param {number} accountId
+ * @param {string} profileCrawl the profile crawl
+ * @param {object} profileData the profiles do the crawl
  * @param {{data: object}} response
  * @returns
  */
-const _filterAndCache = async (profileId, accountId, response) => {
+const _filterAndCache = async (profileCrawl, profileData, response) => {
   const posts = response.data.user.result.timeline_v2.timeline.instructions
     .find((instruction) => instruction.type === 'TimelineAddEntries')
     ?.entries?.filter((entry) => entry.content.entryType === 'TimelineTimelineItem')
   if (!posts) {
     throw new Error('FILTER_POST_ERROR')
   }
-  const lastPostCrawl = await repository.getLastPostSaved(accountId, profileId)
-  const lastEntryId = lastPostCrawl?.twPostId
+  const lastPostCrawl = await getLastPostSaved(profileCrawl)
+  let lastEntryId = null
+  if (lastPostCrawl.result_count > 0) {
+    lastEntryId = lastPostCrawl[0]?.tw_post_id
+  }
   const currentEntryIds = posts.map((post) => post.entryId)
   const newEntryIndex = currentEntryIds.indexOf(lastEntryId)
   if (lastEntryId && newEntryIndex < 1) {
@@ -39,17 +42,35 @@ const _filterAndCache = async (profileId, accountId, response) => {
         if (!reMapped || reMapped.isAds || reMapped.isRePost) {
           return
         }
+        //  entry: JSON.stringify(entry),
+        // return {
+        //   profile_id: profileData.profile_id,
+        //   username: profileCrawl,
+        //   tw_post_id: entry.entryId,
+        //   like: entry.content.itemContent.tweet_results.result.legacy.favorite_count,
+        //   comment: entry.content.itemContent.tweet_results.result.legacy.reply_count,
+        //   share: entry.content.itemContent.tweet_results.result.legacy.retweet_count,
+        //   content: JSON.stringify(entry),
+        //   post_date: entry.content.itemContent.tweet_results.result.legacy.created_at
+        // }
         return {
-          crawlBy: accountId,
-          profileId,
-          twPostId: entry.entryId,
-          entry: JSON.stringify(entry),
-          entryCreatedAt: entry.content.itemContent.tweet_results.result.legacy.created_at
+          profile_id: profileData.profile_id,
+          username: profileCrawl,
+          tw_post_id: entry.entryId,
+          like: entry.content.itemContent.tweet_results.result.legacy.favorite_count,
+          comment: entry.content.itemContent.tweet_results.result.legacy.reply_count,
+          share: entry.content.itemContent.tweet_results.result.legacy.retweet_count,
+          content: JSON.stringify(entry),
+          post_date: entry.content.itemContent.tweet_results.result.legacy.created_at
         }
       })
       .filter(Boolean)
     if (entriesSave.length) {
-      await repository.savePosts(entriesSave)
+      logger.info(`entriesSave ${JSON.stringify(entriesSave)}`)
+      // await repository.savePosts(entriesSave)
+      for (const post of entriesSave) {
+        await createAnewPost(post)
+      }
     }
   } catch (error) {
     logger.error('INSERT_NEW_POSTS_ERROR', error)
@@ -59,26 +80,26 @@ const _filterAndCache = async (profileId, accountId, response) => {
 
 /**
  * @param {puppeteer.Page} page the Puppeteer Page
- * @param {number} accountId
- * @param {string} profileId
+ * @param {object} profileData the account action
+ * @param {string} profileCrawl the account destination
  */
-const _base = async (page, accountId, profileId) => {
+const _base = async (page, profileData, profileCrawl) => {
   try {
-    await page.goto(PAGE_URL.profile(profileId), {
+    await page.goto(PAGE_URL.profile(profileCrawl), {
       waitUntil: 'domcontentloaded'
     })
     const postResponse = await page.waitForResponse(
       (response) => testRegHttpEvent(regGraphAPIUserTws, response) && response.status() === 200
     )
-    await _filterAndCache(profileId, accountId, await postResponse.json())
+    await _filterAndCache(profileCrawl, profileData, await postResponse.json())
+    // await _filterAndCache(profileId, accountId, await postResponse.json())
   } catch (error) {
     logger.error('CRAWL_POST_ERROR', error)
-  } finally {
   }
 }
 
 /**
- * @param {puppeteer.Browser} browser the Puppeteer Browser
+ * @param {puppeteer.Page} page the Puppeteer Page
  * @param {{
  *   id: number;
  *   proxy: string;
@@ -88,10 +109,8 @@ const _base = async (page, accountId, profileId) => {
  *   intervalTimeCheckNewPost: number;
  * }} featOptions The featOptions object
  */
-const _func = async (browser, account, featOptions) => {
-  // console.log("startCrawlPosts");
-  const page = await browser.newPage()
-  await authenticateProxy(page, account.proxy)
+const _func = async (page, profileId, featOptions) => {
+  const profileData = await getProfileData(profileId, {})
   let profileIds = featOptions.profiles
     .split('\n')
     .map((profileId) => profileId.trim())
@@ -100,17 +119,9 @@ const _func = async (browser, account, featOptions) => {
     profileIds = utils.shuffle(profileIds)
   }
   for (let index = 0; index < profileIds.length; index++) {
-    const profileId = profileIds[index]
-    await _base(page, account.id, profileId)
+    const profileCrawl = profileIds[index]
+    await _base(page, profileData, profileCrawl)
     await utils.delayRandom([10000, 11000, 12000, 13000])
-  }
-  await page.close()
-  // console.log("crawlPostsSuccess");
-  if (featOptions.intervalTimeCheckNewPost > 0) {
-    dataMemories[account.id] = setTimeout(
-      () => _func(browser, account, featOptions),
-      featOptions.intervalTimeCheckNewPost * 60000
-    )
   }
 }
 

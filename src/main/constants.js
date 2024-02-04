@@ -112,5 +112,6 @@ export const TASK_NAME_CONFIG = {
   CheckProfile: 'Check follow',
   Newsfeed: 'newsFeed',
   ClickAds: 'clickAds',
-  fairInteract: 'fairInteract'
+  fairInteract: 'fairInteract',
+  reUpPost: 'reUpPost'
 }

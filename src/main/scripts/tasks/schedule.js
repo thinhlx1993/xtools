@@ -12,12 +12,15 @@ import async from 'async'
 import newsFeedStep from '../steps/newsfeed'
 import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
-import { killChrome, checkPort, handleNewPage, randomDelay } from './utils'
+import crawlPostStep from '../steps/crawl-post'
+import reUpStep from '../steps/reup-post'
+
+import { killChrome, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
 import { cpuMonitoring, killPID } from './utils'
 
 let isStarted = false
-const concurrencyLimit = 15
+const concurrencyLimit = 10
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
@@ -126,10 +129,10 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       case TASK_NAME_CONFIG.fairInteract:
         await fairInteractStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)
         break
-      // auto comment: future feature
-      // case TASK_NAME_CONFIG.fairInteract:
-      // crawlPostStep.init(browser, account, reUpPostOptions)
-      // reUpStep.init(browser, account, reUpPostOptions)
+      case TASK_NAME_CONFIG.reUpPost:
+        await crawlPostStep.init(page, profileIdGiver, tasksJson)
+        await reUpStep.init(page, profileIdGiver, tasksJson)
+        break
       default:
         return
     }

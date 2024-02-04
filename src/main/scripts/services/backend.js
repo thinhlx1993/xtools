@@ -8,6 +8,30 @@ export const getProfileData = async (profileId, tz = {}) => {
   return profileData
 }
 
+export const getLastPostSaved = async (profileCrawl) => {
+  const postData = get(
+    `/posts/?page=1&per_page=1&sort_by=created_at&search=${profileCrawl}&sort_order=desc`
+  )
+  return postData
+}
+
+export const getTop3PostSaved = async (profileId) => {
+  const postData = get(
+    `/posts/?page=1&per_page=3&sort_by=created_at&profile_id=${profileId}&sort_order=desc`
+  )
+  return postData
+}
+
+export const softDeletePost = async (twPostId, updateData) => {
+  const response = put(`/posts/${twPostId}`, updateData)
+  return response
+}
+
+export const createAnewPost = async (postData) => {
+  const response = post(`/posts/`, postData)
+  return response
+}
+
 export const updateProfileData = async (profileId, updateData) => {
   const profileData = put(`/profiles/${profileId}`, updateData)
   return profileData
