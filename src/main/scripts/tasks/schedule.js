@@ -133,6 +133,12 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       default:
         return
     }
+    await createEventLogs({
+      event_type: taskName,
+      profile_id: profileIdReceiver,
+      profile_id_interact: profileIdGiver,
+      issue: 'OK'
+    })
     await getCookies(profileIdGiver, page)
   } catch (error) {
     await createEventLogs({

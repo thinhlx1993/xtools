@@ -99,23 +99,6 @@ export default async (page, giverData, featOptions, receiverData) => {
     }
     await scrollAction.scrollToEntry(page, elementHandle)
     await _getDelayTimeAction(featOptions)
-    if (entryItem.isRePost || entryItem.replyCount < 1) {
-      continue
-    }
-    if (entryItem.isAds) {
-      await scrollAction.scrollToEntryMedia(page, elementHandle)
-      await _getDelayTimeAction(featOptions)
-      await interactAction.interactAdsEntry(page, elementHandle, entryItem)
-      await page.mouse.reset()
-      await _getDelayTimeAction(featOptions)
-      continue
-    }
-    const entryUrl = await elementHandle.$(
-      commonPathSelector.entryUrl(entryItem.authorProfileId, entryItem.postId)
-    )
-    if (!entryUrl) {
-      continue
-    }
 
     if (!entryItem.isAds) {
       const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
@@ -152,6 +135,25 @@ export default async (page, giverData, featOptions, receiverData) => {
           await interactAction.favoriteEntry(page, elementHandle)
         }
       }
+    }
+
+    if (entryItem.isRePost || entryItem.replyCount < 1) {
+      continue
+    }
+    if (entryItem.isAds) {
+      await scrollAction.scrollToEntryMedia(page, elementHandle)
+      await _getDelayTimeAction(featOptions)
+      await interactAction.interactAdsEntry(page, elementHandle, entryItem)
+      await page.mouse.reset()
+      await _getDelayTimeAction(featOptions)
+      continue
+    }
+    const entryUrl = await elementHandle.$(
+      commonPathSelector.entryUrl(entryItem.authorProfileId, entryItem.postId)
+    )
+
+    if (!entryUrl) {
+      continue
     }
 
     await _getDelayTimeAction(featOptions)
