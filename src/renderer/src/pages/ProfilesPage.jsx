@@ -21,7 +21,10 @@ import {
   MenuItem,
   TablePagination,
   Tooltip,
-  IconButton
+  IconButton,
+  FormControl,
+  InputLabel,
+  FormControlLabel
 } from '@mui/material'
 import Papa from 'papaparse'
 import VerifiedIcon from '@mui/icons-material/Verified'
@@ -61,7 +64,6 @@ const ProfilesPage = () => {
   const [page, setPage] = useState(1)
   const [resultCount, setresultCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedGroup, setSelectedGroup] = useState('All')
   const [groups, setGroups] = useState([])
   const [users, setUsers] = useState([])
   const [rowsPerPage, setRowsPerPage] = useState(25) // Rows per page
@@ -69,9 +71,14 @@ const ProfilesPage = () => {
   const [confirmAction, setConfirmAction] = useState(null)
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [targetGroup, setTargetGroup] = useState('')
+  const [selectedGroup, setSelectedGroup] = useState('All')
   const [targetUser, setTargetUser] = useState('')
   const [filterByType, setFilterByType] = useState('all')
   const [newProfileDefaultType, setNewProfileDefaultType] = useState(false)
+  const [data, setData] = useState([])
+  const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     fetchProfiles()
@@ -79,16 +86,20 @@ const ProfilesPage = () => {
     fetchUsers()
   }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
 
-  const [data, setData] = useState([])
-
   const parseCsv = (file) => {
-    Papa.parse(file, {
-      complete: (result) => {
-        console.log('Parsed CSV:', result.data)
-        setData(result.data)
-      },
-      header: true, // Set to true if your CSV has headers
-      skipEmptyLines: true
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        complete: (result) => {
+          console.log('Parsed CSV:', result.data)
+          resolve(result.data) // Resolve the promise with the parsed data
+        },
+        error: (error) => {
+          console.error('Error parsing CSV:', error)
+          reject(error) // Reject the promise if there's an error
+        },
+        header: true, // Set to true if your CSV has headers
+        skipEmptyLines: true
+      })
     })
   }
 
@@ -120,7 +131,7 @@ const ProfilesPage = () => {
   const handleCheckProfile = async () => {
     let profiles = []
     if (fileInput) {
-      await parseCsv(fileInput)
+      const data = await parseCsv(fileInput)
       profiles = data.map((item) => ({
         username: item?.username,
         password: item?.password,
@@ -144,10 +155,11 @@ const ProfilesPage = () => {
   }
 
   const handleCreateProfile = async () => {
+    setIsAdding(true)
     // If a file is uploaded, use its content; otherwise, use text area input
     let profiles = []
     if (fileInput) {
-      await parseCsv(fileInput)
+      const data = await parseCsv(fileInput)
       profiles = data.map((item) => ({
         username: item?.username,
         password: item?.password,
@@ -204,6 +216,7 @@ const ProfilesPage = () => {
     //
     // Refresh the profiles list and reset input fields
     fetchProfiles()
+    setIsAdding(false)
     setNewProfile('')
     setFilterByType('all')
     setFileInput(null)
@@ -490,6 +503,127 @@ const ProfilesPage = () => {
     setMoveDialogOpen(false) // Close the move dialog
   }
 
+  const BatchUpdateDialog = ({ open, onClose, onUpdate }) => {
+    const [updateType, setUpdateType] = useState('proxy') // 'proxies' or 'cookies'
+    const [updateValue, setUpdateValue] = useState('')
+    const [setAsMainAccount, setSetAsMainAccount] = useState(false) // State for the checkbox
+
+    const handleUpdate = () => {
+      onUpdate(updateType, updateValue, setAsMainAccount)
+      // Reset dialog state
+      setUpdateType('proxy')
+      setUpdateValue('')
+      setSetAsMainAccount(false) // Reset the checkbox state
+      onClose() // Close the dialog
+    }
+
+    return (
+      <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+        <DialogTitle>Batch Update</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="update-type-select-label">Update Type</InputLabel>
+            <Select
+              labelId="update-type-select-label"
+              value={updateType}
+              onChange={(e) => setUpdateType(e.target.value)}
+            >
+              <MenuItem value="proxy">Proxies</MenuItem>
+              <MenuItem value="cookies">Cookies</MenuItem>
+              <MenuItem value="gpt_key">GPT Key</MenuItem>
+              <MenuItem value="main_profile">Set Main Account</MenuItem>
+            </Select>
+          </FormControl>
+          {updateType !== 'main_profile' ? (
+            <TextField
+              autoFocus
+              margin="dense"
+              label={`New ${updateType} Value`}
+              type="text"
+              fullWidth
+              variant="outlined"
+              multiline
+              rows={updateType === 'cookies' ? 10 : 10}
+              value={updateValue}
+              onChange={(e) => setUpdateValue(e.target.value)}
+            />
+          ) : (
+            <div style={{ marginTop: 20 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={setAsMainAccount}
+                    onChange={(e) => setSetAsMainAccount(e.target.checked)}
+                    name="setAsMainAccount"
+                  />
+                }
+                label="Set as Main Account. Don't allow comment, like, click Ads"
+              />
+            </div>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleUpdate} color="primary" disabled={isUpdating}>
+            Update
+          </Button>
+        </DialogActions>
+      </Dialog>
+    )
+  }
+
+  // Function to open the batch update dialog
+  const handleBatchUpdateClick = () => {
+    setBatchUpdateDialogOpen(true)
+  }
+
+  const handleBatchUpdate = async (updateType, value, setAsMainAccount) => {
+    setIsUpdating(true)
+    // Split the value by new lines to get an array of values
+    const values = value ? value.split('\n') : []
+
+    const updatePromises = selectedRows.map((profileId, index) => {
+      let updatePayload = {}
+      if (updateType === 'main_profile') {
+        updatePayload[updateType] = setAsMainAccount
+      } else {
+        const individualValue = index < values.length ? values[index] : null
+        if (individualValue) {
+          updatePayload[updateType] = individualValue
+        }
+      }
+
+      // Construct the fetch request for each profile
+      return fetch(`${AppConfig.BASE_URL}/profiles/${profileId}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatePayload)
+      })
+    })
+
+    try {
+      // Wait for all the update requests to complete
+      await Promise.all(updatePromises)
+
+      openSnackbar('Profiles updated successfully', 'success')
+
+      // Refresh the profiles list and clear selected rows after updates
+      setIsUpdating(false)
+      fetchProfiles()
+      setSelectedRows([])
+      setBatchUpdateDialogOpen(false) // Close the update dialog
+    } catch (error) {
+      openSnackbar('Error updating profiles', 'error')
+      console.error('Error updating profiles:', error)
+    }
+  }
+
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
       <Grid container alignItems="center" style={{ marginTop: '20px' }}>
@@ -532,16 +666,16 @@ const ProfilesPage = () => {
             Import
           </Button>
         </Grid>
-        {/* <Grid item style={{ marginLeft: '20px' }}>
+        <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
             color="primary"
             disabled={selectedRows.length === 0}
-            onClick={() => setMoveDialogOpen(true)}
+            onClick={() => handleBatchUpdateClick(true)}
           >
-            Share
+            Batch Update
           </Button>
-        </Grid> */}
+        </Grid>
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
@@ -730,7 +864,7 @@ const ProfilesPage = () => {
             Hãy chú ý nhập đúng định dạng
           </Typography>
           <Typography variant="subtitle1" color="textSecondary">
-            Các trường bắt buộc phải có username|password|2fa|proxy|gpt_key
+            Các trường bắt buộc phải có username|password|fa|proxy|gpt_key
           </Typography>
 
           <TextField
@@ -746,7 +880,10 @@ const ProfilesPage = () => {
             onChange={(e) => setNewProfile(e.target.value)}
           />
           <Typography variant="body1" style={{ margin: '20px 0 10px' }}>
-            Or upload a file:
+            Or upload a CSV file:
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary">
+            Chú ý: liên hệ admin để lấy định dạng file
           </Typography>
           <Button variant="outlined" component="label" fullWidth style={{ textTransform: 'none' }}>
             Upload File
@@ -762,13 +899,20 @@ const ProfilesPage = () => {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} color="info">
+          <Button
+            onClick={() => {
+              setNewProfile('')
+              setDialogOpen(false)
+              setFileInput(null)
+            }}
+            color="info"
+          >
             Cancel
           </Button>
           <Button onClick={handleCheckProfile} color="info">
             Check
           </Button>
-          <Button disabled={!data && !newProfile} onClick={handleCreateProfile} color="primary">
+          <Button disabled={isAdding} onClick={handleCreateProfile} color="primary">
             Add
           </Button>
         </DialogActions>
@@ -897,6 +1041,11 @@ const ProfilesPage = () => {
         }}
         groups={groups} // Pass the groups array
         users={users}
+      />
+      <BatchUpdateDialog
+        open={batchUpdateDialogOpen}
+        onClose={() => setBatchUpdateDialogOpen(false)}
+        onUpdate={handleBatchUpdate}
       />
     </Grid>
   )

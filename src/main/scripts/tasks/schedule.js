@@ -29,7 +29,11 @@ let taskQueue = async.queue(async (task) => {
 const fetchAndProcessTask = async () => {
   while (true) {
     try {
-      if (taskQueue.length() < 10) {
+      // if we dont have any task in queue, kill all chrome
+
+      await randomDelay()
+
+      if (taskQueue.length() < concurrencyLimit) {
         const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
           // Add tasks to queue
@@ -39,7 +43,9 @@ const fetchAndProcessTask = async () => {
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 5000))
-      // await cpuMonitoring()
+      if (taskQueue.length() === 0) {
+        await cpuMonitoring()
+      }
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before retrying in case of error
@@ -99,12 +105,12 @@ const processTaskQueue = async (queueData) => {
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
     switch (taskName) {
-      // case TASK_NAME_CONFIG.Login:
-      //   await startSignIn(profileIdGiver, page)
-      //   break
-      // case TASK_NAME_CONFIG.GetCookie:
-      //   await getCookies(profileIdGiver, page)
-      //   break
+      case TASK_NAME_CONFIG.Login:
+        await startSignIn(profileIdGiver, page)
+        break
+      case TASK_NAME_CONFIG.GetCookie:
+        await getCookies(profileIdGiver, page)
+        break
       case TASK_NAME_CONFIG.Captcha:
         await resolveCaptcha(profileIdGiver, page)
         break
@@ -120,17 +126,14 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       case TASK_NAME_CONFIG.fairInteract:
         await fairInteractStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)
         break
+      // auto comment: future feature
+      // case TASK_NAME_CONFIG.fairInteract:
+      // crawlPostStep.init(browser, account, reUpPostOptions)
+      // reUpStep.init(browser, account, reUpPostOptions)
       default:
         return
     }
     await getCookies(profileIdGiver, page)
-    // logger.info(`Create event logs: ${taskName} ${profileIdGiver}`)
-    // await createEventLogs({
-    //   event_type: taskName,
-    //   profile_id: profileIdReceiver,
-    //   profile_id_interact: profileIdGiver,
-    //   issue: 'OK'
-    // })
   } catch (error) {
     await createEventLogs({
       event_type: taskName,

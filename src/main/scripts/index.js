@@ -290,6 +290,7 @@ const init = async (options, callbackFuncUpdateStatus, accountId) => {
       if (buffViewsOptions?.enable) {
         buffViewsStep.init(browser, account, buffViewsOptions)
       }
+      // auto post
       if (reUpPostOptions?.enable) {
         crawlPostStep.init(browser, account, reUpPostOptions)
         reUpStep.init(browser, account, reUpPostOptions)

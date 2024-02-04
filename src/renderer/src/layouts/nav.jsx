@@ -191,6 +191,11 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Users" />
             </ListItem>
           )}
+          {userRole === 'admin' && (
+            <ListItem button component={Link} to="/admin/hma">
+              <ListItemText primary="HMA Users" />
+            </ListItem>
+          )}
           {/* <ListItem button component={Link} to="/client">
             <ListItemText primary="XGPT Client" />
           </ListItem> */}
