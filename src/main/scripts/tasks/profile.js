@@ -413,7 +413,7 @@ export const checkProfiles = async (profileId, page) => {
   await randomDelay()
   await page.waitForSelector('div[aria-label="Home timeline"]', {
     visible: true,
-    timeout: 5000
+    timeout: 15000
   })
   await page.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]')
   await page.click('a[data-testid="AppTabBar_Profile_Link"]')
@@ -421,7 +421,7 @@ export const checkProfiles = async (profileId, page) => {
   await randomDelay()
   await page.waitForSelector('a[href*="/following"]', {
     visible: true,
-    timeout: 5000
+    timeout: 15000
   })
 
   let followers = profileData.followers ? profileData.followers : ''

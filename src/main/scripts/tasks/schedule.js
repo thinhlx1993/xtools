@@ -20,7 +20,7 @@ import { mapErrorConstructor } from '../../helpers'
 import { cpuMonitoring, killPID } from './utils'
 
 let isStarted = false
-const concurrencyLimit = 10
+const concurrencyLimit = 15
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
