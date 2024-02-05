@@ -310,7 +310,7 @@ export const startSignIn = async (profileId, page) => {
     try {
       await page.waitForSelector('div[aria-label="Home timeline"]', {
         visible: true,
-        timeout: 2000
+        timeout: 10000
       })
       await cacheCookies(page, profileId)
       await updateProfileData(profileId, { status: 'ok' })

@@ -96,10 +96,12 @@ const processTaskQueue = async (queueData) => {
         const taskName = task.tasks.tasks_name
         await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
         const tasksJson = task.tasks.tasks_json
-        const configProfiles = task?.config?.profiles
-        if (configProfiles) {
-          tasksJson.profiles = configProfiles
-        }
+        try {
+          const configProfiles = task?.config?.profiles
+          if (configProfiles) {
+            tasksJson.profiles = configProfiles
+          }
+        } catch (error) {}
 
         const startDate = new Date()
         logger.info(`${startDate} ${profileIdGiver} Worker start ${taskName}`)

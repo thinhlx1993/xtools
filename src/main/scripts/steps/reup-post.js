@@ -59,7 +59,6 @@ const dataMemories = {}
  * }} twPost
  */
 const _base = async (page, openAIConfig, twPost) => {
-  // logger.info(`${JSON.stringify(twPost)}`)
   const profileCrawl = twPost.profile_crawl
   logger.info(`start reup post ${profileCrawl}`)
   const oldestPost = JSON.parse(twPost.content)
@@ -188,14 +187,21 @@ const _func = async (page, profileId, featOptions) => {
   // const total = utils.randomArrayNumberInString(featOptions.randomTotalPostsReUp || '1,1')
   // logger.info('totalPostsReUp', total)
   const posts = await getTop3PostSaved(profileData.profile_id)
+
   // Assuming posts.data contains the array of posts
   const postsLength = posts.data.length
+  if (postsLength === 0) {
+    logger.error(`Reup failed, not found any posts`)
+    return
+  }
 
   // Pick a random index
   const randomIndex = Math.floor(Math.random() * postsLength)
 
   // Select a random post
   const post = posts.data[randomIndex]
+
+  logger.info(`Process ${JSON.stringify(posts)} posts`)
 
   // Navigate to the page to create a post
   await page.goto(PAGE_URL.createPost, { waitUntil: 'domcontentloaded' })
