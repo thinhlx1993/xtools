@@ -92,7 +92,7 @@ export default async (page, giverData, receiverData, featOptions, postEntry) => 
       await scrollAction.scrollToEntry(page, elementHandle)
       await _getDelayTimeAction(featOptions)
 
-      if (subEntryItem.isAds && Math.random() < 0.33) {
+      if (subEntryItem.isAds) {
         await scrollAction.scrollToEntryMedia(page, elementHandle)
         await _getDelayTimeAction(featOptions)
         await createEventLogs({

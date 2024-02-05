@@ -49,9 +49,13 @@ const MissionPage = () => {
     userId: '',
     repeatSchedule: []
   }
+  const [configProfiles, setConfigProfiles] = useState('')
 
   const [newMission, setNewMission] = useState(defaultForms)
   const missionDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  const reUpPostSelected = newMission.missionTasks.some(
+    (task) => tasks.find((t) => t.tasks_id === task).tasks_name === 'reUpPost'
+  )
 
   useEffect(() => {
     fetchTasks()
@@ -262,9 +266,6 @@ const MissionPage = () => {
   }
 
   const handleCreateMission = async () => {
-    // setMissions([...missions, { ...newMission, id: missions.length + 1 }])
-    // Reset form
-
     const url = `${AppConfig.BASE_URL}/missions/`
     const headers = {
       accept: 'application/json',
@@ -280,6 +281,7 @@ const MissionPage = () => {
           mission_name: newMission.missionName,
           profile_ids: newMission.profileIds,
           tasks: newMission.missionTasks,
+          config: { profiles: configProfiles.split('\n') },
           user_id: newMission.userId,
           mission_schedule: newMission.repeatSchedule,
           start_date: newMission.startDate
@@ -428,7 +430,7 @@ const MissionPage = () => {
       >
         <DialogTitle id="form-dialog-title">Add New Mission</DialogTitle>
         <DialogContent>
-          <DialogContentText>Fill in the details for the new mission.</DialogContentText>
+          {/* <DialogContentText>Fill in the details for the new mission.</DialogContentText> */}
           {/* Place form elements here */}
           <Grid item xs={6} sm={3}>
             <TextField
@@ -482,6 +484,21 @@ const MissionPage = () => {
                 ))}
               </Select>
             </FormControl>
+            {reUpPostSelected && (
+              <TextField
+                autoFocus
+                margin="dense"
+                id="reUpPostText"
+                label="ReUp Username"
+                type="text"
+                fullWidth
+                multiline
+                rows={4}
+                variant="outlined"
+                value={configProfiles}
+                onChange={(e) => setConfigProfiles(e.target.value)}
+              />
+            )}
             <FormControl fullWidth margin="normal">
               <InputLabel>Profiles, default all items are selected</InputLabel>
               <Select

@@ -11,7 +11,7 @@ import scrollAction from '../../actions/scroll'
 import navAction from '../../actions/nav'
 import interactAction from '../../actions/interact'
 import postDetail from './post-detail'
-import { getEventsLogs, createEventLogs } from '../../services/backend'
+import { getEventsLogs, createEventLogs, getGiverEventsLogs } from '../../services/backend'
 /**
  *
  * @param {InteractAdsOptions} featOptions
@@ -100,15 +100,17 @@ export default async (page, giverData, featOptions, receiverData) => {
     await scrollAction.scrollToEntry(page, elementHandle)
     await _getDelayTimeAction(featOptions)
 
-    if (!entryItem.isAds) {
+    if (!entryItem.isAds && Math.random() < 0.33) {
       const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
       const userEventLogs = await getEventsLogs(receiverData.username, actionType)
+      const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
       // maximum 5 comment likes per user per day
       const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
-      if (userEventLogs.result_count < maxCommentLike) {
+      if (userEventLogs.result_count < maxCommentLike && userGiverLogs < maxCommentLike) {
         logger.info(
           `${receiverData.username} today have ${userEventLogs.result_count} ${actionType}`
         )
+        logger.info(`${giverData.username} today give ${userGiverLogs.result_count} ${actionType}`)
         await createEventLogs({
           event_type: actionType,
           profile_id: receiverData.profile_id,
@@ -161,7 +163,12 @@ export default async (page, giverData, featOptions, receiverData) => {
     await utils.delayRandom()
 
     const userEventLogs = await getEventsLogs(receiverData.username, 'clickAds')
-    if (userEventLogs.result_count < 350) {
+    const userGiverLogs = await getGiverEventsLogs(giverData.username, 'clickAds')
+    if (
+      userEventLogs.result_count < 350 &&
+      userGiverLogs.result_count < 350 &&
+      Math.random() < 0.33
+    ) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,

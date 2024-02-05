@@ -158,7 +158,6 @@ const SettingsPage = () => {
             onChange={handleChange}
           />
         </Grid>
-
         <Grid item xs={12}>
           <FormControl fullWidth>
             <InputLabel>Browser Version</InputLabel>

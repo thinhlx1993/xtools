@@ -2,7 +2,7 @@ import fs from 'fs'
 import axios from 'axios'
 import { getProfileData, updateProfileData, updatePostData } from '../services/backend'
 import { defaultPuppeteerOptions, getRandomPosition } from '../../constants'
-import puppeteer from 'puppeteer-extra'
+import puppeteer from 'puppeteer-core'
 import { getAppPath } from '../../utils'
 import { splitProxy, mapErrorConstructor } from '../../helpers'
 import hideMyAcc from '../../integration/hidemyacc'
@@ -30,7 +30,7 @@ export const openProfileBrowser = async (profile) => {
     let profileData = await getProfileData(profile, {})
     const debuggerPort = profileData.debugger_port
     if (debuggerPort) {
-      args.push(`--remote-debugging-port=0`)
+      args.push(`--remote-debugging-port=${debuggerPort}`)
     }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
@@ -463,63 +463,64 @@ export const checkProfiles = async (profileId, page) => {
 
   await updateProfileData(profileId, { profile_data: { followers, following, verify } })
 
-  const isSelectorPresent = (await page.$('article[data-testid="tweet"]')) !== null
-  if (isSelectorPresent) {
-    await page.waitForSelector('article[data-testid="tweet"]')
-    const articles = await page.$$('article[data-testid="tweet"]')
+  // Disable get artciles
+  // const isSelectorPresent = (await page.$('article[data-testid="tweet"]')) !== null
+  // if (isSelectorPresent) {
+  //   await page.waitForSelector('article[data-testid="tweet"]')
+  //   const articles = await page.$$('article[data-testid="tweet"]')
 
-    for (const article of articles) {
-      try {
-        let content = ''
-        let tw_post_id = ''
-        let view = ''
-        await scrollIntoView(article)
-        try {
-          const element = await article.waitForSelector('div')
+  //   for (const article of articles) {
+  //     try {
+  //       let content = ''
+  //       let tw_post_id = ''
+  //       let view = ''
+  //       await scrollIntoView(article)
+  //       try {
+  //         const element = await article.waitForSelector('div')
 
-          if (element) {
-            content = await element.evaluate((node) => node.textContent)
-          }
-        } catch (error) {
-          logger.error(`Error processing article content: ${error}`)
-        }
-        try {
-          const elementPost = await article.waitForSelector(
-            'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(2) > div > div:nth-child(3) > a'
-          )
-          if (elementPost) {
-            tw_post_id = await elementPost.evaluate((link) => link.href, elementPost)
-          }
-        } catch (error) {
-          logger.error(`Error processing tw_post_id: ${error}`)
-        }
-        try {
-          const viewElement = await article.waitForSelector(
-            'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div > div'
-          )
-          if (viewElement) {
-            view = await viewElement.evaluate(
-              (link) => link.getAttribute('aria-label'),
-              viewElement
-            )
-          }
-        } catch (error) {
-          logger.error(`Error processing view: ${error}`)
-        }
-        // Handling postData
-        const postData = {
-          content: content,
-          tw_post_id: tw_post_id,
-          profile_id: profileId,
-          view: view
-        }
-        logger.info(`Post data: ${JSON.stringify(postData)}`)
-        await updatePostData(profileId, postData)
-      } catch (error) {
-        logger.error(`Error processing article: ${error}`)
-      }
-    }
-  }
+  //         if (element) {
+  //           content = await element.evaluate((node) => node.textContent)
+  //         }
+  //       } catch (error) {
+  //         logger.error(`Error processing article content: ${error}`)
+  //       }
+  //       try {
+  //         const elementPost = await article.waitForSelector(
+  //           'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(2) > div > div:nth-child(3) > a'
+  //         )
+  //         if (elementPost) {
+  //           tw_post_id = await elementPost.evaluate((link) => link.href, elementPost)
+  //         }
+  //       } catch (error) {
+  //         logger.error(`Error processing tw_post_id: ${error}`)
+  //       }
+  //       try {
+  //         const viewElement = await article.waitForSelector(
+  //           'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div > div'
+  //         )
+  //         if (viewElement) {
+  //           view = await viewElement.evaluate(
+  //             (link) => link.getAttribute('aria-label'),
+  //             viewElement
+  //           )
+  //         }
+  //       } catch (error) {
+  //         logger.error(`Error processing view: ${error}`)
+  //       }
+  //       // Handling postData
+  //       const postData = {
+  //         content: content,
+  //         tw_post_id: tw_post_id,
+  //         profile_id: profileId,
+  //         view: view
+  //       }
+  //       logger.info(`Post data: ${JSON.stringify(postData)}`)
+  //       await updatePostData(profileId, postData)
+  //     } catch (error) {
+  //       logger.error(`Error processing article: ${error}`)
+  //     }
+  //   }
+  // }
 
   // check momentizable
   await page.goto('https://twitter.com/settings/monetization')

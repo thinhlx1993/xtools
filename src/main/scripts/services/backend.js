@@ -57,6 +57,11 @@ export const getEventsLogs = async (reciverUsername, eventType) => {
   return response
 }
 
+export const getGiverEventsLogs = async (giverUsername, eventType) => {
+  const response = get(`/events/?giver=${giverUsername}&search=${eventType}`)
+  return response
+}
+
 const axiosInstance = axios.create({
   baseURL: BACKEND_BASE_URL // Replace with your API's base URL
 })

@@ -280,40 +280,7 @@ ipcMain.on('fetchMachineId', async (event) => {
 
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  const [page, browser] = await openProfileBrowser(profile)
-  // const tasksJson = {
-  //   type: 'reUpPost',
-  //   enable: true,
-  //   task_id: '25d4520a-d236-411c-b8da-d560c8d94c3d',
-  //   profiles: 'katyperry\nNBCSports\ncrazyclipsonly',
-  //   profileId: '',
-  //   timesReUp: '',
-  //   stopAction: null,
-  //   totalPosts: null,
-  //   totalViews: null,
-  //   replayAction: null,
-  //   reUpWithImage: true,
-  //   reUpWithVideo: true,
-  //   allowLikeAction: null,
-  //   entryDetailUrls: null,
-  //   chatOpenAIPrefix: 'Scientific Endeavors',
-  //   mixRandomProfiles: true,
-  //   stopActionTimeout: null,
-  //   allowCommentAction: null,
-  //   fairInteractOptions: null,
-  //   replayActionTimeout: null,
-  //   randomDelayTimesReUp: '',
-  //   randomTotalPostsReUp: '1,5',
-  //   randomDelayTimeActions: null,
-  //   randomDelayTimeProfiles: null,
-  //   intervalTimeCheckNewPost: null,
-  //   mixRandomEntryDetailUrls: null,
-  //   randomTotalFollowProfiles: '',
-  //   stopActionRandomTotalPosts: null,
-  //   randomTotalPostsForInteractAds: ''
-  // }
-  // await crawlPostStep.init(page, profile, tasksJson)
-  // await reUpStep.init(page, profile, tasksJson)
+  await openProfileBrowser(profile)
 })
 
 // save access token

@@ -185,15 +185,22 @@ export const cpuMonitoring = async () => {
  */
 export const killPID = async (pid) => {
   if (!pid) {
-    console.error('No PID provided')
+    logger.error('No PID provided')
     return
   }
 
   // Unix-like systems can use process.kill
   try {
-    process.kill(pid, 'SIGKILL') // Attempt a graceful shutdown
-    console.log(`Process ${pid} killed successfully.`)
+    exec(`taskkill /pid ${pid} /f /t`, (error, stdout, stderr) => {
+      if (error) {
+        logger.error(`exec error: ${error}`)
+        return
+      }
+      // console.log(`stdout: ${stdout}`)
+      // console.error(`stderr: ${stderr}`)
+      logger.info(`Process ${pid} killed successfully.`)
+    })
   } catch (error) {
-    console.error(`Error killing process ${pid}: ${error}`)
+    logger.error(`Error killing process ${pid}: ${error}`)
   }
 }

@@ -14,7 +14,8 @@ import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
 import crawlPostStep from '../steps/crawl-post'
 import reUpStep from '../steps/reup-post'
-
+import { exec } from 'child_process'
+import puppeteer from 'puppeteer-core'
 import { killChrome, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
 import { cpuMonitoring, killPID } from './utils'
@@ -66,28 +67,42 @@ export const fetchScheduledTasks = async () => {
 }
 
 const processTaskQueue = async (queueData) => {
+  let page = null
+  let browser = null
   const profileIdGiver = queueData?.profile_id
   let processPID = null
+  // let browserWSEndpoint = null
+
   try {
-    await randomDelay()
-    const tasks = queueData.tasks
+    const mission_tasks = queueData.tasks
     let profileIdReceiver = queueData.profile_id_receiver
 
     if (!profileIdReceiver) {
       profileIdReceiver = profileIdGiver
     }
 
-    let [page, browser] = await openProfileBrowser(profileIdGiver)
+    ;[page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
+      // browserWSEndpoint = browser.wsEndpoint()
+
+      browser.on('disconnected', async () => {
+        console.log('BROWSER disconnected')
+      })
+
       page.setDefaultNavigationTimeout(0)
       processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
-      for (let task of tasks) {
+      for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
         await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
         const tasksJson = task.tasks.tasks_json
+        const configProfiles = task?.config?.profiles
+        if (configProfiles) {
+          tasksJson.profiles = configProfiles
+        }
+
         const startDate = new Date()
         logger.info(`${startDate} ${profileIdGiver} Worker start ${taskName}`)
         await processTask(profileIdGiver, profileIdReceiver, taskName, tasksJson, page)

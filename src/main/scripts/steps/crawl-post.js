@@ -66,7 +66,7 @@ const _filterAndCache = async (profileCrawl, profileData, response) => {
       })
       .filter(Boolean)
     if (entriesSave.length) {
-      logger.info(`entriesSave ${JSON.stringify(entriesSave)}`)
+      // logger.info(`entriesSave ${JSON.stringify(entriesSave)}`)
       // await repository.savePosts(entriesSave)
       for (const post of entriesSave) {
         await createAnewPost(post)
@@ -112,12 +112,9 @@ const _base = async (page, profileData, profileCrawl) => {
 const _func = async (page, profileId, featOptions) => {
   const profileData = await getProfileData(profileId, {})
   let profileIds = featOptions.profiles
-    .split('\n')
-    .map((profileId) => profileId.trim())
-    .filter(Boolean)
-  if (featOptions.mixRandomProfiles) {
-    profileIds = utils.shuffle(profileIds)
-  }
+  logger.info(`Found profiles: ${profileIds}`)
+  profileIds = utils.shuffle(profileIds).slice(0, 3)
+
   for (let index = 0; index < profileIds.length; index++) {
     const profileCrawl = profileIds[index]
     await _base(page, profileData, profileCrawl)

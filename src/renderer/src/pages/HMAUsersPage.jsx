@@ -213,8 +213,9 @@ const HMAUsersPage = () => {
 
   const handleDeleteUserConfirm = async () => {
     try {
+      console.log(`Delete ${currentUser.email}`)
       const response = await fetch(
-        `${AppConfig.API_ENDPOINT}/members/team/tuan/${currentUser.email}`,
+        `${AppConfig.HMA_BASE_URL}/members/team/tuan/${currentUser.email}`,
         {
           method: 'DELETE',
           headers: {
@@ -231,6 +232,7 @@ const HMAUsersPage = () => {
         openSnackbar('Failed to delete user', 'error')
       }
     } catch (error) {
+      console.log(error)
       openSnackbar('Error deleting user', 'error')
     }
   }

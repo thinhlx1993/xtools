@@ -59,7 +59,7 @@ const dataMemories = {}
  * }} twPost
  */
 const _base = async (page, openAIConfig, twPost) => {
-  logger.info(`${JSON.stringify(twPost)}`)
+  // logger.info(`${JSON.stringify(twPost)}`)
   const profileCrawl = twPost.profile_crawl
   logger.info(`start reup post ${profileCrawl}`)
   const oldestPost = JSON.parse(twPost.content)
@@ -185,8 +185,8 @@ const _func = async (page, profileId, featOptions) => {
     logger.info('reUpPostsCancel')
     return
   }
-  const total = utils.randomArrayNumberInString(featOptions.randomTotalPostsReUp || '1,1')
-  logger.info('totalPostsReUp', total)
+  // const total = utils.randomArrayNumberInString(featOptions.randomTotalPostsReUp || '1,1')
+  // logger.info('totalPostsReUp', total)
   const posts = await getTop3PostSaved(profileData.profile_id)
   // Assuming posts.data contains the array of posts
   const postsLength = posts.data.length
@@ -216,11 +216,17 @@ const _func = async (page, profileId, featOptions) => {
   //   "user_crawl": "admin",
   //   "created_at": "04-02-2024 12:31"
   // }
+  const openAIPrefix = featOptions.chatOpenAIPrefix.split('|')
+  // Generate a random index based on the length of the list
+  const randomPrefix = Math.floor(Math.random() * openAIPrefix.length)
+
+  // Select the item at the random index
+  const randomItem = openAIPrefix[randomPrefix]
   await _base(
     page,
     {
       chatOpenAIKey: profileData.gpt_key,
-      chatOpenAIPrefix: featOptions.chatOpenAIPrefix,
+      chatOpenAIPrefix: randomItem,
       reUpWithImage: featOptions.reUpWithImage,
       reUpWithVideo: featOptions.reUpWithVideo
     },

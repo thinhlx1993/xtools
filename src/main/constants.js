@@ -88,6 +88,7 @@ export const defaultPuppeteerOptions = {
   args: [
     '--disable-accelerated-2d-canvas',
     '--no-zygote',
+    '--single-process',
     '--no-first-run',
     '--disable-dev-shm-usage',
     '--disable-3d-apis',
