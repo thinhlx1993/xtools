@@ -2,7 +2,7 @@ import fs from 'fs'
 import axios from 'axios'
 import { getProfileData, updateProfileData, updatePostData } from '../services/backend'
 import { defaultPuppeteerOptions, getRandomPosition } from '../../constants'
-import puppeteer from 'puppeteer-core'
+import puppeteer from 'puppeteer-extra'
 import { getAppPath } from '../../utils'
 import { splitProxy, mapErrorConstructor } from '../../helpers'
 import hideMyAcc from '../../integration/hidemyacc'
@@ -297,12 +297,8 @@ export const startSignIn = async (profileId, page) => {
     let profileData = await getProfileData(profileId, {})
     if (profileData.cookies) {
       await setCookies(page, profileData)
-      // for (let index = 0; index < 2; index++) {
-      //   await tryAgain(page)
-      //   await randomDelay()
-      // }
       await updateProfileData(profileId, { status: 'set cookies ok' })
-      return
+      // return
     }
     // Start Puppeteer
     await updateProfileData(profileId, { status: 'logging in' })
