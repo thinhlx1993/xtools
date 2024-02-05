@@ -8,9 +8,9 @@ export const getProfileData = async (profileId, tz = {}) => {
   return profileData
 }
 
-export const getLastPostSaved = async (profileCrawl) => {
+export const getLastPostSaved = async (profileCrawl, profileId) => {
   const postData = get(
-    `/posts/?page=1&per_page=1&sort_by=created_at&search=${profileCrawl}&sort_order=desc`
+    `/posts/?page=1&per_page=1&sort_by=created_at&search=${profileCrawl}&sort_order=desc&profile_id=${profileId}`
   )
   return postData
 }

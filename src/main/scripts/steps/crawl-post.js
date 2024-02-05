@@ -23,7 +23,7 @@ const _filterAndCache = async (profileCrawl, profileData, response) => {
   if (!posts) {
     throw new Error('FILTER_POST_ERROR')
   }
-  const lastPostCrawl = await getLastPostSaved(profileCrawl)
+  const lastPostCrawl = await getLastPostSaved(profileCrawl, profileData.profile_id)
   let lastEntryId = null
   if (lastPostCrawl.result_count > 0) {
     lastEntryId = lastPostCrawl[0]?.tw_post_id
