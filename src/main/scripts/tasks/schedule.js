@@ -137,9 +137,9 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)
       //   break
-      case TASK_NAME_CONFIG.GetCookie:
-        await getCookies(profileIdGiver, page)
-        break
+      // case TASK_NAME_CONFIG.GetCookie:
+      //   await getCookies(profileIdGiver, page)
+      //   break
       case TASK_NAME_CONFIG.Captcha:
         await resolveCaptcha(profileIdGiver, page)
         break
