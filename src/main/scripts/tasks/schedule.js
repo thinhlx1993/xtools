@@ -17,6 +17,7 @@ import reUpStep from '../steps/reup-post'
 import { killChrome, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
 import { cpuMonitoring, killPID } from './utils'
+import { CronJob } from 'cron'
 
 let isStarted = false
 const concurrencyLimit = 15
@@ -27,6 +28,16 @@ let taskQueue = async.queue(async (task) => {
     logger.error(`processTaskQueue ERROR ${error}`)
   }
 }, concurrencyLimit) // 1 is the concurrency limit
+
+// kill marco.exe every hours
+const job = CronJob.from({
+  cronTime: '0 * * * *',
+  onTick: function () {
+    killChrome()
+  },
+  start: true,
+  timeZone: 'America/Los_Angeles'
+})
 
 const fetchAndProcessTask = async () => {
   while (true) {
@@ -45,9 +56,9 @@ const fetchAndProcessTask = async () => {
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 5000))
-      if (taskQueue.length() === 0) {
-        await cpuMonitoring()
-      }
+      // if (taskQueue.length() === 0) {
+      //   await cpuMonitoring()
+      // }
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before retrying in case of error
@@ -59,7 +70,6 @@ export const fetchScheduledTasks = async () => {
   if (!isStarted) {
     logger.info('Starting task fetching and processing')
     isStarted = true
-    await killChrome()
     fetchAndProcessTask() // Start task fetching and processing
   }
 }
@@ -122,10 +132,11 @@ const processTaskQueue = async (queueData) => {
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
+    await startSignIn(profileIdGiver, page)
     switch (taskName) {
-      case TASK_NAME_CONFIG.Login:
-        await startSignIn(profileIdGiver, page)
-        break
+      // case TASK_NAME_CONFIG.Login:
+      //   await startSignIn(profileIdGiver, page)
+      //   break
       case TASK_NAME_CONFIG.GetCookie:
         await getCookies(profileIdGiver, page)
         break

@@ -71,7 +71,7 @@ export const scrollIntoView = async (page, element) => {
   await randomDelay()
 }
 
-export const killChrome = async () => {
+export const killChrome = () => {
   // This command depends on the operating system
   let command
 

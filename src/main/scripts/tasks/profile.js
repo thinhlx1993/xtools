@@ -109,7 +109,6 @@ export const openProfileBrowser = async (profile) => {
       await page.goto('https://ipfighter.com/')
       logger.info('Open the browser successfully')
       await randomDelay()
-      await startSignIn(profile, page)
     } catch (error) {}
 
     return [page, browser]
@@ -397,7 +396,6 @@ const tryAgain = async (page) => {
 }
 
 export const getCookies = async (profileId, page) => {
-  await randomDelay()
   await cacheCookies(page, profileId)
   await randomDelay()
 }
