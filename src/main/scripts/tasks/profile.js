@@ -555,4 +555,117 @@ export const checkProfiles = async (profileId, page) => {
   await updateProfileData(profileId, {
     profile_data: { followers, following, verify, monetizable, payouts }
   })
+
+  //   await page.goto('https://twitter.com')
+  //   await randomDelay()
+
+  //   page.on('response', async (response) => {
+  //     const url = response.url()
+  //     if (url.includes('UserByScreenName')) {
+  //       try {
+  //         let isResponseOk = response.ok()
+  //         while (!isResponseOk) {
+  //           await page.waitForTimeout(1000)
+  //           isResponseOk = response.ok()
+  //         }
+  //         const responseData = await response.json()
+  //         const tweetData = extractTwitterData(responseData)
+  //       } catch (error) {
+  //         console.log('Failed to parse response:', error)
+  //       }
+  //     }
+  //     if (url.includes('UserTweets')) {
+  //       try {
+  //         let isResponseOk = response.ok()
+  //         while (!isResponseOk) {
+  //           await page.waitForTimeout(1000)
+  //           isResponseOk = response.ok()
+  //         }
+  //         const responseData = await response.json()
+  //         const tweetData = extractTweetData(responseData, profileData.username)
+  //         if (tweetData.length > 0) {
+  //           console.log('Captured Data:', tweetData[0])
+  //         }
+  //       } catch (error) {
+  //         console.log('Failed to parse response:', error)
+  //       }
+  //     }
+  //   })
+  // }
+
+  // const extractTwitterData = (responseData) => {
+  //   const userData = responseData.data.user.result
+  //   if (userData.reason == 'Suspended') {
+  //     return {
+  //       isBlueVerified: false,
+  //       followersCount: 0,
+  //       needsPhoneVerification: true,
+  //       hasSuspended: true
+  //     }
+  //   }
+
+  //   const legacyData = userData.legacy
+
+  //   const isBlueVerified = userData.is_blue_verified
+  //   const followersCount = legacyData.followers_count
+  //   const needsPhoneVerification = legacyData.needs_phone_verification
+
+  //   return {
+  //     isBlueVerified,
+  //     followersCount,
+  //     needsPhoneVerification,
+  //     hasSuspended: false
+  //   }
+  // }
+
+  // const extractTweetData = (jsonData, username) => {
+  //   const tweetsData = jsonData.data.user.result.timeline_v2.timeline.instructions
+  //   let extractedData = []
+
+  //   for (const instruction of tweetsData) {
+  //     if (
+  //       instruction.type === 'TimelinePinEntry' &&
+  //       instruction.entry.content?.itemContent?.itemType === 'TimelineTweet'
+  //     ) {
+  //       const tweetData = instruction.entry.content.itemContent.tweet_results.result
+  //       const tweetDetails = extractDetailsFromTweet(tweetData, username)
+  //       if (tweetDetails) {
+  //         extractedData.push(tweetDetails)
+  //       }
+  //     } else if (instruction.type === 'TimelineAddEntries') {
+  //       for (const entry of instruction.entries) {
+  //         if (entry.content?.itemContent?.itemType === 'TimelineTweet') {
+  //           const tweetData = entry.content.itemContent.tweet_results.result
+  //           const tweetDetails = extractDetailsFromTweet(tweetData, username)
+  //           if (tweetDetails) {
+  //             extractedData.push(tweetDetails)
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   return extractedData
+  // }
+
+  // const extractDetailsFromTweet = (tweetData, username) => {
+  //   if (!tweetData || !tweetData.legacy) {
+  //     return null
+  //   }
+
+  //   const legacyData = tweetData.legacy
+
+  //   const retweetCount = legacyData.retweet_count
+  //   const viewCount = tweetData?.views?.count ? tweetData.views.count : 0 // Views might not be available
+  //   const replyCount = legacyData.reply_count ? legacyData.reply_count : 0
+  //   const conversationId = legacyData.conversation_id_str
+
+  //   const tweetUrl = `https://twitter.com/${username}/status/${conversationId}; `
+
+  //   return {
+  //     tweetUrl,
+  //     retweetCount,
+  //     viewCount,
+  //     replyCount
+  //   }
 }
