@@ -86,18 +86,7 @@ export const defaultPuppeteerOptions = {
     height: 750
   },
   args: [
-    '--disable-accelerated-2d-canvas',
-    '--no-first-run',
-    '--disable-dev-shm-usage',
-    '--disable-3d-apis',
-    '--disable-gpu',
     '--disable-notifications',
-    '--disable-setuid-sandbox',
-    '--lang=en-US',
-    '--flag-switches-begin',
-    '--disable-encryption',
-    '--disable-extensions',
-    '--flag-switches-end',
     '--no-sandbox',
     `--window-size=${DEFAULT_WINDOWS_SIZE.width},${DEFAULT_WINDOWS_SIZE.height}`
   ],

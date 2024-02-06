@@ -11,7 +11,12 @@ import scrollAction from '../../actions/scroll'
 import navAction from '../../actions/nav'
 import interactAction from '../../actions/interact'
 import postDetail from './post-detail'
-import { getEventsLogs, createEventLogs, getGiverEventsLogs } from '../../services/backend'
+import {
+  getEventsLogs,
+  createEventLogs,
+  getGiverEventsLogs,
+  createAnewPost
+} from '../../services/backend'
 /**
  *
  * @param {InteractAdsOptions} featOptions
@@ -73,6 +78,19 @@ export default async (page, giverData, featOptions, receiverData) => {
     }
     const entryItem = mapper.mapUserTweet(entry)
     logger.info('entryItem', entryItem)
+
+    const postData = {
+      profile_id: receiverData.profile_id,
+      username: receiverData.username,
+      tw_post_id: entry.entryId,
+      like: entry.content.itemContent.tweet_results.result.legacy.favorite_count,
+      comment: entry.content.itemContent.tweet_results.result.legacy.reply_count,
+      share: entry.content.itemContent.tweet_results.result.legacy.retweet_count,
+      content: JSON.stringify(entry),
+      post_date: entry.content.itemContent.tweet_results.result.legacy.created_at
+    }
+    await createAnewPost(postData)
+
     await Promise.resolve(
       entryItem.isAds
         ? page.waitForXPath(tweetXPath.entryAds(entryItem.authorProfileId, entryItem.postId), {

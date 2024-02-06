@@ -20,7 +20,7 @@ import { cpuMonitoring, killPID } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
-const concurrencyLimit = 15
+const concurrencyLimit = 1
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
@@ -75,8 +75,6 @@ export const fetchScheduledTasks = async () => {
 }
 
 const processTaskQueue = async (queueData) => {
-  let page = null
-  let browser = null
   const profileIdGiver = queueData?.profile_id
   let processPID = null
   // let browserWSEndpoint = null
@@ -89,7 +87,7 @@ const processTaskQueue = async (queueData) => {
       profileIdReceiver = profileIdGiver
     }
 
-    ;[page, browser] = await openProfileBrowser(profileIdGiver)
+    const [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
       // browserWSEndpoint = browser.wsEndpoint()
@@ -132,7 +130,7 @@ const processTaskQueue = async (queueData) => {
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
-    await startSignIn(profileIdGiver, page)
+    // await startSignIn(profileIdGiver, page)
     switch (taskName) {
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)
