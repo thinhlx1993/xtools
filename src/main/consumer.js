@@ -1,4 +1,5 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import fs from 'fs'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { machineIdSync } from 'node-machine-id'
 import hideMyAcc from './integration/hidemyacc'
 import store from './store'
@@ -299,4 +300,27 @@ ipcMain.on('performScheduledTasks', async () => {
 ipcMain.on('getDetailedAccountById', async (event, profileId) => {
   const [account] = await Promise.all([repository.findAccountByProfileId(profileId)])
   event.reply('replyGetDetailedAccountById', { account })
+})
+
+ipcMain.on('downloadCSV', async (event, csvData) => {
+  const options = {
+    title: 'Save CSV file',
+    defaultPath: app.getPath('downloads') + '/exportedData.csv',
+    buttonLabel: 'Save',
+    filters: [{ name: 'CSV files', extensions: ['csv'] }]
+  }
+
+  dialog
+    .showSaveDialog(options)
+    .then((result) => {
+      if (!result.canceled) {
+        fs.writeFile(result.filePath, csvData, (err) => {
+          if (err) throw err
+          console.log('The file has been saved!')
+        })
+      }
+    })
+    .catch((err) => {
+      console.log(err)
+    })
 })

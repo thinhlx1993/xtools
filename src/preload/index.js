@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld(
     setAccessToken: (accessToken) => ipcRenderer.send('setAccessToken', accessToken),
     performScheduledTasks: () => ipcRenderer.send('performScheduledTasks'),
     getDetailedAccountById: (profileId) => ipcRenderer.send('getDetailedAccountById', profileId),
-    replyGetDetailedAccountById: (value) => ipcRenderer.on('replyGetDetailedAccountById', value)
+    replyGetDetailedAccountById: (value) => ipcRenderer.on('replyGetDetailedAccountById', value),
+    downloadCSV: (csvData) => ipcRenderer.send('downloadCSV', csvData)
   }
 )

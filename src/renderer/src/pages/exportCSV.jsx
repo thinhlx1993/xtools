@@ -1,11 +1,12 @@
 import React from 'react'
 import { Button, Grid } from '@mui/material'
+import { ipcMainConsumer } from '../helpers/api'
 
 const ExportCSV = ({ data }) => {
   const convertToCSV = (objArray) => {
     const headers = [
       { label: 'username', key: 'username' },
-      { label: 'password', key: 'username' },
+      { label: 'password', key: 'password' },
       { label: 'fa', key: 'fa' },
       { label: 'proxy', key: 'proxy' },
       { label: 'gpt_key', key: 'gpt_key' },
@@ -40,15 +41,16 @@ const ExportCSV = ({ data }) => {
 
   const downloadCSV = () => {
     const csvData = convertToCSV(data)
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', 'exportedData.csv')
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    ipcMainConsumer.emit('downloadCSV', csvData)
+    // const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
+    // const link = document.createElement('a')
+    // const url = URL.createObjectURL(blob)
+    // link.setAttribute('href', url)
+    // link.setAttribute('download', 'exportedData.csv')
+    // link.style.visibility = 'hidden'
+    // document.body.appendChild(link)
+    // link.click()
+    // document.body.removeChild(link)
   }
   return (
     <Grid item>
