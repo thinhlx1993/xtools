@@ -27,6 +27,7 @@ import {
   FormControlLabel
 } from '@mui/material'
 import Papa from 'papaparse'
+import { CSVLink } from 'react-csv'
 import VerifiedIcon from '@mui/icons-material/Verified'
 import PaidIcon from '@mui/icons-material/Paid'
 import EditIcon from '@mui/icons-material/Edit'
@@ -37,7 +38,7 @@ import AppConfig from '../config/enums'
 import { useMediaQuery } from '@mui/material'
 import { ipcMainConsumer } from '../helpers/api'
 import CachedIcon from '@mui/icons-material/Cached'
-
+import ExportCSV from './exportCSV'
 const ProfilesPage = () => {
   const { openSnackbar } = useSnackbar()
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'))
@@ -66,7 +67,7 @@ const ProfilesPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [groups, setGroups] = useState([])
   const [users, setUsers] = useState([])
-  const [rowsPerPage, setRowsPerPage] = useState(25) // Rows per page
+  const [rowsPerPage, setRowsPerPage] = useState(100) // Rows per page
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
@@ -175,10 +176,10 @@ const ProfilesPage = () => {
       const input = newProfile
       const main_profile = newProfileDefaultType
       const profileEntries = input.split('\n')
-      // username|password|fa|proxy|gpt_key|cookies
+      // username|password|fa|proxy
       for (const entry of profileEntries) {
-        const [username, password, fa, proxy, gpt_key, cookies] = entry.split('|')
-        profiles.push({ username, password, fa, proxy, gpt_key, cookies, main_profile })
+        const [username, password, fa, proxy] = entry.split('|')
+        profiles.push({ username, password, fa, proxy, main_profile })
       }
     }
 
@@ -655,7 +656,7 @@ const ProfilesPage = () => {
         </Grid>
         <Grid item>
           <TextField
-            label="Search by Username, User"
+            label="Search by Username, Status"
             variant="outlined"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -665,6 +666,9 @@ const ProfilesPage = () => {
           <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
             Import
           </Button>
+        </Grid>
+        <Grid item style={{ marginLeft: '20px' }}>
+          <ExportCSV data={profiles} />
         </Grid>
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
@@ -705,15 +709,27 @@ const ProfilesPage = () => {
               <TableCell>Username</TableCell>
               {!isMobile && <TableCell>Type</TableCell>}
               {!isMobile && <TableCell>Followers</TableCell>}
-              {!isMobile && <TableCell>Following</TableCell>}
+              {!isMobile && <TableCell>Suspended</TableCell>}
               {!isMobile && <TableCell>Payouts</TableCell>}
-              {!isMobile && <TableCell>Created At</TableCell>}
+              {!isMobile && <TableCell>Total View</TableCell>}
               {!isMobile && <TableCell>Notes</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
+            {/* "profile_data": {
+                "followers": 471,
+                "following": "61 Following",
+                "verify": true,
+                "monetizable": false,
+                "payouts": [],
+                "suspended": false,
+                "phone_require": false,
+                "view": 5921569,
+                "account_status": "ERROR",
+                "stripe_connect_account": false
+            }, */}
             {profiles.map((profile) => (
               <TableRow key={profile.profile_id}>
                 <TableCell padding="checkbox">
@@ -735,13 +751,39 @@ const ProfilesPage = () => {
                           color: profile?.profile_data?.verify ? 'blue' : 'gray'
                         }}
                       />
-                      <PaidIcon
-                        style={{
-                          marginLeft: '5px',
-                          verticalAlign: 'middle',
-                          color: profile?.profile_data?.monetizable ? 'green' : 'gray'
-                        }}
-                      />
+                      {profile.profile_data?.account_status === 'ERROR' ? (
+                        <PaidIcon
+                          style={{
+                            marginLeft: '5px',
+                            verticalAlign: 'middle',
+                            color: 'red'
+                          }}
+                        />
+                      ) : (
+                        <></>
+                      )}
+                      {profile.profile_data?.account_status === 'NotStarted' ? (
+                        <PaidIcon
+                          style={{
+                            marginLeft: '5px',
+                            verticalAlign: 'middle',
+                            color: 'yellow'
+                          }}
+                        />
+                      ) : (
+                        <></>
+                      )}
+                      {profile.profile_data?.account_status === 'OK' ? (
+                        <PaidIcon
+                          style={{
+                            marginLeft: '5px',
+                            verticalAlign: 'middle',
+                            color: 'green'
+                          }}
+                        />
+                      ) : (
+                        <></>
+                      )}
                     </span>
                   </Tooltip>
                 </TableCell>
@@ -779,8 +821,8 @@ const ProfilesPage = () => {
                       maxWidth: 50
                     }}
                   >
-                    <Tooltip title={profile?.profile_data?.following}>
-                      <span>{profile?.profile_data?.following}</span>
+                    <Tooltip title={profile?.profile_data?.suspended}>
+                      <span>{!profile?.profile_data?.suspended ? 'No' : 'Yes'}</span>
                     </Tooltip>
                   </TableCell>
                 )}
@@ -807,8 +849,8 @@ const ProfilesPage = () => {
                       maxWidth: 50
                     }}
                   >
-                    <Tooltip title={profile.created_at}>
-                      <span>{profile.created_at}</span>
+                    <Tooltip title={profile?.profile_data?.view}>
+                      <span>{profile?.profile_data?.view}</span>
                     </Tooltip>
                   </TableCell>
                 )}
@@ -853,6 +895,7 @@ const ProfilesPage = () => {
           rowsPerPage={rowsPerPage}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[100, 200, 500, 1000]}
         />
       </Paper>
 
@@ -864,7 +907,7 @@ const ProfilesPage = () => {
             Hãy chú ý nhập đúng định dạng
           </Typography>
           <Typography variant="subtitle1" color="textSecondary">
-            Các trường bắt buộc phải có username|password|fa|proxy|gpt_key
+            Các trường bắt buộc phải có username|password|fa|proxy
           </Typography>
 
           <TextField
@@ -873,7 +916,7 @@ const ProfilesPage = () => {
             label="Profile Data"
             fullWidth
             variant="outlined"
-            placeholder="username|password|fa|proxy|gpt_key|cookies"
+            placeholder="username|password|fa|proxy"
             multiline
             rows={4}
             value={newProfile}

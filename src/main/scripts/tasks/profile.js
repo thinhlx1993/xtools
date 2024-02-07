@@ -404,268 +404,196 @@ export const getCookies = async (profileId, page) => {
 export const checkProfiles = async (profileId, page) => {
   logger.info('checkProfiles')
   const profileData = await getProfileData(profileId, {})
-  await page.goto('https://twitter.com')
-  await randomDelay()
-  await page.waitForSelector('div[aria-label="Home timeline"]', {
-    visible: true,
-    timeout: 15000
-  })
-  await page.waitForSelector('a[data-testid="AppTabBar_Profile_Link"]')
-  await page.click('a[data-testid="AppTabBar_Profile_Link"]')
+  const profileInfo = profileData.profile_data ? profileData.profile_data : {}
+  await page.goto(`https://twitter.com/${profileData.username}`)
 
-  await randomDelay()
-  await page.waitForSelector('a[href*="/following"]', {
-    visible: true,
-    timeout: 15000
-  })
+  const userResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('UserByScreenName') && response.status() === 200
+  )
+  const tweetsResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('UserTweets') && response.status() === 200
+  )
 
-  let followers = profileData.followers ? profileData.followers : ''
-  let following = profileData.following ? profileData.following : ''
-  let verify = profileData.verify ? profileData.verify : false
-  let payouts = profileData.payouts ? profileData.payouts : []
-  let monetizable = profileData.monetizable ? profileData.monetizable : false
-  let impressions = profileData.impressions ? profileData.impressions : ''
+  const userResponse = await userResponsePromise
+  const tweetsResponse = await tweetsResponsePromise
 
-  // Query for links that contain '/following' in their href
-  try {
-    let element = await page.waitForSelector('a[href*="/following"]')
-    await scrollIntoView(element)
-    following = await element.evaluate((el) => el.textContent, element)
-    logger.info(`Following ${following}`)
-  } catch (error) {
-    console.error('Error in /following:', error)
+  // Assuming extractTwitterData and extractTweetData are asynchronous, add await if necessary.
+  const twitterData = extractTwitterData(await userResponse.json())
+  const tweetData = extractTweetData(await tweetsResponse.json(), profileData.username)
+
+  logger.info(`twitterData ${JSON.stringify(twitterData)}`)
+  profileInfo.verify = twitterData.isBlueVerified
+  profileInfo.followers = twitterData.followersCount
+  profileInfo.suspended = twitterData.hasSuspended
+  profileInfo.phone_require = twitterData.needsPhoneVerification
+
+  if (tweetData.length > 0) {
+    const totalViews = sumViewCounts(tweetData)
+    profileInfo.view = totalViews
+    logger.info('Total Views:', totalViews)
   }
-
-  try {
-    let element = await page.waitForSelector('a[href*="/verified_followers"]')
-    await scrollIntoView(element)
-    followers = await element.evaluate((el) => el.textContent, element)
-    logger.info(`Followers ${followers}`)
-  } catch (error) {
-    console.error('Error in /verified_followers:', error)
-  }
-
-  try {
-    let element = await page.waitForSelector(
-      'div[aria-label="Provides details about verified accounts."]'
-    )
-    await scrollIntoView(element)
-    verify = element ? true : false
-    logger.info(`Verify ${verify}`)
-  } catch (error) {
-    console.error('Error in verified accounts:', error)
-  }
-
-  await updateProfileData(profileId, { profile_data: { followers, following, verify } })
-
-  // Disable get artciles
-  // const isSelectorPresent = (await page.$('article[data-testid="tweet"]')) !== null
-  // if (isSelectorPresent) {
-  //   await page.waitForSelector('article[data-testid="tweet"]')
-  //   const articles = await page.$$('article[data-testid="tweet"]')
-
-  //   for (const article of articles) {
-  //     try {
-  //       let content = ''
-  //       let tw_post_id = ''
-  //       let view = ''
-  //       await scrollIntoView(article)
-  //       try {
-  //         const element = await article.waitForSelector('div')
-
-  //         if (element) {
-  //           content = await element.evaluate((node) => node.textContent)
-  //         }
-  //       } catch (error) {
-  //         logger.error(`Error processing article content: ${error}`)
-  //       }
-  //       try {
-  //         const elementPost = await article.waitForSelector(
-  //           'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div > div:nth-child(1) > div > div > div:nth-child(2) > div > div:nth-child(3) > a'
-  //         )
-  //         if (elementPost) {
-  //           tw_post_id = await elementPost.evaluate((link) => link.href, elementPost)
-  //         }
-  //       } catch (error) {
-  //         logger.error(`Error processing tw_post_id: ${error}`)
-  //       }
-  //       try {
-  //         const viewElement = await article.waitForSelector(
-  //           'div > div > div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div > div'
-  //         )
-  //         if (viewElement) {
-  //           view = await viewElement.evaluate(
-  //             (link) => link.getAttribute('aria-label'),
-  //             viewElement
-  //           )
-  //         }
-  //       } catch (error) {
-  //         logger.error(`Error processing view: ${error}`)
-  //       }
-  //       // Handling postData
-  //       const postData = {
-  //         content: content,
-  //         tw_post_id: tw_post_id,
-  //         profile_id: profileId,
-  //         view: view
-  //       }
-  //       logger.info(`Post data: ${JSON.stringify(postData)}`)
-  //       await updatePostData(profileId, postData)
-  //     } catch (error) {
-  //       logger.error(`Error processing article: ${error}`)
-  //     }
-  //   }
-  // }
 
   // check momentizable
   await page.goto('https://twitter.com/settings/monetization')
-  await randomDelay()
+  const response = await page.waitForResponse(
+    (response) =>
+      response.url().includes('MonetizationCreatorSettingsQuery') && response.status() === 200
+  )
 
-  try {
-    const adsEnable = await page.waitForSelector('a[href="/settings/ad_rev_share_dashboard"]')
-    if (adsEnable) {
-      monetizable = true
-      logger.info('Ads Eligible')
-    }
-  } catch (error) {
-    logger.info('Not found Not yet eligible')
+  const responseData = await response.json()
+  const result = responseData.data.viewer.user_results.result
+  if (result?.stripe_connect_account?.status === 'NotStarted') {
+    logger.info(`account is ready for turn on momentization`)
+    profileInfo.stripe_connect_account = true
+    profileInfo.monetizable = false
+    profileInfo.account_status = 'NotStarted'
   }
 
-  if (monetizable) {
-    try {
-      await page.click('a[href="/settings/ad_rev_share_dashboard"]')
-      // section[aria-label="Section details"] > div > div > ul > div > div > li > div
-      try {
-        const revenueElement = await page.waitForSelector(
-          'section[aria-label="Section details"] > div > div > ul > div > div > li > div'
-        )
+  if (
+    result?.stripe_connect_account?.status === 'Completed' &&
+    result?.verified_user_profiles?.ad_revenue_sharing_user_profile?.is_active === true
+  ) {
+    profileInfo.monetizable = true
+    profileInfo.stripe_connect_account = false
+    profileInfo.account_status = 'OK'
+    logger.info(`ad_revenue_sharing ok`)
+  }
 
-        if (revenueElement) {
-          const payout = await revenueElement.evaluate((node) => node.textContent)
-          if (!payouts.includes(payout)) {
-            payouts.push(payout)
-          }
-        }
-      } catch (error) {
-        logger.error(`Error processing article content: ${error}`)
+  if (
+    result?.stripe_connect_account?.status === 'Completed' &&
+    result?.verified_user_profiles?.ad_revenue_sharing_user_profile?.is_active === false
+  ) {
+    profileInfo.monetizable = false
+    profileInfo.account_status = 'ERROR'
+    profileInfo.stripe_connect_account = false
+    logger.info(`ad_revenue_sharing turn off`)
+  }
+
+  if (profileInfo.monetizable) {
+    try {
+      await page.goto('https://twitter.com/settings/ad_rev_share_dashboard')
+      const adsResponse = await page.waitForResponse(
+        (response) =>
+          response.url().includes('AdRevShareDashboardScreenQuery') && response.status() === 200
+      )
+      const adsResponseData = await adsResponse.json()
+      logger.info(`${JSON.stringify(adsResponseData)}`)
+      const itemsPayouts =
+        adsResponseData?.data?.viewer?.user_results?.result?.ad_revenue_sharing_payouts?.items
+
+      const tempPayouts = []
+      for (let item of itemsPayouts) {
+        tempPayouts.push(item.payout_amount)
+      }
+      profileInfo.payouts = tempPayouts
+      logger.info(`payouts ${profileInfo.payouts}`)
+    } catch (error) {}
+
+    // check analytics
+    try {
+      await page.goto('https://twitter.com/i/account_analytics')
+      const analyticsResponse = await page.waitForResponse(
+        (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200
+      )
+      const analyticsResponseData = await analyticsResponse.json()
+      logger.info(`${JSON.stringify(analyticsResponseData)}`)
+      const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
+      for (let metric of currentMetrics) {
+        profileInfo.metric.metric_type = metric?.metric_value
       }
     } catch (error) {}
   }
 
-  await updateProfileData(profileId, {
-    profile_data: { followers, following, verify, monetizable, payouts }
-  })
+  logger.info(`profile info: ${JSON.stringify(profileInfo)}`)
+  await updateProfileData(profileId, { profile_data: profileInfo })
+}
 
-  //   await page.goto('https://twitter.com')
-  //   await randomDelay()
+const extractTwitterData = (responseData) => {
+  const userData = responseData.data.user.result
+  if (userData.reason == 'Suspended') {
+    return {
+      isBlueVerified: false,
+      followersCount: 0,
+      needsPhoneVerification: true,
+      hasSuspended: true
+    }
+  }
 
-  //   page.on('response', async (response) => {
-  //     const url = response.url()
-  //     if (url.includes('UserByScreenName')) {
-  //       try {
-  //         let isResponseOk = response.ok()
-  //         while (!isResponseOk) {
-  //           await page.waitForTimeout(1000)
-  //           isResponseOk = response.ok()
-  //         }
-  //         const responseData = await response.json()
-  //         const tweetData = extractTwitterData(responseData)
-  //       } catch (error) {
-  //         console.log('Failed to parse response:', error)
-  //       }
-  //     }
-  //     if (url.includes('UserTweets')) {
-  //       try {
-  //         let isResponseOk = response.ok()
-  //         while (!isResponseOk) {
-  //           await page.waitForTimeout(1000)
-  //           isResponseOk = response.ok()
-  //         }
-  //         const responseData = await response.json()
-  //         const tweetData = extractTweetData(responseData, profileData.username)
-  //         if (tweetData.length > 0) {
-  //           console.log('Captured Data:', tweetData[0])
-  //         }
-  //       } catch (error) {
-  //         console.log('Failed to parse response:', error)
-  //       }
-  //     }
-  //   })
-  // }
+  const legacyData = userData.legacy
 
-  // const extractTwitterData = (responseData) => {
-  //   const userData = responseData.data.user.result
-  //   if (userData.reason == 'Suspended') {
-  //     return {
-  //       isBlueVerified: false,
-  //       followersCount: 0,
-  //       needsPhoneVerification: true,
-  //       hasSuspended: true
-  //     }
-  //   }
+  const isBlueVerified = userData.is_blue_verified
+  const followersCount = legacyData.followers_count
+  const needsPhoneVerification = legacyData.needs_phone_verification
 
-  //   const legacyData = userData.legacy
+  return {
+    isBlueVerified,
+    followersCount,
+    needsPhoneVerification,
+    hasSuspended: false
+  }
+}
 
-  //   const isBlueVerified = userData.is_blue_verified
-  //   const followersCount = legacyData.followers_count
-  //   const needsPhoneVerification = legacyData.needs_phone_verification
+const extractTweetData = (jsonData, username) => {
+  const tweetsData = jsonData.data.user.result.timeline_v2.timeline.instructions
+  let extractedData = []
 
-  //   return {
-  //     isBlueVerified,
-  //     followersCount,
-  //     needsPhoneVerification,
-  //     hasSuspended: false
-  //   }
-  // }
+  for (const instruction of tweetsData) {
+    if (
+      instruction.type === 'TimelinePinEntry' &&
+      instruction.entry.content?.itemContent?.itemType === 'TimelineTweet'
+    ) {
+      const tweetData = instruction.entry.content.itemContent.tweet_results.result
+      const tweetDetails = extractDetailsFromTweet(tweetData, username)
+      if (tweetDetails) {
+        extractedData.push(tweetDetails)
+      }
+    } else if (instruction.type === 'TimelineAddEntries') {
+      for (const entry of instruction.entries) {
+        if (entry.content?.itemContent?.itemType === 'TimelineTweet') {
+          const tweetData = entry.content.itemContent.tweet_results.result
+          const tweetDetails = extractDetailsFromTweet(tweetData, username)
+          if (tweetDetails) {
+            extractedData.push(tweetDetails)
+          }
+        }
+      }
+    }
+  }
 
-  // const extractTweetData = (jsonData, username) => {
-  //   const tweetsData = jsonData.data.user.result.timeline_v2.timeline.instructions
-  //   let extractedData = []
+  return extractedData
+}
 
-  //   for (const instruction of tweetsData) {
-  //     if (
-  //       instruction.type === 'TimelinePinEntry' &&
-  //       instruction.entry.content?.itemContent?.itemType === 'TimelineTweet'
-  //     ) {
-  //       const tweetData = instruction.entry.content.itemContent.tweet_results.result
-  //       const tweetDetails = extractDetailsFromTweet(tweetData, username)
-  //       if (tweetDetails) {
-  //         extractedData.push(tweetDetails)
-  //       }
-  //     } else if (instruction.type === 'TimelineAddEntries') {
-  //       for (const entry of instruction.entries) {
-  //         if (entry.content?.itemContent?.itemType === 'TimelineTweet') {
-  //           const tweetData = entry.content.itemContent.tweet_results.result
-  //           const tweetDetails = extractDetailsFromTweet(tweetData, username)
-  //           if (tweetDetails) {
-  //             extractedData.push(tweetDetails)
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
+const extractDetailsFromTweet = (tweetData, username) => {
+  if (!tweetData || !tweetData.legacy) {
+    return null
+  }
 
-  //   return extractedData
-  // }
+  const legacyData = tweetData.legacy
 
-  // const extractDetailsFromTweet = (tweetData, username) => {
-  //   if (!tweetData || !tweetData.legacy) {
-  //     return null
-  //   }
+  const retweetCount = legacyData.retweet_count
+  const viewCount = tweetData?.views?.count ? tweetData.views.count : 0 // Views might not be available
+  const replyCount = legacyData.reply_count ? legacyData.reply_count : 0
+  const conversationId = legacyData.conversation_id_str
 
-  //   const legacyData = tweetData.legacy
+  const tweetUrl = `https://twitter.com/${username}/status/${conversationId}; `
 
-  //   const retweetCount = legacyData.retweet_count
-  //   const viewCount = tweetData?.views?.count ? tweetData.views.count : 0 // Views might not be available
-  //   const replyCount = legacyData.reply_count ? legacyData.reply_count : 0
-  //   const conversationId = legacyData.conversation_id_str
+  return {
+    tweetUrl,
+    retweetCount,
+    viewCount,
+    replyCount
+  }
+}
 
-  //   const tweetUrl = `https://twitter.com/${username}/status/${conversationId}; `
+const sumViewCounts = (tweetDetails) => {
+  let totalViewCount = 0
 
-  //   return {
-  //     tweetUrl,
-  //     retweetCount,
-  //     viewCount,
-  //     replyCount
-  //   }
+  for (const tweet of tweetDetails) {
+    // Check if viewCount is a number or can be converted to one
+    if (!isNaN(tweet.viewCount)) {
+      totalViewCount += parseInt(tweet.viewCount, 10)
+    }
+  }
+
+  return totalViewCount
 }

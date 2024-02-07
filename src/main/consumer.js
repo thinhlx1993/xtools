@@ -12,6 +12,7 @@ import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
 import crawlPostStep from './scripts/steps/crawl-post'
 import reUpStep from './scripts/steps/reup-post'
+import { checkProfiles } from './scripts/tasks/profile'
 
 const dataMemories = {}
 
@@ -280,7 +281,8 @@ ipcMain.on('fetchMachineId', async (event) => {
 
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
-  await openProfileBrowser(profile)
+  const [page, browser] = await openProfileBrowser(profile)
+  // await checkProfiles(profile, page)
 })
 
 // save access token
