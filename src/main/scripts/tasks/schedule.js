@@ -76,7 +76,10 @@ const processTaskQueue = async (queueData) => {
   const profileIdGiver = queueData?.profile_id
   // let processPID = null
   // let browserWSEndpoint = null
-
+  if (listOpenBrowser.includes(profileIdGiver)) {
+    return
+  }
+  
   try {
     const mission_tasks = queueData.tasks
     let profileIdReceiver = queueData.profile_id_receiver
