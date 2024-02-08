@@ -124,35 +124,44 @@ export default async (page, giverData, featOptions, receiverData) => {
       const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
       // maximum 5 comment likes per user per day
       const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
-      if (userEventLogs.result_count < maxCommentLike && userGiverLogs < maxCommentLike) {
+      if (
+        userEventLogs.result_count < maxCommentLike &&
+        userGiverLogs.result_count < maxCommentLike
+      ) {
         logger.info(
           `${receiverData.username} today have ${userEventLogs.result_count} ${actionType}`
         )
         logger.info(`${giverData.username} today give ${userGiverLogs.result_count} ${actionType}`)
-        await createEventLogs({
-          event_type: actionType,
-          profile_id: receiverData.profile_id,
-          profile_id_interact: giverData.profile_id,
-          issue: 'OK'
-        })
         if (
           actionType === 'comment' &&
           featOptions.allowCommentAction &&
-          giverData.gpt_key &&
+          receiverData.gpt_key &&
           featOptions.chatOpenAIPrefix
         ) {
           const choices = featOptions.chatOpenAIPrefix.split('|')
           const chosenOption = choices[Math.floor(Math.random() * choices.length)]
           logger.info(`${receiverData.username} commentEntryWithChatGPT`)
           await interactAction.commentEntryWithChatGPT(page, elementHandle, entryItem.fullText, {
-            key: giverData.gpt_key,
+            key: receiverData.gpt_key,
             prefix: chosenOption,
             maxRetryTime: 2
+          })
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'OK'
           })
         } else if (actionType === 'like' && featOptions.allowLikeAction) {
           await utils.delayRandom()
           logger.info(`${receiverData.username} favoriteEntry`)
           await interactAction.favoriteEntry(page, elementHandle)
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'OK'
+          })
         }
       }
     }

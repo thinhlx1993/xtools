@@ -5,6 +5,7 @@ import logger from '../../logger'
 import { exec } from 'child_process'
 import { createConnection } from 'net'
 import { regTwDomain, regXDomain } from '../regex'
+import { delayRandom } from '../utils'
 
 export const randomDelay = (min = 500, max = 5000) => {
   return new Promise((resolve) => {
@@ -132,35 +133,35 @@ export const closeBlankPages = async (browser) => {
 }
 
 export const handleNewPage = async (target) => {
+  const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
   try {
-    const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
+    console.log('targetcreated')
     const newPage = await target.page()
     if (!newPage) {
       return
     }
     const pageUrl = newPage.url()
-    logger.info('pageUrl', pageUrl)
+    console.log('pageUrl', pageUrl)
     if (isTwUrl(pageUrl)) {
       return
     }
     try {
       await newPage.waitForNavigation({ waitUntil: 'networkidle0' })
-    } catch (error) {
-      logger.error(`handleNewPage_waitForNavigation_ERROR ${error}`)
-    }
+    } catch (error) {}
     try {
       const pageUrlSecond = newPage.url()
-      logger.info('pageUrlSecond', pageUrlSecond)
+      console.log('pageUrlSecond', pageUrlSecond)
+      await delayRandom([4000, 4250, 4500, 4750, 5000, 5250, 5500, 5750, 6000])
       if (isTwUrl(pageUrlSecond)) {
         return
       }
     } catch (error) {
-      logger.info('targetcreated__closed')
+      console.log('targetcreated__closed')
+      return
     }
-
     await newPage.close()
   } catch (error) {
-    logger.error(`handleNewPage_ERROR ${error}`)
+    logger.error(`HAND_TARGET_CREATED_ERROR ${error}`)
   }
 }
 

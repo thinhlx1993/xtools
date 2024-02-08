@@ -32,7 +32,7 @@ let taskQueue = async.queue(async (task) => {
 
 // kill marco.exe every hours
 const job = CronJob.from({
-  cronTime: '0 * * * *',
+  cronTime: '0 */4 * * *',
   onTick: function () {
     killChrome()
   },
@@ -68,6 +68,7 @@ export const fetchScheduledTasks = async () => {
   if (!isStarted) {
     logger.info('Starting task fetching and processing')
     isStarted = true
+    killChrome()
     fetchAndProcessTask() // Start task fetching and processing
   }
 }
@@ -88,10 +89,10 @@ const processTaskQueue = async (queueData) => {
       profileIdReceiver = profileIdGiver
     }
 
+    listOpenBrowser.push(profileIdGiver)
     const [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
-      listOpenBrowser.push(profileIdGiver)
       browser.on('disconnected', async () => {
         console.log('BROWSER disconnected')
       })

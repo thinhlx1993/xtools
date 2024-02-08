@@ -25,8 +25,6 @@ const _func = async (page, profileGiver, profileReceiver, featOptions) => {
       accountId: profileGiverData.username,
       error: mapErrorConstructor(error)
     })
-  } finally {
-    await randomDelay(5000, 15000)
   }
 }
 
