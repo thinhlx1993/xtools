@@ -53,7 +53,7 @@ export const openProfileBrowser = async (profile) => {
       logger.info(`Add proxy ${profileData.proxy}`)
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
     } else {
-      await updateProfileData(profile, { status: 'Add proxy error' })
+      await updateProfileData(profile, { status: 'Proxy not found' })
       return [page, browser]
     }
 
