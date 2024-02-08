@@ -16,7 +16,7 @@ import crawlPostStep from '../steps/crawl-post'
 import reUpStep from '../steps/reup-post'
 import { killChrome, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
-import { cpuMonitoring, killPID } from './utils'
+import { cpuMonitoring, killPID, closeBlankPages } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
@@ -79,7 +79,7 @@ const processTaskQueue = async (queueData) => {
   if (listOpenBrowser.includes(profileIdGiver)) {
     return
   }
-  
+
   try {
     const mission_tasks = queueData.tasks
     let profileIdReceiver = queueData.profile_id_receiver
@@ -108,6 +108,9 @@ const processTaskQueue = async (queueData) => {
       // processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
 
+      // close blank page
+      await closeBlankPages(browser)
+
       for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
@@ -134,7 +137,7 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
-  listOpenBrowser = array.filter(item => item !== profileIdGiver);
+  listOpenBrowser = listOpenBrowser.filter((item) => item !== profileIdGiver)
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {

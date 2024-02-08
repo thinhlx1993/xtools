@@ -126,6 +126,20 @@ export const closeBlankPage = async (browser) => {
   )
 }
 
+export const closeBlankPages = async (browser) => {
+  browser.on('targetcreated', async (target) => {
+    const page = await target.page() // Get the page from the target
+    if (page) {
+      // Ensure the target is a page
+      const title = await page.title()
+      if (title === 'about:blank') {
+        // Check if the page is blank
+        await page.close() // Close the blank page
+      }
+    }
+  })
+}
+
 export const handleNewPage = async (target) => {
   try {
     const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
@@ -139,7 +153,7 @@ export const handleNewPage = async (target) => {
       return
     }
     try {
-      await newPage.waitForNavigation({ waitUntil: 'networkidle0'})
+      await newPage.waitForNavigation({ waitUntil: 'networkidle0' })
     } catch (error) {
       logger.error(`handleNewPage_waitForNavigation_ERROR ${error}`)
     }
@@ -153,7 +167,6 @@ export const handleNewPage = async (target) => {
       logger.info('targetcreated__closed')
       return
     }
-    
 
     await newPage.close()
   } catch (error) {

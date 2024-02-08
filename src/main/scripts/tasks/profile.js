@@ -14,7 +14,8 @@ import {
   clickIntoNext,
   calculateClicks,
   sendCapGuruRequest,
-  scrollIntoView
+  scrollIntoView,
+  closeBlankPages
 } from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
@@ -110,7 +111,7 @@ export const openProfileBrowser = async (profile) => {
         })
       }
 
-      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0'})
+      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0' })
       logger.info('Open the browser successfully')
       await startSignIn(profile, page)
     } catch (error) {}
@@ -317,8 +318,7 @@ export const startSignIn = async (profileId, page) => {
       // })
       // badge_count.json
       const badgeCount = await page.waitForResponse(
-        (response) =>
-          response.url().includes('badge_count.json') && response.status() === 200
+        (response) => response.url().includes('badge_count.json') && response.status() === 200
       )
       if (badgeCount.ok()) {
         await cacheCookies(page, profileId)
@@ -334,7 +334,7 @@ export const startSignIn = async (profileId, page) => {
     try {
       const acceptAllCookies =
         "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Accept all cookies')]"
-      await page.waitForXPath(acceptAllCookies, {timeout: 2000})
+      await page.waitForXPath(acceptAllCookies, { timeout: 2000 })
       const nextButtons = await page.$x(acceptAllCookies)
       await nextButtons[0].click()
     } catch (error) {
@@ -383,8 +383,7 @@ export const startSignIn = async (profileId, page) => {
     await page.waitForSelector('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     const badgeCount = await page.waitForResponse(
-      (response) =>
-        response.url().includes('badge_count.json') && response.status() === 200
+      (response) => response.url().includes('badge_count.json') && response.status() === 200
     )
     if (badgeCount.ok()) {
       await cacheCookies(page, profileId)
