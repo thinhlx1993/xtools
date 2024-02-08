@@ -31,14 +31,14 @@ let taskQueue = async.queue(async (task) => {
 }, concurrencyLimit) // 1 is the concurrency limit
 
 // kill marco.exe every hours
-// const job = CronJob.from({
-//   cronTime: '0 * * * *',
-//   onTick: function () {
-//     killChrome()
-//   },
-//   start: true,
-//   timeZone: 'America/Los_Angeles'
-// })
+const job = CronJob.from({
+  cronTime: '0 * * * *',
+  onTick: function () {
+    killChrome()
+  },
+  start: true,
+  timeZone: 'America/Los_Angeles'
+})
 
 const fetchAndProcessTask = async () => {
   while (true) {
