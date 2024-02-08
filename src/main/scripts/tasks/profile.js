@@ -110,7 +110,7 @@ export const openProfileBrowser = async (profile) => {
         })
       }
 
-      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0', timeout: 0 })
+      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0'})
       logger.info('Open the browser successfully')
       await startSignIn(profile, page)
     } catch (error) {}
