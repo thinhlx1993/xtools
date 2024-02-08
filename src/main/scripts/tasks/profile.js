@@ -28,10 +28,10 @@ export const openProfileBrowser = async (profile) => {
     const randomPos = getRandomPosition()
     let args = [`--window-position=${randomPos}`]
     let profileData = await getProfileData(profile, {})
-    const debuggerPort = profileData.debugger_port
-    if (debuggerPort) {
-      args.push(`--remote-debugging-port=${debuggerPort}`)
-    }
+    // const debuggerPort = profileData.debugger_port
+    // if (debuggerPort) {
+    //   args.push(`--remote-debugging-port=${debuggerPort}`)
+    // }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
         const tz = await hideMyAcc.network(splitProxy(profileData.proxy))
@@ -52,7 +52,11 @@ export const openProfileBrowser = async (profile) => {
       }
       logger.info(`Add proxy`)
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
+    } else {
+      await updateProfileData(profile, { status: 'Proxy error' })
+      return [page, browser]
     }
+
     logger.info(`Current dir: ${getAppPath('')}`)
     let hideMyAccProfileDir = getAppPath(`\\profiles\\${profile}`)
     if (profileData.settings.folderPath) {
@@ -106,7 +110,7 @@ export const openProfileBrowser = async (profile) => {
         })
       }
 
-      await page.goto('https://ipfighter.com/')
+      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0', timeout: 0 })
       logger.info('Open the browser successfully')
       await randomDelay()
       await startSignIn(profile, page)
@@ -121,6 +125,7 @@ export const openProfileBrowser = async (profile) => {
     } else {
       logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors
+      throw error
     }
     return [page, browser]
   }

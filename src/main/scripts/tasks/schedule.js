@@ -30,22 +30,19 @@ let taskQueue = async.queue(async (task) => {
 }, concurrencyLimit) // 1 is the concurrency limit
 
 // kill marco.exe every hours
-const job = CronJob.from({
-  cronTime: '0 * * * *',
-  onTick: function () {
-    killChrome()
-  },
-  start: true,
-  timeZone: 'America/Los_Angeles'
-})
+// const job = CronJob.from({
+//   cronTime: '0 * * * *',
+//   onTick: function () {
+//     killChrome()
+//   },
+//   start: true,
+//   timeZone: 'America/Los_Angeles'
+// })
 
 const fetchAndProcessTask = async () => {
   while (true) {
     try {
       // if we dont have any task in queue, kill all chrome
-
-      await randomDelay()
-
       if (taskQueue.length() < concurrencyLimit) {
         const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
@@ -55,7 +52,7 @@ const fetchAndProcessTask = async () => {
           })
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 5000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       // if (taskQueue.length() === 0) {
       //   await cpuMonitoring()
       // }
@@ -76,7 +73,7 @@ export const fetchScheduledTasks = async () => {
 
 const processTaskQueue = async (queueData) => {
   const profileIdGiver = queueData?.profile_id
-  let processPID = null
+  // let processPID = null
   // let browserWSEndpoint = null
 
   try {
@@ -90,14 +87,21 @@ const processTaskQueue = async (queueData) => {
     const [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
-      // browserWSEndpoint = browser.wsEndpoint()
-
       browser.on('disconnected', async () => {
         console.log('BROWSER disconnected')
       })
 
-      page.setDefaultNavigationTimeout(0)
-      processPID = browser.process().pid
+      browser.on('targetdestroyed', async (target) => {
+        // fix listen disconnected on MacOS
+        const pages = await browser.pages()
+        if (!pages.length) {
+          await browser.close()
+          return
+        }
+      })
+
+      // page.setDefaultNavigationTimeout(0)
+      // processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
       for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
@@ -125,7 +129,7 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
-  await killPID(processPID)
+  // await killPID(processPID)
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
