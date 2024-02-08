@@ -393,9 +393,6 @@ export const startSignIn = async (profileId, page) => {
     } else {
       await updateProfileData(profileId, { status: 'Login error' })
     }
-
-    await cacheCookies(page, profileId)
-    await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
   }
