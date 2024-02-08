@@ -128,20 +128,6 @@ export const closeBlankPage = async (browser) => {
 
 export const handleNewPage = async (target) => {
   try {
-    // Close blank pages
-  const pages = await browser.pages();
-  await Promise.all(
-    pages.map(async (p) => {
-      const title = await p.title();
-      if (title === 'about:blank') {
-        await p.close();
-      }
-    })
-  );
-  } catch (error) {
-    logger.error(error)
-  }
-  try {
     const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
     const newPage = await target.page()
     if (!newPage) {
@@ -153,7 +139,7 @@ export const handleNewPage = async (target) => {
       return
     }
     try {
-      await newPage.waitForNavigation({ waitUntil: 'networkidle0', timeout: 0 })
+      await newPage.waitForNavigation({ waitUntil: 'networkidle0'})
     } catch (error) {
       logger.error(`handleNewPage_waitForNavigation_ERROR ${error}`)
     }
