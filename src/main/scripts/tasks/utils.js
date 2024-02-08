@@ -133,7 +133,6 @@ export const closeBlankPages = async (browser) => {
 
 export const handleNewPage = async (target) => {
   try {
-    await randomDelay(1000, 3000)
     const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
     const newPage = await target.page()
     if (!newPage) {
