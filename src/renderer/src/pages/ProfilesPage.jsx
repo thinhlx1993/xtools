@@ -84,7 +84,7 @@ const ProfilesPage = () => {
     fetchGroups()
     fetchUsers()
     // Set up the interval to call fetchData every 10 seconds
-  const interval = setInterval(fetchData, 10000);
+  const interval = setInterval(fetchProfiles, 10000);
   // Clear the interval on component unmount
   return () => clearInterval(interval);
   }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
