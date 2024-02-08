@@ -136,7 +136,7 @@ const processTaskQueue = async (queueData) => {
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
-    await startSignIn(profileIdGiver, page)
+    // await startSignIn(profileIdGiver, page)
     switch (taskName) {
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)
