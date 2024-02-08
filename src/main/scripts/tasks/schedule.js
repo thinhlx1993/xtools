@@ -20,8 +20,8 @@ import { cpuMonitoring, killPID } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
-const concurrencyLimit = 15
-const listOpenBrowser = []
+const concurrencyLimit = 5
+let listOpenBrowser = []
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
