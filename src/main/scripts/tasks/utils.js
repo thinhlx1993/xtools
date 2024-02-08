@@ -127,21 +127,13 @@ export const closeBlankPage = async (browser) => {
 }
 
 export const closeBlankPages = async (browser) => {
-  browser.on('targetcreated', async (target) => {
-    const page = await target.page() // Get the page from the target
-    if (page) {
-      // Ensure the target is a page
-      const title = await page.title()
-      if (title === 'about:blank') {
-        // Check if the page is blank
-        await page.close() // Close the blank page
-      }
-    }
-  })
+  // browser.on('targetcreated', async (target) => {
+  // })
 }
 
 export const handleNewPage = async (target) => {
   try {
+    await randomDelay(1000, 3000)
     const isTwUrl = (pageUrl) => regTwDomain.test(pageUrl) || regXDomain.test(pageUrl)
     const newPage = await target.page()
     if (!newPage) {
@@ -165,7 +157,6 @@ export const handleNewPage = async (target) => {
       }
     } catch (error) {
       logger.info('targetcreated__closed')
-      return
     }
 
     await newPage.close()

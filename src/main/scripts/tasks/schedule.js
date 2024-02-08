@@ -20,7 +20,7 @@ import { cpuMonitoring, killPID, closeBlankPages } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
-const concurrencyLimit = 5
+const concurrencyLimit = 15
 let listOpenBrowser = []
 let taskQueue = async.queue(async (task) => {
   try {
@@ -107,9 +107,6 @@ const processTaskQueue = async (queueData) => {
       // page.setDefaultNavigationTimeout(0)
       // processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
-
-      // close blank page
-      await closeBlankPages(browser)
 
       for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
