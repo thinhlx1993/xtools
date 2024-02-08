@@ -48,9 +48,9 @@ const fetchAndProcessTask = async () => {
         const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
           // Add tasks to queue
-          response.schedule.forEach((task) => {
-            taskQueue.push(task)
-          })
+          // response.schedule.forEach((task) => {
+          //   taskQueue.push(task)
+          // })
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 1000))
