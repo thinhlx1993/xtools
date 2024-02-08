@@ -40,7 +40,7 @@ export const openProfileBrowser = async (profile) => {
         logger.error('Get proxy data error', {
           error: mapErrorConstructor(error)
         })
-        await updateProfileData(profile, { status: 'Proxy error' })
+        await updateProfileData(profile, { status: 'Proxy unstable' })
         return [page, browser]
       }
     }
@@ -50,10 +50,10 @@ export const openProfileBrowser = async (profile) => {
       if (proxyParts.length === 4) {
         proxyProtected = true
       }
-      logger.info(`Add proxy`)
+      logger.info(`Add proxy ${profileData.proxy}`)
       args.push(`--proxy-server=${proxyParts[0]}:${proxyParts[1]}`)
     } else {
-      await updateProfileData(profile, { status: 'Proxy error' })
+      await updateProfileData(profile, { status: 'Add proxy error' })
       return [page, browser]
     }
 
@@ -112,8 +112,7 @@ export const openProfileBrowser = async (profile) => {
 
       await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0', timeout: 0 })
       logger.info('Open the browser successfully')
-      await randomDelay()
-      await startSignIn(profile, page)
+      // await startSignIn(profile, page)
     } catch (error) {}
 
     return [page, browser]
@@ -121,7 +120,7 @@ export const openProfileBrowser = async (profile) => {
     if (error.message.includes('net::ERR_TUNNEL_CONNECTION_FAILED')) {
       logger.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
-      await updateProfileData(profile, { status: 'proxy failed' })
+      await updateProfileData(profile, { status: 'Proxy connection failed' })
     } else {
       logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors
@@ -306,20 +305,28 @@ export const startSignIn = async (profileId, page) => {
       // return
     }
     // Start Puppeteer
-    await updateProfileData(profileId, { status: 'logging in' })
+    // await updateProfileData(profileId, { status: 'logging in' })
 
     await page.goto('https://twitter.com')
-    await randomDelay()
 
     // check if profile is already logged in
     try {
-      await page.waitForSelector('div[aria-label="Home timeline"]', {
-        visible: true,
-        timeout: 10000
-      })
-      await cacheCookies(page, profileId)
-      await updateProfileData(profileId, { status: 'ok' })
-      return
+      // await page.waitForSelector('div[aria-label="Home timeline"]', {
+      //   visible: true,
+      //   timeout: 10000
+      // })
+      // badge_count.json
+      const badgeCount = await page.waitForResponse(
+        (response) =>
+          response.url().includes('badge_count.json') && response.status() === 200
+      )
+      if (badgeCount.ok()) {
+        await cacheCookies(page, profileId)
+        await updateProfileData(profileId, { status: 'Login ok' })
+        return
+      } else {
+        await updateProfileData(profileId, { status: 'logging in' })
+      }
     } catch (error) {
       logger.info('Not found home page')
     }
@@ -327,7 +334,7 @@ export const startSignIn = async (profileId, page) => {
     try {
       const acceptAllCookies =
         "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Accept all cookies')]"
-      await page.waitForXPath(acceptAllCookies)
+      await page.waitForXPath(acceptAllCookies, {timeout: 2000})
       const nextButtons = await page.$x(acceptAllCookies)
       await nextButtons[0].click()
     } catch (error) {
@@ -375,10 +382,20 @@ export const startSignIn = async (profileId, page) => {
     await randomDelay()
     await page.waitForSelector('div[role="button"][data-testid="ocfEnterTextNextButton"]')
     await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
-    await randomDelay()
-    await updateProfileData(profileId, { status: 'ok' })
+    const badgeCount = await page.waitForResponse(
+      (response) =>
+        response.url().includes('badge_count.json') && response.status() === 200
+    )
+    if (badgeCount.ok()) {
+      await cacheCookies(page, profileId)
+      await updateProfileData(profileId, { status: 'Login ok' })
+      return
+    } else {
+      await updateProfileData(profileId, { status: 'Login error' })
+    }
+
     await cacheCookies(page, profileId)
-    await randomDelay(5000, 15000)
+    await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
     await updateProfileData(profileId, { status: 'login failed' })
   }

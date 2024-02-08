@@ -21,6 +21,7 @@ import { CronJob } from 'cron'
 
 let isStarted = false
 const concurrencyLimit = 15
+const listOpenBrowser = []
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
@@ -87,6 +88,7 @@ const processTaskQueue = async (queueData) => {
     const [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
+      listOpenBrowser.push(profileIdGiver)
       browser.on('disconnected', async () => {
         console.log('BROWSER disconnected')
       })
@@ -94,15 +96,15 @@ const processTaskQueue = async (queueData) => {
       browser.on('targetdestroyed', async (target) => {
         // fix listen disconnected on MacOS
         const pages = await browser.pages()
-        if (!pages.length) {
+        if (!pages.length || pages.length > 5) {
           await browser.close()
-          return
         }
       })
 
       // page.setDefaultNavigationTimeout(0)
       // processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
+
       for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
@@ -129,12 +131,12 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
-  // await killPID(processPID)
+  listOpenBrowser = array.filter(item => item !== profileIdGiver);
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
-    // await startSignIn(profileIdGiver, page)
+    await startSignIn(profileIdGiver, page)
     switch (taskName) {
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)

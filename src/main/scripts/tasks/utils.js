@@ -135,10 +135,6 @@ export const handleNewPage = async (target) => {
     }
     const pageUrl = newPage.url()
     logger.info('pageUrl', pageUrl)
-    if (pageUrl === 'about:blank') {
-      await newPage.close()
-      return
-    }
     if (isTwUrl(pageUrl)) {
       return
     }
@@ -150,7 +146,6 @@ export const handleNewPage = async (target) => {
     try {
       const pageUrlSecond = newPage.url()
       logger.info('pageUrlSecond', pageUrlSecond)
-      await randomDelay()
       if (isTwUrl(pageUrlSecond)) {
         return
       }
