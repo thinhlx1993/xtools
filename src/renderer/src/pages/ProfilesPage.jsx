@@ -84,9 +84,9 @@ const ProfilesPage = () => {
     fetchGroups()
     fetchUsers()
     // Set up the interval to call fetchData every 10 seconds
-  const interval = setInterval(fetchProfiles, 10000);
-  // Clear the interval on component unmount
-  return () => clearInterval(interval);
+    const interval = setInterval(fetchProfiles, 10000)
+    // Clear the interval on component unmount
+    return () => clearInterval(interval)
   }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
 
   const parseCsv = (file) => {
@@ -108,7 +108,7 @@ const ProfilesPage = () => {
 
   const fetchProfiles = async () => {
     try {
-      const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=desc&filter=${filterByType}`
+      const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=asc&filter=${filterByType}`
       const response = await fetch(apiUrl, {
         method: 'GET',
         headers: {
@@ -714,7 +714,8 @@ const ProfilesPage = () => {
               {!isMobile && <TableCell>Suspended</TableCell>}
               {!isMobile && <TableCell>Payouts</TableCell>}
               {!isMobile && <TableCell>Total View</TableCell>}
-              {!isMobile && <TableCell>Notes</TableCell>}
+              {!isMobile && <TableCell>LinkClicks</TableCell>}
+              {!isMobile && <TableCell>Replies</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -862,11 +863,25 @@ const ProfilesPage = () => {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      width: '200px'
+                      width: '50px'
                     }}
                   >
-                    <Tooltip title={profile.notes}>
-                      <span>{profile.notes}</span>
+                    <Tooltip title={profile.profile_data?.metrics?.LinkClicks}>
+                      <span>{profile.profile_data?.metrics?.LinkClicks}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      width: '50px'
+                    }}
+                  >
+                    <Tooltip title={profile.profile_data?.metrics?.Replies}>
+                      <span>{profile.profile_data?.metrics?.Replies}</span>
                     </Tooltip>
                   </TableCell>
                 )}

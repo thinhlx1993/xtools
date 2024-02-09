@@ -151,7 +151,10 @@ export const handleNewPage = async (target) => {
     try {
       const pageUrlSecond = newPage.url()
       console.log('pageUrlSecond', pageUrlSecond)
-      await delayRandom([4000, 4250, 4500, 4750, 5000, 5250, 5500, 5750, 6000])
+      if (!pageUrlSecond.includes('about:blank')) {
+        await delayRandom([4000, 4250, 4500, 4750, 5000, 5250, 5500, 5750, 6000])
+      }
+
       if (isTwUrl(pageUrlSecond)) {
         return
       }

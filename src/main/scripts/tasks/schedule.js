@@ -75,7 +75,7 @@ export const fetchScheduledTasks = async () => {
 
 const processTaskQueue = async (queueData) => {
   const profileIdGiver = queueData?.profile_id
-  // let processPID = null
+  let processPID = null
   // let browserWSEndpoint = null
   if (listOpenBrowser.includes(profileIdGiver)) {
     return
@@ -106,7 +106,7 @@ const processTaskQueue = async (queueData) => {
       })
 
       // page.setDefaultNavigationTimeout(0)
-      // processPID = browser.process().pid
+      processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
 
       for (let task of mission_tasks) {
@@ -135,6 +135,7 @@ const processTaskQueue = async (queueData) => {
       error: mapErrorConstructor(error)
     })
   }
+  await killPID(processPID)
   listOpenBrowser = listOpenBrowser.filter((item) => item !== profileIdGiver)
 }
 

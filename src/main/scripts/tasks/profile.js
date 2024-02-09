@@ -459,7 +459,16 @@ export const checkProfiles = async (profileId, page) => {
   )
 
   const responseData = await response.json()
+
   const result = responseData.data.viewer.user_results.result
+
+  if (
+    !profileInfo.verify &&
+    result?.verified_program_eligibility?.ad_revenue_sharing_eligibility?.includes('verified')
+  ) {
+    profileInfo.verify = true
+  }
+
   if (result?.stripe_connect_account?.status === 'NotStarted') {
     logger.info(`account is ready for turn on momentization`)
     profileInfo.stripe_connect_account = true
@@ -516,8 +525,18 @@ export const checkProfiles = async (profileId, page) => {
       const analyticsResponseData = await analyticsResponse.json()
       logger.info(`${JSON.stringify(analyticsResponseData)}`)
       const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
+      profileInfo.metrics = {}
       for (let metric of currentMetrics) {
-        profileInfo.metric.metric_type = metric?.metric_value
+        if (metric.metric_value !== undefined) {
+          // Check if metric_value is present
+          profileInfo.metrics[metric.metric_type] = metric.metric_value
+        }
+      }
+      if (
+        !profileData.isBlueVerified &&
+        analyticsResponseData?.data?.user?.result?.is_blue_verified
+      ) {
+        profileData.isBlueVerified = analyticsResponseData?.data?.user?.result?.is_blue_verified
       }
     } catch (error) {}
   }
