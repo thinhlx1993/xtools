@@ -118,7 +118,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await scrollAction.scrollToEntry(page, elementHandle)
     await _getDelayTimeAction(featOptions)
 
-    if (!entryItem.isAds && Math.random() < 0.33) {
+    if (!entryItem.isAds && Math.random() < 0.33 && receiverData.gpt_key) {
       const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
       const userEventLogs = await getEventsLogs(receiverData.username, actionType)
       const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
@@ -189,13 +189,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    const userEventLogs = await getEventsLogs(receiverData.username, 'clickAds')
-    const userGiverLogs = await getGiverEventsLogs(giverData.username, 'clickAds')
-    if (
-      userEventLogs.result_count < 350 &&
-      userGiverLogs.result_count < 350 &&
-      Math.random() < 0.33
-    ) {
+    if (Math.random() < 0.5) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,
