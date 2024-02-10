@@ -14,13 +14,13 @@ import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
 import crawlPostStep from '../steps/crawl-post'
 import reUpStep from '../steps/reup-post'
-import { killChrome, handleNewPage, randomDelay } from './utils'
+import { killChrome, handleNewPage } from './utils'
 import { mapErrorConstructor } from '../../helpers'
-import { cpuMonitoring, killPID, closeBlankPages } from './utils'
+import { killPID } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
-const concurrencyLimit = 15
+const concurrencyLimit = 25
 let listOpenBrowser = []
 let taskQueue = async.queue(async (task) => {
   try {
@@ -99,10 +99,7 @@ const processTaskQueue = async (queueData) => {
 
       browser.on('targetdestroyed', async (target) => {
         // fix listen disconnected on MacOS
-        const pages = await browser.pages()
-        if (!pages.length || pages.length > 5) {
-          await browser.close()
-        }
+        // const pages = await browser.pages()
       })
 
       // page.setDefaultNavigationTimeout(0)

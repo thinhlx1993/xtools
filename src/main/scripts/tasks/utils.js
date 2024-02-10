@@ -103,17 +103,21 @@ export const killChrome = () => {
   })
 }
 
-export const checkPort = async (port) => {
-  return new Promise((resolve) => {
-    const client = createConnection({ port }, () => {
-      client.end()
-      resolve(true)
+export const checkPort = (port) => {
+  return axios
+    .get(`http://127.0.0.1:${port}/json/version`)
+    .then((response) => {
+      const webSocketDebuggerUrl = response.data.webSocketDebuggerUrl
+      if (webSocketDebuggerUrl) {
+        console.log(`Found webSocketDebuggerUrl: ${webSocketDebuggerUrl}`)
+        return webSocketDebuggerUrl // This will be returned to the caller of checkPort
+      }
+      return false
     })
-
-    client.on('error', () => {
-      resolve(false)
+    .catch((error) => {
+      // If you want to handle specific errors, you can do so here
+      return false
     })
-  })
 }
 
 export const closeBlankPage = async (browser) => {

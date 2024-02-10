@@ -39,6 +39,7 @@ export default async (page, giverData, featOptions, receiverData) => {
   const totalPosts = utils.randomArrayNumberInString(featOptions.randomTotalPostsForInteractAds)
   let totalCount = 0
   let pinEntryAdded = false
+  let currentEntrie = 0
   const entries = []
   handleResponseUserTweets(page, ({ pinEntry, addEntries }) => {
     if (pinEntry && !pinEntryAdded) {
@@ -67,6 +68,7 @@ export default async (page, giverData, featOptions, receiverData) => {
       return
     }
     entries.shift()
+    currentEntrie = currentEntrie + 1
     const entryType = entry.content.entryType
     if (entryType === ENTRY_TYPE.module) {
       await windowScrollBy(page, 300)
@@ -77,7 +79,7 @@ export default async (page, giverData, featOptions, receiverData) => {
       continue
     }
     const entryItem = mapper.mapUserTweet(entry)
-    logger.info('entryItem', entryItem)
+    // logger.info('entryItem', entryItem)
 
     const postData = {
       profile_id: receiverData.profile_id,
@@ -118,7 +120,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await scrollAction.scrollToEntry(page, elementHandle)
     await _getDelayTimeAction(featOptions)
 
-    if (!entryItem.isAds && Math.random() < 0.33 && receiverData.gpt_key) {
+    if (!entryItem.isAds && currentEntrie === 1 && receiverData.gpt_key) {
       const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
       const userEventLogs = await getEventsLogs(receiverData.username, actionType)
       const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
@@ -141,17 +143,31 @@ export default async (page, giverData, featOptions, receiverData) => {
           const choices = featOptions.chatOpenAIPrefix.split('|')
           const chosenOption = choices[Math.floor(Math.random() * choices.length)]
           logger.info(`${receiverData.username} commentEntryWithChatGPT`)
-          await interactAction.commentEntryWithChatGPT(page, elementHandle, entryItem.fullText, {
-            key: receiverData.gpt_key,
-            prefix: chosenOption,
-            maxRetryTime: 2
-          })
-          await createEventLogs({
-            event_type: actionType,
-            profile_id: receiverData.profile_id,
-            profile_id_interact: giverData.profile_id,
-            issue: 'OK'
-          })
+          const commentStatus = await interactAction.commentEntryWithChatGPT(
+            page,
+            elementHandle,
+            entryItem.fullText,
+            {
+              key: receiverData.gpt_key,
+              prefix: chosenOption,
+              maxRetryTime: 2
+            }
+          )
+          if (commentStatus) {
+            await createEventLogs({
+              event_type: actionType,
+              profile_id: receiverData.profile_id,
+              profile_id_interact: giverData.profile_id,
+              issue: 'OK'
+            })
+          } else {
+            await createEventLogs({
+              event_type: actionType,
+              profile_id: receiverData.profile_id,
+              profile_id_interact: giverData.profile_id,
+              issue: 'Comment error'
+            })
+          }
         } else if (actionType === 'like' && featOptions.allowLikeAction) {
           await utils.delayRandom()
           logger.info(`${receiverData.username} favoriteEntry`)
@@ -166,7 +182,7 @@ export default async (page, giverData, featOptions, receiverData) => {
       }
     }
 
-    if (entryItem.isRePost || entryItem.replyCount < 1) {
+    if (entryItem.isRePost || entryItem.replyCount < 2) {
       continue
     }
     if (entryItem.isAds) {
@@ -189,7 +205,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    if (Math.random() < 0.5) {
+    if (Math.random() < 1) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,

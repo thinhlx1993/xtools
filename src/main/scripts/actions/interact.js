@@ -187,10 +187,11 @@ const _getContentCommentByChatGPT = (chatGPT, content, tryTime = 0) => {
 const commentEntryWithChatGPT = async (page, entryElementHandle, entryContent, chatGPT) => {
   const commentContent = await _getContentCommentByChatGPT(chatGPT, entryContent)
   if (!commentContent) {
-    return
+    return false
   }
   logger.info(`ChatGPT return content ${commentContent}`)
-  return await commentEntry(page, entryElementHandle, commentContent)
+  await commentEntry(page, entryElementHandle, commentContent)
+  return true
 }
 
 /**

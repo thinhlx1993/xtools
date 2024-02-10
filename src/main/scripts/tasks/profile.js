@@ -15,7 +15,8 @@ import {
   calculateClicks,
   sendCapGuruRequest,
   scrollIntoView,
-  closeBlankPages
+  closeBlankPages,
+  checkPort
 } from './utils'
 import { cacheCookies } from './cookies'
 import { DOMAIN_COOKIE } from '../constants'
@@ -29,10 +30,22 @@ export const openProfileBrowser = async (profile) => {
     const randomPos = getRandomPosition()
     let args = [`--window-position=${randomPos}`]
     let profileData = await getProfileData(profile, {})
-    // const debuggerPort = profileData.debugger_port
-    // if (debuggerPort) {
-    //   args.push(`--remote-debugging-port=${debuggerPort}`)
-    // }
+    const debuggerPort = profileData.debugger_port
+    if (debuggerPort) {
+      const webSocketDebuggerUrl = await checkPort(debuggerPort)
+      console.log(`Found ${webSocketDebuggerUrl}`)
+      if (webSocketDebuggerUrl) {
+        const browser = await puppeteer.connect({
+          browserWSEndpoint: webSocketDebuggerUrl
+        })
+        console.log('Connected to the browser')
+
+        // Close the browser
+        await browser.close()
+      }
+
+      args.push(`--remote-debugging-port=${debuggerPort}`)
+    }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
         const tz = await hideMyAcc.network(splitProxy(profileData.proxy))
@@ -98,7 +111,25 @@ export const openProfileBrowser = async (profile) => {
     }
     // logger.info(newBrowserOptions.args)
     browser = await puppeteer.launch(newBrowserOptions)
-    page = await browser.newPage()
+    let pages = await browser.pages()
+
+    // Check if there are pages open
+    logger.info(`Page length: ${pages.length}`)
+    if (pages.length > 1) {
+      // Iterate through all pages except the first one
+      for (let i = 1; i < pages.length; i++) {
+        await pages[i].close() // Close each page
+      }
+    }
+
+    // At this point, only the first page is open
+    // You can access the first page with pages[0] if it exists, or create a new one
+    pages = await browser.pages()
+    if (pages.length) {
+      page = pages[0]
+    } else {
+      page = await browser.newPage()
+    }
 
     try {
       // enter proxy username password
