@@ -118,15 +118,9 @@ const ProfilesPage = () => {
       //   }
       // })
       const response = await getRequest(apiUrl)
-
-      if (response.ok) {
-        const data = await response.json()
-        setProfiles(data.profiles) // Assuming the API response contains an array of profiles in 'profiles' key
-        setresultCount(data.result_count)
-      } else {
-        openSnackbar('Failed to fetch profiles', 'error')
-        console.error('Failed to fetch profiles:', await response.text())
-      }
+      const data = await response.data
+      setProfiles(data.profiles) // Assuming the API response contains an array of profiles in 'profiles' key
+      setresultCount(data.result_count)
     } catch (error) {
       openSnackbar('Error fetching profiles', 'error')
       console.error('Error fetching profiles:', error)

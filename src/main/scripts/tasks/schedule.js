@@ -53,13 +53,13 @@ const fetchAndProcessTask = async () => {
           })
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 20000))
       // if (taskQueue.length() === 0) {
       //   await cpuMonitoring()
       // }
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
-      await new Promise((resolve) => setTimeout(resolve, 5000)) // Wait before retrying in case of error
+      await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
     }
   }
 }
@@ -139,6 +139,7 @@ const processTaskQueue = async (queueData) => {
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
     // await startSignIn(profileIdGiver, page)
+    await resolveCaptcha(profileIdGiver, page)
     switch (taskName) {
       // case TASK_NAME_CONFIG.Login:
       //   await startSignIn(profileIdGiver, page)
@@ -168,12 +169,15 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       default:
         return
     }
-    await createEventLogs({
-      event_type: taskName,
-      profile_id: profileIdReceiver,
-      profile_id_interact: profileIdGiver,
-      issue: 'OK'
-    })
+    if (taskName !== TASK_NAME_CONFIG.ClickAds) {
+      await createEventLogs({
+        event_type: taskName,
+        profile_id: profileIdReceiver,
+        profile_id_interact: profileIdGiver,
+        issue: 'OK'
+      })
+    }
+
     await getCookies(profileIdGiver, page)
   } catch (error) {
     await createEventLogs({

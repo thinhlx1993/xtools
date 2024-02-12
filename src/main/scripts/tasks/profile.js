@@ -30,6 +30,7 @@ export const openProfileBrowser = async (profile) => {
     const randomPos = getRandomPosition()
     let args = [`--window-position=${randomPos}`]
     let profileData = await getProfileData(profile, {})
+    logger.info(`Open Browser ${profileData.username}`)
     const debuggerPort = profileData.debugger_port
     if (debuggerPort) {
       const webSocketDebuggerUrl = await checkPort(debuggerPort)
@@ -189,33 +190,37 @@ export const setCookies = async (page, profileData) => {
 }
 
 export const resolveCaptcha = async (profileId, page) => {
-  await randomDelay()
-  try {
-    // aria-label="Home timeline"
-    await page.waitForSelector('div[aria-label="Home timeline"]', {
-      visible: true,
-      timeout: 5000
-    })
-    await updateProfileData(profileId, { status: 'ok' })
-    return
-  } catch (error) {
-    logger.info('Cant access to the homepage')
-  }
-
-  await page.evaluate(() =>
-    document
-      .querySelector('span')
-      ?.innerText?.includes('Hmm...this page doesn’t exist. Try searching for something else.')
-  )
-  await updateProfileData(profileId, { status: 'found captcha' })
+  // await randomDelay()
+  // try {
+  //   // aria-label="Home timeline"
+  //   await page.waitForSelector('div[aria-label="Home timeline"]', {
+  //     visible: true,
+  //     timeout: 5000
+  //   })
+  //   await updateProfileData(profileId, { status: 'ok' })
+  //   return
+  // } catch (error) {
+  //   logger.info('Cant access to the homepage')
+  // }
 
   try {
+    const textExists = await page.evaluate(() =>
+      document
+        .querySelector('span')
+        ?.innerText?.includes('Hmm...this page doesn’t exist. Try searching for something else.')
+    )
+    if (!textExists) {
+      return
+    }
+
+    await updateProfileData(profileId, { status: 'found captcha' })
+
     let profileData = await getProfileData(profileId, {})
     let key = ''
     if (profileData.settings.capguruKey) {
       key = profileData.settings.capguruKey
     } else {
-      await updateProfileData(profileId, { status: 'captcha|not found guru key' })
+      await updateProfileData(profileId, { status: 'not found guru key' })
       return
     }
 
@@ -323,8 +328,8 @@ export const resolveCaptcha = async (profileId, page) => {
     // You've proven you're a human. Continue your action.
     await updateProfileData(profileId, { status: 'ok' })
   } catch (error) {
-    logger.info(error)
-    await updateProfileData(profileId, { status: 'captcha error' })
+    logger.error(error)
+    // await updateProfileData(profileId, { status: 'captcha error' })
   }
 }
 

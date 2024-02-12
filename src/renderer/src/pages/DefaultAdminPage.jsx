@@ -23,7 +23,7 @@ const AdminComponent = () => {
   }, [])
 
   const fetchData = async () => {
-    const response = await getRequest('/dashboard')
+    const response = await getRequest('/dashboard/')
     setData(response.data)
   }
 
@@ -38,7 +38,7 @@ const AdminComponent = () => {
               value: `${data.user_count}`
             },
             {
-              name: 'Profiles',
+              name: 'Total Profiles',
               value: `${data.profiles_count}`
             },
             {
@@ -46,7 +46,7 @@ const AdminComponent = () => {
               value: `${data.unverified_profiles_count}`
             },
             {
-              name: 'Verified',
+              name: 'Profiles Click',
               value: `${data.verified_profiles_count}`
             },
             {
@@ -70,7 +70,7 @@ const AdminComponent = () => {
                 <TableCell>Username</TableCell>
                 <TableCell>Profiles</TableCell>
                 <TableCell>Clone</TableCell>
-                <TableCell>Verified</TableCell>
+                <TableCell>Profiles Click</TableCell>
                 <TableCell>Momentizable</TableCell>
                 <TableCell>Earning</TableCell>
               </TableRow>

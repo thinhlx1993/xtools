@@ -5,7 +5,6 @@ const REFRESH_TOKEN_URL = `${AppConfig.BASE_URL}/user/refresh` // Endpoint for r
 
 const axiosInstance = axios.create({
   baseURL: AppConfig.BASE_URL,
-  timeout: 30000, // Set the request timeout
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
