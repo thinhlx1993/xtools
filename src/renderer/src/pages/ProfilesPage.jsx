@@ -37,6 +37,7 @@ import { useMediaQuery } from '@mui/material'
 import { ipcMainConsumer } from '../helpers/api'
 import CachedIcon from '@mui/icons-material/Cached'
 import ExportCSV from './exportCSV'
+import { getRequest } from '../helpers/backend'
 const ProfilesPage = () => {
   const { openSnackbar } = useSnackbar()
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'))
@@ -81,8 +82,8 @@ const ProfilesPage = () => {
 
   useEffect(() => {
     fetchProfiles()
-    fetchGroups()
-    fetchUsers()
+    // fetchGroups()
+    // fetchUsers()
     // Set up the interval to call fetchData every 10 seconds
     const interval = setInterval(fetchProfiles, 60000)
     // Clear the interval on component unmount
@@ -109,13 +110,14 @@ const ProfilesPage = () => {
   const fetchProfiles = async () => {
     try {
       const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=asc&filter=${filterByType}`
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}` // Replace with actual token
-        }
-      })
+      // const response = await fetch(apiUrl, {
+      //   method: 'GET',
+      //   headers: {
+      //     Accept: 'application/json',
+      //     Authorization: `Bearer ${localStorage.getItem('access_token')}` // Replace with actual token
+      //   }
+      // })
+      const response = await getRequest(apiUrl)
 
       if (response.ok) {
         const data = await response.json()
@@ -669,9 +671,9 @@ const ProfilesPage = () => {
             Import
           </Button>
         </Grid>
-        {/* <Grid item style={{ marginLeft: '20px' }}>
+        <Grid item style={{ marginLeft: '20px' }}>
           <ExportCSV data={profiles} />
-        </Grid> */}
+        </Grid>
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"

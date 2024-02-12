@@ -1,8 +1,11 @@
 import React from 'react'
 import { Button, Grid } from '@mui/material'
 import { ipcMainConsumer } from '../helpers/api'
+import { useSnackbar } from '../context/SnackbarContext'
 
 const ExportCSV = ({ data }) => {
+  const { openSnackbar } = useSnackbar()
+
   const convertToCSV = (objArray) => {
     const headers = [
       { label: 'username', key: 'username' },
@@ -42,6 +45,7 @@ const ExportCSV = ({ data }) => {
   const downloadCSV = () => {
     const csvData = convertToCSV(data)
     ipcMainConsumer.emit('downloadCSV', csvData)
+    openSnackbar('Exported into the clipboard', 'success')
     // const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
     // const link = document.createElement('a')
     // const url = URL.createObjectURL(blob)

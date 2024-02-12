@@ -546,31 +546,31 @@ export const checkProfiles = async (profileId, page) => {
       profileInfo.payouts = tempPayouts
       logger.info(`payouts ${profileInfo.payouts}`)
     } catch (error) {}
-
-    // check analytics
-    try {
-      await page.goto('https://twitter.com/i/account_analytics')
-      const analyticsResponse = await page.waitForResponse(
-        (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200
-      )
-      const analyticsResponseData = await analyticsResponse.json()
-      logger.info(`${JSON.stringify(analyticsResponseData)}`)
-      const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
-      profileInfo.metrics = {}
-      for (let metric of currentMetrics) {
-        if (metric.metric_value !== undefined) {
-          // Check if metric_value is present
-          profileInfo.metrics[metric.metric_type] = metric.metric_value
-        }
-      }
-      if (
-        !profileData.isBlueVerified &&
-        analyticsResponseData?.data?.user?.result?.is_blue_verified
-      ) {
-        profileData.isBlueVerified = analyticsResponseData?.data?.user?.result?.is_blue_verified
-      }
-    } catch (error) {}
   }
+
+  // check analytics
+  try {
+    await page.goto('https://twitter.com/i/account_analytics')
+    const analyticsResponse = await page.waitForResponse(
+      (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200
+    )
+    const analyticsResponseData = await analyticsResponse.json()
+    logger.info(`${JSON.stringify(analyticsResponseData)}`)
+    const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
+    profileInfo.metrics = {}
+    for (let metric of currentMetrics) {
+      if (metric.metric_value !== undefined) {
+        // Check if metric_value is present
+        profileInfo.metrics[metric.metric_type] = metric.metric_value
+      }
+    }
+    if (
+      !profileData.isBlueVerified &&
+      analyticsResponseData?.data?.user?.result?.is_blue_verified
+    ) {
+      profileData.isBlueVerified = analyticsResponseData?.data?.user?.result?.is_blue_verified
+    }
+  } catch (error) {}
 
   logger.info(`profile info: ${JSON.stringify(profileInfo)}`)
   await updateProfileData(profileId, { profile_data: profileInfo })

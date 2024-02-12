@@ -1,11 +1,11 @@
 import axios from 'axios'
 import AppConfig from '../config/enums'
-
+import { ipcMainConsumer } from './api'
 const REFRESH_TOKEN_URL = `${AppConfig.BASE_URL}/user/refresh` // Endpoint for refreshing tokens
 
 const axiosInstance = axios.create({
   baseURL: AppConfig.BASE_URL,
-  timeout: 10000, // Set the request timeout
+  timeout: 30000, // Set the request timeout
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json'
@@ -28,6 +28,7 @@ const getRefreshToken = () => {
 const saveAccessToken = (token) => {
   // Implement logic to save your access token
   localStorage.setItem('access_token', token)
+  ipcMainConsumer.emit('setAccessToken', token)
 }
 
 // Request interceptor to add the auth token header to requests
@@ -64,11 +65,15 @@ axiosInstance.interceptors.response.use(
           Authorization: `Bearer ${refreshToken}`
         }
       }
+
       return axios.post(REFRESH_TOKEN_URL, { refreshToken }, config).then((res) => {
         if (res.status === 200) {
-          saveAccessToken(res.data.accessToken)
-          axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.accessToken
+          console.log(`refresh token ${res.data}`)
+          saveAccessToken(res.data.access_token)
+          axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.access_token
           return axios(originalRequest)
+        } else {
+          //  Logout
         }
       })
     }

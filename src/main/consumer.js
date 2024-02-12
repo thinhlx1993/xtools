@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron'
 import { machineIdSync } from 'node-machine-id'
 import hideMyAcc from './integration/hidemyacc'
 import store from './store'
@@ -303,24 +303,26 @@ ipcMain.on('getDetailedAccountById', async (event, profileId) => {
 })
 
 ipcMain.on('downloadCSV', async (event, csvData) => {
-  const options = {
-    title: 'Save CSV file',
-    defaultPath: app.getPath('downloads') + '/exportedData.csv',
-    buttonLabel: 'Save',
-    filters: [{ name: 'CSV files', extensions: ['csv'] }]
-  }
+  // const options = {
+  //   title: 'Save CSV file',
+  //   defaultPath: './exportedData.csv',
+  //   buttonLabel: 'Save',
+  //   filters: [{ name: 'CSV files', extensions: ['csv'] }]
+  // }
 
-  dialog
-    .showSaveDialog(options)
-    .then((result) => {
-      if (!result.canceled) {
-        fs.writeFile(result.filePath, csvData, (err) => {
-          if (err) throw err
-          console.log('The file has been saved!')
-        })
-      }
-    })
-    .catch((err) => {
-      console.log(err)
-    })
+  clipboard.writeText(csvData)
+
+  // dialog
+  //   .showSaveDialog(options)
+  //   .then((result) => {
+  //     if (!result.canceled) {
+  //       fs.writeFile(result.filePath, csvData, (err) => {
+  //         if (err) throw err
+  //         console.log('The file has been saved!')
+  //       })
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.log(err)
+  //   })
 })
