@@ -81,17 +81,17 @@ export default async (page, giverData, featOptions, receiverData) => {
     const entryItem = mapper.mapUserTweet(entry)
     // logger.info('entryItem', entryItem)
 
-    const postData = {
-      profile_id: receiverData.profile_id,
-      username: receiverData.username,
-      tw_post_id: entry.entryId,
-      like: entry.content.itemContent.tweet_results.result.legacy.favorite_count,
-      comment: entry.content.itemContent.tweet_results.result.legacy.reply_count,
-      share: entry.content.itemContent.tweet_results.result.legacy.retweet_count,
-      content: JSON.stringify(entry),
-      post_date: entry.content.itemContent.tweet_results.result.legacy.created_at
-    }
-    await createAnewPost(postData)
+    // const postData = {
+    //   profile_id: receiverData.profile_id,
+    //   username: receiverData.username,
+    //   tw_post_id: entry.entryId,
+    //   like: entry.content.itemContent.tweet_results.result.legacy.favorite_count,
+    //   comment: entry.content.itemContent.tweet_results.result.legacy.reply_count,
+    //   share: entry.content.itemContent.tweet_results.result.legacy.retweet_count,
+    //   content: JSON.stringify(entry),
+    //   post_date: entry.content.itemContent.tweet_results.result.legacy.created_at
+    // }
+    // await createAnewPost(postData)
 
     await Promise.resolve(
       entryItem.isAds
@@ -122,18 +122,14 @@ export default async (page, giverData, featOptions, receiverData) => {
 
     if (!entryItem.isAds && currentEntrie === 1 && receiverData.gpt_key) {
       const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
-      const userEventLogs = await getEventsLogs(receiverData.username, actionType)
-      const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
+      // const userEventLogs = await getEventsLogs(receiverData.username, actionType)
+      // const userGiverLogs = await getGiverEventsLogs(giverData.username, actionType)
       // maximum 5 comment likes per user per day
       const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
-      if (
-        userEventLogs.result_count < maxCommentLike &&
-        userGiverLogs.result_count < maxCommentLike
-      ) {
-        logger.info(
-          `${receiverData.username} today have ${userEventLogs.result_count} ${actionType}`
-        )
-        logger.info(`${giverData.username} today give ${userGiverLogs.result_count} ${actionType}`)
+      const totalActionCount = receiverData.like_count + receiverData.comment_count
+      const totalGiverCount = giverData.like_count + giverData.comment_count
+      if (totalActionCount < 6 && totalGiverCount < 6) {
+        logger.info(`${receiverData.username} today have ${totalActionCount} ${actionType}`)
         if (
           actionType === 'comment' &&
           featOptions.allowCommentAction &&
@@ -185,7 +181,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     if (entryItem.isRePost || entryItem.replyCount < 2) {
       continue
     }
-    if (entryItem.isAds) {
+    if (entryItem.isAds && receiverData.click_count < 350) {
       await scrollAction.scrollToEntryMedia(page, elementHandle)
       await _getDelayTimeAction(featOptions)
       await interactAction.interactAdsEntry(page, elementHandle, entryItem)

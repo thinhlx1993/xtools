@@ -84,7 +84,7 @@ const ProfilesPage = () => {
     fetchGroups()
     fetchUsers()
     // Set up the interval to call fetchData every 10 seconds
-    const interval = setInterval(fetchProfiles, 20000)
+    const interval = setInterval(fetchProfiles, 60000)
     // Clear the interval on component unmount
     return () => clearInterval(interval)
   }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
@@ -669,9 +669,9 @@ const ProfilesPage = () => {
             Import
           </Button>
         </Grid>
-        <Grid item style={{ marginLeft: '20px' }}>
+        {/* <Grid item style={{ marginLeft: '20px' }}>
           <ExportCSV data={profiles} />
-        </Grid>
+        </Grid> */}
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
