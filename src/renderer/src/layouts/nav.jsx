@@ -181,7 +181,7 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Profiles" />
             </ListItem>
           )}
-          {userRole === 'admin' && (
+          {userSuperAdmin && (
             <ListItem button component={Link} to="/admin/events">
               <ListItemText primary="Events" />
             </ListItem>

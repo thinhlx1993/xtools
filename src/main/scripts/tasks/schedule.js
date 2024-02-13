@@ -78,6 +78,7 @@ const processTaskQueue = async (queueData) => {
   let processPID = null
   // let browserWSEndpoint = null
   if (listOpenBrowser.includes(profileIdGiver)) {
+    logger.info(`The user ${profileIdGiver} is running`)
     return
   }
 
@@ -147,9 +148,9 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       // case TASK_NAME_CONFIG.GetCookie:
       //   await getCookies(profileIdGiver, page)
       //   break
-      case TASK_NAME_CONFIG.Captcha:
-        await resolveCaptcha(profileIdGiver, page)
-        break
+      // case TASK_NAME_CONFIG.Captcha:
+      //   await resolveCaptcha(profileIdGiver, page)
+      //   break
       case TASK_NAME_CONFIG.CheckProfile:
         await checkProfiles(profileIdGiver, page)
         break

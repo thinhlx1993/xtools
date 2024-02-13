@@ -208,7 +208,7 @@ const ProfilesPage = () => {
         openSnackbar(data.message, 'success')
       }
     } catch (error) {
-      openSnackbar(`Error creating profiles`, 'error')
+      openSnackbar(`Due to a high traffic, please wating until your profiles loaded`, 'success')
       console.error(`Error creating profiles:`, error)
     }
 
@@ -642,24 +642,28 @@ const ProfilesPage = () => {
         </Grid>
 
         {/* Search Field */}
-        <Grid item style={{ marginRight: '20px' }}>
-          <Select value={filterByType} onChange={(e) => setFilterByType(e.target.value)}>
-            <MenuItem key="all" value="all">
-              All Account
-            </MenuItem>
-            <MenuItem key="main_account" value="main_account">
-              Main Account
-            </MenuItem>
-          </Select>
-        </Grid>
-        <Grid item>
-          <TextField
-            label="Search by Username, Status"
-            variant="outlined"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </Grid>
+        {!isMobile && (
+          <Grid item style={{ marginRight: '20px' }}>
+            <Select value={filterByType} onChange={(e) => setFilterByType(e.target.value)}>
+              <MenuItem key="all" value="all">
+                All Account
+              </MenuItem>
+              <MenuItem key="main_account" value="main_account">
+                Main Account
+              </MenuItem>
+            </Select>
+          </Grid>
+        )}
+        {!isMobile && (
+          <Grid item>
+            <TextField
+              label="Search by Username, Status"
+              variant="outlined"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </Grid>
+        )}
         <Grid item style={{ marginLeft: '20px' }}>
           <Button variant="contained" color="primary" onClick={() => setDialogOpen(true)}>
             Import
@@ -668,16 +672,18 @@ const ProfilesPage = () => {
         <Grid item style={{ marginLeft: '20px' }}>
           <ExportCSV data={profiles} />
         </Grid>
-        <Grid item style={{ marginLeft: '20px' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={selectedRows.length === 0}
-            onClick={() => handleBatchUpdateClick(true)}
-          >
-            Batch Update
-          </Button>
-        </Grid>
+        {!isMobile && (
+          <Grid item style={{ marginLeft: '20px' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={selectedRows.length === 0}
+              onClick={() => handleBatchUpdateClick(true)}
+            >
+              Batch Update
+            </Button>
+          </Grid>
+        )}
         <Grid item style={{ marginLeft: '20px' }}>
           <Button
             variant="contained"
