@@ -59,9 +59,9 @@ const MissionPage = () => {
 
   useEffect(() => {
     fetchTasks()
-    fetchGroups()
+    // fetchGroups()
     // fetchUsers()
-    fetchProfiles('')
+    // fetchProfiles('')
     fetchMissions()
   }, [])
 

@@ -283,7 +283,7 @@ ipcMain.on('fetchMachineId', async (event) => {
 // open profile
 ipcMain.on('startOpenProfile', async (event, profile) => {
   const [page, browser] = await openProfileBrowser(profile)
-  // await checkProfiles(profile, page)
+  await checkProfiles(profile, page)
 })
 
 // save access token

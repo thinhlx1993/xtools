@@ -36,7 +36,7 @@ const TeamsPage = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await fetch(`${AppConfig.BASE_URL}/teams`, {
+      const response = await fetch(`${AppConfig.BASE_URL}/teams/`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`

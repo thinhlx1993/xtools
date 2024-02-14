@@ -32,7 +32,7 @@ let taskQueue = async.queue(async (task) => {
 
 // kill marco.exe every hours
 const job = CronJob.from({
-  cronTime: '0 */4 * * *',
+  cronTime: '0 */12 * * *',
   onTick: function () {
     killChrome()
   },

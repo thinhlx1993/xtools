@@ -33,7 +33,18 @@ const ExportCSV = ({ data }) => {
       for (const header of headers) {
         if (line !== '') line += ','
 
-        const resolvedKey = header.key.split('.').reduce((acc, currentKey) => acc[currentKey], obj)
+        // Use reduce to navigate through the nested properties, with a check for existence of `acc`
+        const resolvedKey = header.key.split('.').reduce((acc, currentKey) => {
+          // Check if `acc` exists and has the property `currentKey`
+          if (acc && typeof acc === 'object' && currentKey in acc) {
+            return acc[currentKey]
+          } else {
+            // Handle the case where `acc` does not exist or does not have `currentKey`
+            // You can return `acc` itself, a default value, or any other appropriate fallback
+            return '' // Assuming an empty string as fallback if `acc` or `acc[currentKey]` does not exist
+          }
+        }, obj)
+
         line += `"${resolvedKey}"`
       }
       str += line + '\r\n'

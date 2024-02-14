@@ -46,11 +46,11 @@ const AdminComponent = () => {
               value: `${data.unverified_profiles_count}`
             },
             {
-              name: 'Profiles Click',
+              name: 'Profiles Giver',
               value: `${data.verified_profiles_count}`
             },
             {
-              name: 'Momentizable',
+              name: 'Profiles Receiver',
               value: `${data.monetizable_profiles_count}`
             },
             {
@@ -70,8 +70,8 @@ const AdminComponent = () => {
                 <TableCell>Username</TableCell>
                 <TableCell>Profiles</TableCell>
                 <TableCell>Clone</TableCell>
-                <TableCell>Profiles Click</TableCell>
-                <TableCell>Momentizable</TableCell>
+                <TableCell>Profiles Giver</TableCell>
+                <TableCell>Profiles Receiver</TableCell>
                 <TableCell>Earning</TableCell>
               </TableRow>
             </TableHead>

@@ -486,6 +486,7 @@ export const checkProfiles = async (profileId, page) => {
     profileInfo.view = totalViews
     logger.info('Total Views:', totalViews)
   }
+  await randomDelay()
 
   // check momentizable
   await page.goto('https://twitter.com/settings/monetization')
@@ -507,7 +508,7 @@ export const checkProfiles = async (profileId, page) => {
 
   if (result?.stripe_connect_account?.status === 'NotStarted') {
     logger.info(`account is ready for turn on momentization`)
-    profileInfo.stripe_connect_account = true
+    profileInfo.stripe_connect_account = false
     profileInfo.monetizable = false
     profileInfo.account_status = 'NotStarted'
   }
@@ -517,7 +518,7 @@ export const checkProfiles = async (profileId, page) => {
     result?.verified_user_profiles?.ad_revenue_sharing_user_profile?.is_active === true
   ) {
     profileInfo.monetizable = true
-    profileInfo.stripe_connect_account = false
+    profileInfo.stripe_connect_account = true
     profileInfo.account_status = 'OK'
     logger.info(`ad_revenue_sharing ok`)
   }
@@ -528,7 +529,7 @@ export const checkProfiles = async (profileId, page) => {
   ) {
     profileInfo.monetizable = false
     profileInfo.account_status = 'ERROR'
-    profileInfo.stripe_connect_account = false
+    profileInfo.stripe_connect_account = true
     logger.info(`ad_revenue_sharing turn off`)
   }
 
