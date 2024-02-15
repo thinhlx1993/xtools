@@ -499,11 +499,15 @@ export const checkProfiles = async (profileId, page) => {
 
   const result = responseData.data.viewer.user_results.result
 
-  if (
-    !profileInfo.verify &&
-    result?.verified_program_eligibility?.ad_revenue_sharing_eligibility?.includes('verified')
-  ) {
-    profileInfo.verify = true
+  try {
+    if (
+      !profileInfo.verify &&
+      !result.verified_program_eligibility.ad_revenue_sharing_eligibility.includes('verified')
+    ) {
+      profileInfo.verify = true
+    }
+  } catch (error) {
+    logger.error(error)
   }
 
   if (result?.stripe_connect_account?.status === 'NotStarted') {
@@ -535,6 +539,7 @@ export const checkProfiles = async (profileId, page) => {
 
   if (profileInfo.monetizable) {
     try {
+      await randomDelay()
       await page.goto('https://twitter.com/settings/ad_rev_share_dashboard')
       const adsResponse = await page.waitForResponse(
         (response) =>
@@ -556,6 +561,7 @@ export const checkProfiles = async (profileId, page) => {
 
   // check analytics
   try {
+    await randomDelay()
     await page.goto('https://twitter.com/i/account_analytics')
     const analyticsResponse = await page.waitForResponse(
       (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200

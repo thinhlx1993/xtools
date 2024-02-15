@@ -156,11 +156,11 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
     <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
       <div role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
         <List>
-          {userRole === 'admin' && (
+          {/* {userRole === 'admin' && (
             <ListItem button component={Link} to="/admin">
               <ListItemText primary="Admin Dashboard" />
             </ListItem>
-          )}
+          )} */}
           {userSuperAdmin && (
             <ListItem button component={Link} to="/admin/teams">
               <ListItemText primary="Teams" />
@@ -181,7 +181,7 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Profiles" />
             </ListItem>
           )}
-          {userSuperAdmin && (
+          {userRole === 'admin' && (
             <ListItem button component={Link} to="/admin/events">
               <ListItemText primary="Events" />
             </ListItem>

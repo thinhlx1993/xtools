@@ -1,11 +1,5 @@
-import { get, createEventLogs, updateProfileData, getProfileData } from '../services/backend'
-import {
-  openProfileBrowser,
-  startSignIn,
-  getCookies,
-  resolveCaptcha,
-  checkProfiles
-} from './profile'
+import { get, createEventLogs, updateProfileData } from '../services/backend'
+import { openProfileBrowser, getCookies, resolveCaptcha, checkProfiles } from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
 import logger from '../../logger'
 import async from 'async'
@@ -31,7 +25,7 @@ let taskQueue = async.queue(async (task) => {
 }, concurrencyLimit) // 1 is the concurrency limit
 
 // kill marco.exe every hours
-const job = CronJob.from({
+CronJob.from({
   cronTime: '0 */12 * * *',
   onTick: function () {
     killChrome()
@@ -98,11 +92,6 @@ const processTaskQueue = async (queueData) => {
         console.log('BROWSER disconnected')
       })
 
-      browser.on('targetdestroyed', async (target) => {
-        // fix listen disconnected on MacOS
-        // const pages = await browser.pages()
-      })
-
       // page.setDefaultNavigationTimeout(0)
       processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
@@ -117,7 +106,9 @@ const processTaskQueue = async (queueData) => {
           if (configProfiles) {
             tasksJson.profiles = configProfiles
           }
-        } catch (error) {}
+        } catch (error) {
+          logger.error(error)
+        }
 
         const startDate = new Date()
         logger.info(`${startDate} ${profileIdGiver} Worker start ${taskName}`)
