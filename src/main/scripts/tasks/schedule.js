@@ -149,6 +149,12 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         await newsFeedStep.init(page, profileIdGiver, tasksJson)
         break
       case TASK_NAME_CONFIG.ClickAds:
+        // if (Math.random() < 0.1) {
+        //   await newsFeedStep.init(page, profileIdGiver, tasksJson)
+        // }
+        if (Math.random() < 0.05) {
+          await checkProfiles(profileIdGiver, page)
+        }
         await profileAdsStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)
         break
       case TASK_NAME_CONFIG.fairInteract:

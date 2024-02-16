@@ -900,7 +900,7 @@ const ProfilesPage = () => {
                     <DeleteForeverIcon />
                   </IconButton>
                   <Button color="info" onClick={() => handleOpenProfile(profile)}>
-                    Open Profile
+                    Check Profile
                   </Button>
                 </TableCell>
               </TableRow>

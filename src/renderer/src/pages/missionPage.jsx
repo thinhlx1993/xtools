@@ -101,15 +101,16 @@ const MissionPage = () => {
         })
 
         if (response.ok) {
+          const responseData = await response.json()
+          openSnackbar(responseData.message, 'success')
           setNewMission(defaultForms)
           fetchMissions()
-          openSnackbar('The mission deleted successfully', 'success')
         } else {
-          openSnackbar('Delete mission failed', 'error')
+          openSnackbar('Mission not found or deleted', 'error')
         }
       } catch (error) {
-        console.error('Error creating mission:', error)
-        openSnackbar('Error creating mission', 'error')
+        console.error('Error Delete mission:', error)
+        openSnackbar('Error Delete mission', 'error')
       }
       closeDeleteDialog()
     }

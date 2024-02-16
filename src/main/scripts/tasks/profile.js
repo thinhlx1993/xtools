@@ -1,6 +1,6 @@
 import fs from 'fs'
 import axios from 'axios'
-import { getProfileData, updateProfileData, updatePostData } from '../services/backend'
+import { getProfileData, updateProfileData } from '../services/backend'
 import { defaultPuppeteerOptions, getRandomPosition } from '../../constants'
 import puppeteer from 'puppeteer-extra'
 import { getAppPath } from '../../utils'
@@ -55,7 +55,13 @@ export const openProfileBrowser = async (profile) => {
         logger.error('Get proxy data error', {
           error: mapErrorConstructor(error)
         })
-        await updateProfileData(profile, { status: 'Proxy unstable' })
+        if (error.response.data.message.includes('HMA')) {
+          // Handle specific error (e.g., retry logic, alternate action)
+          await updateProfileData(profile, { status: 'Check HMA Account' })
+        } else {
+          await updateProfileData(profile, { status: 'Proxy unstable' })
+        }
+
         return [page, browser]
       }
     }
@@ -146,7 +152,10 @@ export const openProfileBrowser = async (profile) => {
       await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0' })
       logger.info('Open the browser successfully')
       await startSignIn(profile, page)
-    } catch (error) {}
+    } catch (error) {
+      logger.error(error)
+      throw error
+    }
 
     return [page, browser]
   } catch (error) {
@@ -154,6 +163,13 @@ export const openProfileBrowser = async (profile) => {
       logger.error('Tunnel connection failed. Check your proxy configuration.')
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'Proxy connection failed' })
+    } else if (error.message.includes('net::ERR_CONNECTION_RESET')) {
+      logger.error('Tunnel connection failed. Check your proxy configuration.')
+      // Handle specific error (e.g., retry logic, alternate action)
+      await updateProfileData(profile, { status: 'Proxy connection failed' })
+    } else if (error.message.includes('HMA')) {
+      // Handle specific error (e.g., retry logic, alternate action)
+      await updateProfileData(profile, { status: 'Check HMA Account' })
     } else {
       logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors
@@ -325,11 +341,16 @@ export const resolveCaptcha = async (profileId, page) => {
         await randomDelay(1000, 3000)
       }
     }
-    // You've proven you're a human. Continue your action.
-    await updateProfileData(profileId, { status: 'ok' })
+    const captchaResolved = await page.evaluate(() =>
+      document
+        .querySelector('div')
+        ?.innerText?.includes("You've proven you're a human. Continue your action.")
+    )
+    if (captchaResolved) {
+      await updateProfileData(profileId, { status: 'captcha resolved' })
+    }
   } catch (error) {
     logger.error(error)
-    // await updateProfileData(profileId, { status: 'captcha error' })
   }
 }
 
