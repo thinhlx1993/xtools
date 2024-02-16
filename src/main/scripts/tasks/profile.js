@@ -535,7 +535,11 @@ export const checkProfiles = async (profileId, page) => {
     logger.info(`account is ready for turn on momentization`)
     profileInfo.stripe_connect_account = false
     profileInfo.monetizable = false
-    profileInfo.account_status = 'NotStarted'
+    if (result?.verified_program_eligibility?.ad_revenue_sharing_eligibility?.length === 0) {
+      profileInfo.account_status = 'AdsEligible'
+    } else {
+      profileInfo.account_status = 'NotStarted'
+    }
   }
 
   if (

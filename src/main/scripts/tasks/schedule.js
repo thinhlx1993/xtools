@@ -116,7 +116,7 @@ const processTaskQueue = async (queueData) => {
         const endDate = new Date()
         logger.info(`${endDate} ${profileIdGiver} Worker finished ${taskName}`)
       }
-      await updateProfileData(profileIdGiver, { status: `ok` })
+      // await updateProfileData(profileIdGiver, { status: `ok` })
       await browser.close()
     }
   } catch (error) {

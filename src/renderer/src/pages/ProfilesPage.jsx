@@ -767,7 +767,7 @@ const ProfilesPage = () => {
                       ) : (
                         <></>
                       )}
-                      {profile.profile_data?.account_status === 'NotStarted' ? (
+                      {profile.profile_data?.account_status === 'AdsEligible' ? (
                         <PaidIcon
                           style={{
                             marginLeft: '5px',
