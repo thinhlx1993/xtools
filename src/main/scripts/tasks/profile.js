@@ -401,6 +401,19 @@ export const startSignIn = async (profileId, page) => {
     await page.waitForSelector('a[href="/login"][data-testid="loginButton"]')
     await page.click('a[href="/login"][data-testid="loginButton"]')
     await randomDelay()
+
+    try {
+      const profileErrorText = await page.evaluate(() =>
+        document
+          .querySelector('span')
+          ?.innerText?.includes('Oops, something went wrong. Please try again later.')
+      )
+      if (profileErrorText) {
+        await updateProfileData(profileId, { status: 'something went wrong' })
+        return
+      }
+      // Oops, something went wrong. Please try again later.
+    } catch (error) {}
     await page.waitForSelector('div[dir="ltr"] > input[autocomplete="username"]')
     // Replace sendDelays with typing with delay
     await page.type('div[dir="ltr"] > input[autocomplete="username"]', profileData.username, {
@@ -414,7 +427,7 @@ export const startSignIn = async (profileId, page) => {
     const nextButtons = await page.$x(nextButtonXPath)
     if (nextButtons.length === 0) {
       await updateProfileData(profileId, { status: 'Login error' })
-      throw new Error('Login error, Next button not found exception')
+      return
     }
     await nextButtons[0].click()
     await randomDelay()
@@ -592,7 +605,7 @@ export const checkProfiles = async (profileId, page) => {
       (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200
     )
     const analyticsResponseData = await analyticsResponse.json()
-    logger.info(`${JSON.stringify(analyticsResponseData)}`)
+    logger.info(`analyticsResponseData ${JSON.stringify(analyticsResponseData)}`)
     const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
     profileInfo.metrics = {}
     for (let metric of currentMetrics) {
@@ -601,13 +614,12 @@ export const checkProfiles = async (profileId, page) => {
         profileInfo.metrics[metric.metric_type] = metric.metric_value
       }
     }
-    if (
-      !profileData.isBlueVerified &&
-      analyticsResponseData?.data?.user?.result?.is_blue_verified
-    ) {
-      profileData.isBlueVerified = analyticsResponseData?.data?.user?.result?.is_blue_verified
+    if (!profileInfo.verify && analyticsResponseData?.data?.user?.result?.is_blue_verified) {
+      profileInfo.verify = true
     }
-  } catch (error) {}
+  } catch (error) {
+    logger.error(error)
+  }
 
   logger.info(`profile info: ${JSON.stringify(profileInfo)}`)
   await updateProfileData(profileId, { profile_data: profileInfo })

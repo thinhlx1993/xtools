@@ -7,7 +7,6 @@ export const mapErrorConstructor = (error) => {
   const errorInfo = {
     name: error.name,
     message: error.message,
-    data: error.response.data,
     stack: error.stack
   }
 

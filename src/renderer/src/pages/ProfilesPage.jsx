@@ -778,6 +778,17 @@ const ProfilesPage = () => {
                       ) : (
                         <></>
                       )}
+                      {profile.profile_data?.account_status === 'NotStarted' ? (
+                        <PaidIcon
+                          style={{
+                            marginLeft: '5px',
+                            verticalAlign: 'middle',
+                            color: 'gray'
+                          }}
+                        />
+                      ) : (
+                        <></>
+                      )}
                       {profile.profile_data?.account_status === 'OK' ? (
                         <PaidIcon
                           style={{
