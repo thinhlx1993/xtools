@@ -85,7 +85,7 @@ const catchError = (error) => {
   logger.error(
     `Backend API call error ${error.response ? JSON.stringify(error.response.data) : error.message}`
   )
-  logger.error(`Access Token: ${token}`)
+  // logger.error(`Access Token: ${token}`)
   throw error
 }
 
