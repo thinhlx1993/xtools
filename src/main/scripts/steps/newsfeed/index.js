@@ -1,14 +1,12 @@
 import { mapErrorConstructor } from '../../../helpers'
 import logger from '../../../logger'
 import { STOP_ACTION_OPTION } from '../../../constants'
-import { authenticateProxy } from '../../helpers'
 import utils from '../../utils'
 // eslint-disable-next-line no-unused-vars
 import { Browser, Account, NewsFeedOptions } from '../../define-type'
 import home from './home'
 import { randomDelay } from '../../tasks/utils'
 import { getProfileData } from '../../services/backend'
-const dataMemories = {}
 
 /**
  * @param {Browser} browser the Puppeteer Browser
@@ -17,7 +15,6 @@ const dataMemories = {}
  */
 const _func = async (page, profileId, featOptions) => {
   const profileData = await getProfileData(profileId, {})
-  await authenticateProxy(page, profileData.proxy)
   try {
     let totalPosts = 0
     let totalPostsToClose = undefined

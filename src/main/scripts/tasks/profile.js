@@ -153,7 +153,7 @@ export const openProfileBrowser = async (profile) => {
       logger.info('Open the browser successfully')
       await startSignIn(profile, page)
     } catch (error) {
-      logger.error(error)
+      logger.error(`Open the browser ${error}`)
       throw error
     }
 
@@ -350,7 +350,7 @@ export const resolveCaptcha = async (profileId, page) => {
       await updateProfileData(profileId, { status: 'captcha resolved' })
     }
   } catch (error) {
-    logger.error(error)
+    logger.error(`Resolve captcha error ${error}`)
   }
 }
 
@@ -541,7 +541,7 @@ export const checkProfiles = async (profileId, page) => {
       profileInfo.verify = true
     }
   } catch (error) {
-    logger.error(error)
+    logger.error(`Check verify error ${error}`)
   }
 
   if (result?.stripe_connect_account?.status === 'NotStarted') {
@@ -618,7 +618,7 @@ export const checkProfiles = async (profileId, page) => {
       profileInfo.verify = true
     }
   } catch (error) {
-    logger.error(error)
+    logger.error(`Check analytics ${error}`)
   }
 
   logger.info(`profile info: ${JSON.stringify(profileInfo)}`)

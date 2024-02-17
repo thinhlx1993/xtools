@@ -99,24 +99,22 @@ const processTaskQueue = async (queueData) => {
       for (let task of mission_tasks) {
         // logger.info(`Task: ${JSON.stringify(task)}`)
         const taskName = task.tasks.tasks_name
-        await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
+        // await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
         const tasksJson = task.tasks.tasks_json
         try {
           const configProfiles = task?.config?.profiles
-          if (configProfiles) {
+          if (tasksJson && configProfiles) {
             tasksJson.profiles = configProfiles
           }
         } catch (error) {
-          logger.error(error)
+          logger.error(`set task profiles error ${error}`)
         }
-
         const startDate = new Date()
         logger.info(`${startDate} ${profileIdGiver} Worker start ${taskName}`)
         await processTask(profileIdGiver, profileIdReceiver, taskName, tasksJson, page)
         const endDate = new Date()
         logger.info(`${endDate} ${profileIdGiver} Worker finished ${taskName}`)
       }
-      // await updateProfileData(profileIdGiver, { status: `ok` })
       await browser.close()
     }
   } catch (error) {
@@ -130,18 +128,8 @@ const processTaskQueue = async (queueData) => {
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
   try {
-    // await startSignIn(profileIdGiver, page)
     await resolveCaptcha(profileIdGiver, page)
     switch (taskName) {
-      // case TASK_NAME_CONFIG.Login:
-      //   await startSignIn(profileIdGiver, page)
-      //   break
-      // case TASK_NAME_CONFIG.GetCookie:
-      //   await getCookies(profileIdGiver, page)
-      //   break
-      // case TASK_NAME_CONFIG.Captcha:
-      //   await resolveCaptcha(profileIdGiver, page)
-      //   break
       case TASK_NAME_CONFIG.CheckProfile:
         await checkProfiles(profileIdGiver, page)
         break
@@ -149,10 +137,10 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         await newsFeedStep.init(page, profileIdGiver, tasksJson)
         break
       case TASK_NAME_CONFIG.ClickAds:
-        // if (Math.random() < 0.1) {
-        //   await newsFeedStep.init(page, profileIdGiver, tasksJson)
-        // }
-        if (Math.random() < 0.05) {
+        if (Math.random() < 0.1) {
+          await newsFeedStep.init(page, profileIdGiver, tasksJson)
+        }
+        if (Math.random() < 0.03) {
           await checkProfiles(profileIdGiver, page)
         }
         await profileAdsStep.init(page, profileIdGiver, profileIdReceiver, tasksJson)

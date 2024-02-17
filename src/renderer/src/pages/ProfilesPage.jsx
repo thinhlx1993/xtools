@@ -38,6 +38,7 @@ import { ipcMainConsumer } from '../helpers/api'
 import CachedIcon from '@mui/icons-material/Cached'
 import ExportCSV from './exportCSV'
 import { getRequest } from '../helpers/backend'
+
 const ProfilesPage = () => {
   const { openSnackbar } = useSnackbar()
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'))
@@ -651,6 +652,27 @@ const ProfilesPage = () => {
               <MenuItem key="main_account" value="main_account">
                 Main Account
               </MenuItem>
+              <MenuItem key="monetizable" value="monetizable">
+                Monetizable
+              </MenuItem>
+              <MenuItem key="error" value="error">
+                Ads suspended
+              </MenuItem>
+              <MenuItem key="AdsEligible" value="AdsEligible">
+                Ads Eligible
+              </MenuItem>
+              <MenuItem key="suspended" value="suspended">
+                Account suspended
+              </MenuItem>
+              <MenuItem key="verified" value="verified">
+                Account verified
+              </MenuItem>
+              <MenuItem key="not_verified" value="not_verified">
+                Account not verified
+              </MenuItem>
+              <MenuItem key="unknown" value="unknown">
+                Unknown
+              </MenuItem>
             </Select>
           </Grid>
         )}
@@ -851,8 +873,8 @@ const ProfilesPage = () => {
                       maxWidth: 100
                     }}
                   >
-                    <Tooltip title={profile?.profile_data?.payouts}>
-                      <span>{profile?.profile_data?.payouts?.join('\n')}</span>
+                    <Tooltip title={profile?.profile_data?.payouts?.join(' ')}>
+                      <span>{profile?.profile_data?.payouts?.join(' ')}</span>
                     </Tooltip>
                   </TableCell>
                 )}

@@ -23,7 +23,10 @@ const ExportCSV = ({ data }) => {
       { label: 'stripe', key: 'profile_data.stripe_connect_account' },
       { label: 'suspended', key: 'profile_data.suspended' },
       { label: 'phone required', key: 'profile_data.phone_require' },
-      { label: 'view', key: 'profile_data.view' }
+      { label: 'view', key: 'profile_data.view' },
+      { label: 'clicks', key: 'profile_data.metrics.LinkClicks' },
+      { label: 'replies', key: 'profile_data.metrics.Replies' },
+      { label: 'payouts', key: 'profile_data.payouts' }
     ]
     const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray
     let str = `${headers.map((header) => header.label).join(',')}\n`

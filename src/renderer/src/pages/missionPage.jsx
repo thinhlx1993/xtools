@@ -11,8 +11,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Box,
-  Divider,
   CardActions,
   Checkbox,
   Tooltip,
@@ -30,9 +28,7 @@ import cronstrue from 'cronstrue'
 const MissionPage = () => {
   const { openSnackbar } = useSnackbar()
   const [missions, setMissions] = useState([])
-  const [groups, setGroups] = useState([])
   const [tasks, setTasks] = useState([])
-  const [users, setUsers] = useState([])
   const [profiles, setProfiles] = useState([])
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [startDialogOpen, setStartDialogOpen] = useState(false)
@@ -43,7 +39,7 @@ const MissionPage = () => {
     missionName: '',
     groupName: '',
     groupId: '',
-    profileIds: [],
+    profileIds: '',
     startDate: '',
     missionTasks: [],
     userId: '',
@@ -59,9 +55,6 @@ const MissionPage = () => {
 
   useEffect(() => {
     fetchTasks()
-    // fetchGroups()
-    // fetchUsers()
-    // fetchProfiles('')
     fetchMissions()
   }, [])
 
@@ -163,17 +156,6 @@ const MissionPage = () => {
     setNewMission({ ...newMission, missionTasks: value })
   }
 
-  const handleChangeProfiles = (event) => {
-    const { value } = event.target
-    setNewMission({ ...newMission, profileIds: value })
-  }
-
-  const handleChangeUser = (event) => {
-    const { value } = event.target
-    setNewMission({ ...newMission, userId: value })
-    fetchProfiles(value)
-  }
-
   const fetchTasks = async () => {
     const response = await fetch(`${AppConfig.BASE_URL}/tasks/`, {
       headers: {
@@ -206,66 +188,6 @@ const MissionPage = () => {
     }
   }
 
-  const fetchUsers = async () => {
-    const response = await fetch(`${AppConfig.BASE_URL}/user`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}` // Replace <access token> with actual token
-      }
-    })
-    if (response.ok) {
-      const data = await response.json()
-      setUsers(data.user_list)
-    } else {
-      // Handle errors
-      console.error('Failed to fetch tasks')
-    }
-  }
-
-  const fetchProfiles = async (userId) => {
-    const response = await fetch(`${AppConfig.BASE_URL}/profiles/`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}` // Replace <access token> with actual token
-      }
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      setProfiles(data.profiles)
-    } else {
-      // Handle errors
-      console.error('Failed to fetch tasks')
-    }
-  }
-
-  const fetchGroups = async () => {
-    try {
-      const response = await fetch(`${AppConfig.BASE_URL}/groups`, {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setGroups(data) // Assuming the response has a 'groups' field
-      } else {
-        // openSnackbar('Failed to fetch groups', 'error')
-      }
-    } catch (error) {
-      //   openSnackbar('Error fetching groups', 'error')
-    }
-  }
-
-  const handleStartMission = (missionId) => {
-    // Logic to start the mission
-  }
-
-  const handleStopMission = (missionId) => {
-    // Logic to stop the mission
-  }
-
   const handleCreateMission = async () => {
     const url = `${AppConfig.BASE_URL}/missions/`
     const headers = {
@@ -294,7 +216,7 @@ const MissionPage = () => {
       }
       setNewMission(defaultForms)
       await response.json()
-      fetchMissions()
+      await fetchMissions()
       setAddMissionDialogOpen(false)
       openSnackbar('Create a new mission successfully', 'success')
     } catch (error) {
@@ -329,11 +251,11 @@ const MissionPage = () => {
                     className="overflowHidden"
                     style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                   >
-                    {mission.mission_name}
+                    Title: {mission.mission_name}
                   </Typography>
                 </Tooltip>
 
-                <Typography color="textSecondary">Mission Status: {mission.status}</Typography>
+                {/*<Typography color="textSecondary"></Typography>*/}
                 <Tooltip
                   title={
                     mission.mission_json.cron
@@ -353,7 +275,7 @@ const MissionPage = () => {
                   </Typography>
                 </Tooltip>
 
-                <Typography color="textSecondary">User: {mission.username}</Typography>
+                {/*<Typography color="textSecondary">User: {mission.username}</Typography>*/}
                 <Typography color="textSecondary">
                   Profiles: {mission.mission_schedule.length}{' '}
                 </Typography>
@@ -373,13 +295,13 @@ const MissionPage = () => {
                 >
                   Start Now
                 </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={() => handleStopMission(mission.mission_id)}
-                >
-                  Stop
-                </Button>
+                {/*<Button*/}
+                {/*  variant="contained"*/}
+                {/*  color="secondary"*/}
+                {/*  onClick={() => handleStopMission(mission.mission_id)}*/}
+                {/*>*/}
+                {/*  Stop*/}
+                {/*</Button>*/}
                 <Button color="error" variant="contained" onClick={() => openDeleteDialog(mission)}>
                   Delete
                 </Button>
@@ -445,6 +367,20 @@ const MissionPage = () => {
               onChange={(e) => setNewMission({ ...newMission, missionName: e.target.value })}
             />
             <TextField
+              autoFocus
+              margin="dense"
+              id="profilesSelected"
+              label="Username"
+              placeholder="Leave empty to select all profiles, or each username in a line"
+              type="text"
+              fullWidth
+              multiline
+              rows={4}
+              variant="outlined"
+              value={newMission.profileIds}
+              onChange={(e) => setNewMission({ ...newMission, profileIds: e.target.value })}
+            />
+            <TextField
               fullWidth
               label="Start Time"
               type="time"
@@ -500,22 +436,22 @@ const MissionPage = () => {
                 onChange={(e) => setConfigProfiles(e.target.value)}
               />
             )}
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Profiles, default all items are selected</InputLabel>
-              <Select
-                multiple
-                value={newMission.profileIds}
-                onChange={handleChangeProfiles}
-                renderValue={(selected) => `${selected.length} Profiles`}
-              >
-                {profiles.map((item) => (
-                  <MenuItem key={item.profile_id} value={item.profile_id}>
-                    <Checkbox checked={newMission?.profileIds?.includes(item.profile_id)} />
-                    <ListItemText primary={item.username} />
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            {/*<FormControl fullWidth margin="normal">*/}
+            {/*  <InputLabel>Profiles, default all items are selected</InputLabel>*/}
+            {/*  <Select*/}
+            {/*    multiple*/}
+            {/*    value={newMission.profileIds}*/}
+            {/*    onChange={handleChangeProfiles}*/}
+            {/*    renderValue={(selected) => `${selected.length} Profiles`}*/}
+            {/*  >*/}
+            {/*    {profiles.map((item) => (*/}
+            {/*      <MenuItem key={item.profile_id} value={item.profile_id}>*/}
+            {/*        <Checkbox checked={newMission?.profileIds?.includes(item.profile_id)} />*/}
+            {/*        <ListItemText primary={item.username} />*/}
+            {/*      </MenuItem>*/}
+            {/*    ))}*/}
+            {/*  </Select>*/}
+            {/*</FormControl>*/}
           </Grid>
           {/* Repeat for Start Time, Mission Schedule, Tasks, Profiles */}
         </DialogContent>

@@ -112,29 +112,29 @@ export default async (page, profileData, featOptions, callbackDoneEntry) => {
       }
       await randomDelay()
       await scrollAction.scrollToEntryAction(page, elementHandle)
-      await randomDelay()
-      const funcActions = utils.shuffle(
-        [
-          utils.random(featOptions.allowCommentAction) &&
-            !subEntryItem.limitedActions.reply &&
-            profileData.gpt_key &&
-            featOptions.chatOpenAIPrefix &&
-            (() =>
-              interactAction.commentEntryWithChatGPT(page, elementHandle, subEntryItem.fullText, {
-                key: profileData.gpt_key,
-                prefix: featOptions.chatOpenAIPrefix,
-                maxRetryTime: 2
-              })),
-          utils.random(featOptions.allowLikeAction) &&
-            !subEntryItem.limitedActions.like &&
-            (() => interactAction.favoriteEntry(page, elementHandle))
-        ].filter(Boolean)
-      )
-      for (let funcActionIndex = 0; funcActionIndex < funcActions.length; funcActionIndex++) {
-        const funcAction = funcActions[funcActionIndex]
-        await funcAction()
-        await randomDelay()
-      }
+      // await randomDelay()
+      // const funcActions = utils.shuffle(
+      //   [
+      //     utils.random(featOptions.allowCommentAction) &&
+      //       !subEntryItem.limitedActions.reply &&
+      //       profileData.gpt_key &&
+      //       featOptions.chatOpenAIPrefix &&
+      //       (() =>
+      //         interactAction.commentEntryWithChatGPT(page, elementHandle, subEntryItem.fullText, {
+      //           key: profileData.gpt_key,
+      //           prefix: featOptions.chatOpenAIPrefix,
+      //           maxRetryTime: 2
+      //         })),
+      //     utils.random(featOptions.allowLikeAction) &&
+      //       !subEntryItem.limitedActions.like &&
+      //       (() => interactAction.favoriteEntry(page, elementHandle))
+      //   ].filter(Boolean)
+      // )
+      // for (let funcActionIndex = 0; funcActionIndex < funcActions.length; funcActionIndex++) {
+      //   const funcAction = funcActions[funcActionIndex]
+      //   await funcAction()
+      //   await randomDelay()
+      // }
       if (callbackDoneEntry()) {
         logger.info('newsFeed__home_close')
         return
