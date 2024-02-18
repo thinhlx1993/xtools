@@ -11,7 +11,12 @@ import { TWEET_MEDIA_TYPE, PAGE_URL } from '../constants'
 import utils from '../utils'
 import { composeTweetPathSelector } from '../path-selector'
 import mapper from '../mapper'
-import { getProfileData, getTop3PostSaved, softDeletePost } from '../services/backend'
+import {
+  createEventLogs,
+  getProfileData,
+  getTop3PostSaved,
+  softDeletePost
+} from '../services/backend'
 
 /**
  * @typedef {Object} FeatOptions
@@ -72,7 +77,7 @@ const _base = async (page, openAIConfig, twPost) => {
     if (!reMapped || reMapped.isAds || reMapped.isRePost) {
       await softDeletePost(twPost.tw_post_id, { is_deleted: true })
       logger.info(`Cancel reup post ${profileCrawl}`)
-      return
+      return false
     }
     // prepare post
     const post = {
@@ -99,7 +104,7 @@ const _base = async (page, openAIConfig, twPost) => {
       `${openAIConfig.chatOpenAIPrefix} ${post.legacy.fullText}`
     )
     if (!contentInput) {
-      return
+      return false
     }
 
     // ??
@@ -123,17 +128,17 @@ const _base = async (page, openAIConfig, twPost) => {
       switch (mediaItem.type) {
         case TWEET_MEDIA_TYPE.video:
           if (!openAIConfig.reUpWithVideo) {
-            return
+            return false
           }
           break
         case TWEET_MEDIA_TYPE.gif:
         case TWEET_MEDIA_TYPE.photo:
           if (!openAIConfig.reUpWithImage) {
-            return
+            return false
           }
           break
         default:
-          return
+          return false
       }
       contentInput += '\n'
       contentInput += mediaItem.expandedUrl
@@ -149,7 +154,7 @@ const _base = async (page, openAIConfig, twPost) => {
     await utils.delay()
     const submitBtn = await page.$(composeTweetPathSelector.submitBtn)
     if (!submitBtn) {
-      return
+      return false
     }
     await submitBtn.hover()
     await utils.delayRandom()
@@ -160,6 +165,7 @@ const _base = async (page, openAIConfig, twPost) => {
     })
     await softDeletePost(twPost.tw_post_id, { is_deleted: true })
     logger.info('success')
+    return true
   } catch (error) {
     logger.error('REUP_POST_ERROR', {
       error: mapErrorConstructor(error),
@@ -232,7 +238,7 @@ const _func = async (page, profileId, featOptions) => {
 
   // Select the item at the random index
   const randomItem = openAIPrefix[randomPrefix]
-  await _base(
+  const reupStatus = await _base(
     page,
     {
       chatOpenAIKey: profileData.gpt_key,
@@ -242,6 +248,15 @@ const _func = async (page, profileId, featOptions) => {
     },
     post
   )
+
+  if (reupStatus) {
+    await createEventLogs({
+      event_type: 'reUpPost',
+      profile_id: profileData.profile_id,
+      profile_id_interact: profileData.profile_id,
+      issue: 'OK'
+    })
+  }
 
   // Optionally wait after processing the post, if necessary
   await utils.delayRandom()

@@ -510,6 +510,21 @@ export const checkProfiles = async (profileId, page) => {
   const profileInfo = profileData.profile_data ? profileData.profile_data : {}
   await page.goto(`https://twitter.com/${profileData.username}`)
 
+  try {
+    const clientEventResponse = await page.waitForResponse(
+      (response) => response.url().includes('client_event.json') && response.status() === 200
+    )
+    const clientEventResponseData = await clientEventResponse.json()
+    for (const item of clientEventResponseData.errors) {
+      if (item.code === 64) {
+        profileInfo.suspended = true
+        await updateProfileData(profileId, { profile_data: profileInfo })
+      }
+    }
+  } catch (error) {
+    logger.error(`Check suspended ${error}`)
+  }
+
   const userResponsePromise = page.waitForResponse(
     (response) => response.url().includes('UserByScreenName') && response.status() === 200
   )
@@ -527,7 +542,7 @@ export const checkProfiles = async (profileId, page) => {
   logger.info(`twitterData ${JSON.stringify(twitterData)}`)
   profileInfo.verify = twitterData.isBlueVerified
   profileInfo.followers = twitterData.followersCount
-  profileInfo.suspended = twitterData.hasSuspended
+  profileInfo.suspended = false
   profileInfo.phone_require = twitterData.needsPhoneVerification
 
   if (tweetData.length > 0) {
@@ -619,7 +634,9 @@ export const checkProfiles = async (profileId, page) => {
     const analyticsResponse = await page.waitForResponse(
       (response) => response.url().includes('AccountAnalyticsQuery') && response.status() === 200
     )
+
     const analyticsResponseData = await analyticsResponse.json()
+
     logger.info(`analyticsResponseData ${JSON.stringify(analyticsResponseData)}`)
     const currentMetrics = analyticsResponseData?.data?.user?.result?.current_organic_metrics
     profileInfo.metrics = {}

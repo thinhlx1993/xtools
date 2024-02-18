@@ -27,6 +27,9 @@ const getCompletion = async (
       }
     ]
   })
+  if (completion.choices[0].message.content.includes("I'm sorry")) {
+    return ''
+  }
   logger.info(`Found chat GPT completion ${completion.choices[0].message.content}`)
   return completion.choices[0].message.content
 }

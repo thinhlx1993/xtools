@@ -107,7 +107,7 @@ const processTaskQueue = async (queueData) => {
         const endDate = new Date()
         logger.info(`${endDate} ${profileIdGiver} Worker finished ${taskName}`)
       }
-      await closeBrowserWithTimeout(browser)
+      await browser.close()
     }
   } catch (error) {
     logger.error(`processTaskQueue_error ${error}`)
@@ -146,15 +146,6 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
       default:
         return
     }
-    if (taskName !== TASK_NAME_CONFIG.ClickAds) {
-      await createEventLogs({
-        event_type: taskName,
-        profile_id: profileIdReceiver,
-        profile_id_interact: profileIdGiver,
-        issue: 'OK'
-      })
-    }
-
     await getCookies(profileIdGiver, page)
   } catch (error) {
     await createEventLogs({
