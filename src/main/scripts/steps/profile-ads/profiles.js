@@ -49,7 +49,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     entries.push(...addEntries)
   })
   await page.goto(PAGE_URL.profile(receiverData.username))
-  logger.info(`done goto ${JSON.stringify(receiverData)}`)
+  logger.info(`done goto ${receiverData.username}`)
   await page
     .waitForSelector(commonPathSelector.timelineSection, {
       visible: true,
