@@ -150,6 +150,19 @@ const commentEntry = async (page, entryElementHandle, content) => {
   await waitDialogClosed()
 }
 
+export const getRandomAskingQuestion = () => {
+  const randomPositions = [
+    'How can I reply to the post below? Keep it under 20 words',
+    'Can you explain why?',
+    'Ask author a question please, question length from 10 to 20 words',
+    'Can you paraphase this one more academic? from 10 to 20 words',
+    'Can you paraphase this one more positive? from 10 to 20 words',
+    'Can you paraphase this one more negative? from 10 to 20 words'
+  ]
+  const randomIndex = Math.floor(Math.random() * randomPositions.length)
+  return randomPositions[randomIndex]
+}
+
 /**
  *
  * @param {{
@@ -162,15 +175,18 @@ const commentEntry = async (page, entryElementHandle, content) => {
  */
 const _getContentCommentByChatGPT = (chatGPT, content, tryTime = 0) => {
   const contentGPT = `${chatGPT.prefix} ${content}`
-  return chatIntegration.getCompletion(chatGPT.key, contentGPT).catch(async (error) => {
-    logger.error('GET_CONTENT_COMMENT_ERROR', error?.error || error)
-    if (tryTime >= (chatGPT.maxRetryTime || MAXIMUM_RETRY_CHATGPT)) {
-      logger.error('WAIT_CHAT_GPT_RESPONSE_LONG_TIME')
-      return
-    }
-    await utils.delayRandom([15000, 20000, 25000, 30000])
-    return _getContentCommentByChatGPT(chatGPT, content, tryTime + 1)
-  })
+  const askingQuestion = getRandomAskingQuestion()
+  return chatIntegration
+    .getCompletion(chatGPT.key, contentGPT, askingQuestion)
+    .catch(async (error) => {
+      logger.error('GET_CONTENT_COMMENT_ERROR', error?.error || error)
+      if (tryTime >= (chatGPT.maxRetryTime || MAXIMUM_RETRY_CHATGPT)) {
+        logger.error('WAIT_CHAT_GPT_RESPONSE_LONG_TIME')
+        return
+      }
+      await utils.delayRandom([15000, 20000, 25000, 30000])
+      return _getContentCommentByChatGPT(chatGPT, content, tryTime + 1)
+    })
 }
 
 /**
@@ -206,6 +222,10 @@ const commentEntryWithChatGPT = async (page, entryElementHandle, entryContent, c
 const watchVideo = async (page, entryElementHandle, video) => {
   logger.info('watchVideo')
   const videoLayout = await entryElementHandle.$(tweetDetailPathSelector.videoLayout)
+  if (!videoLayout) {
+    await utils.delayRandomByArrayNumberInString('500,1000')
+    return null
+  }
   logger.info('videoLayout', videoLayout)
   if (videoLayout) {
     await videoLayout.hover()
@@ -292,6 +312,10 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
       await linkElement.hover()
       await utils.delayRandom()
       await linkElement.click()
+      await page.mouse.reset()
+      await utils.delayRandom()
+      logger.info('clickLinkAds__done')
+      return true
     } else {
       logger.error('NOT_FOUND_LINK_ADS_BLANK')
     }
@@ -301,10 +325,12 @@ const clickLinkAds = async (page, entryElementHandle, expandedUrls) => {
     await linkElement.hover()
     await utils.delayRandom()
     await linkElement.click()
+    await page.mouse.reset()
+    await utils.delayRandom()
+    logger.info('clickLinkAds__done')
+    return true
   }
-  await page.mouse.reset()
-  await utils.delayRandom()
-  logger.info('clickLinkAds__done')
+  return false
 }
 
 /**
@@ -355,11 +381,13 @@ const interactAdsEntry = async (page, entryElementHandle, entryItem) => {
   adsUrls = [...new Set(adsUrls)]
   if (adsUrls.length) {
     logger.info('adsUrls', adsUrls)
-    await clickLinkAds(page, entryElementHandle, adsUrls)
+    const clickStatus = await clickLinkAds(page, entryElementHandle, adsUrls)
     await utils.delayRandom()
+    return clickStatus
   }
   await utils.delayRandom()
   logger.info('interactAds__done')
+  return false
 }
 
 export default {

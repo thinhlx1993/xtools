@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import logger from '../logger'
 const OPEN_AI_MODEL = 'gpt-3.5-turbo'
 
 /**
@@ -26,6 +27,7 @@ const getCompletion = async (
       }
     ]
   })
+  logger.info(`Found chat GPT completion ${completion.choices[0].message.content}`)
   return completion.choices[0].message.content
 }
 
