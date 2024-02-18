@@ -201,7 +201,7 @@ export const killPID = async (pid) => {
   try {
     exec(`taskkill /pid ${pid} /f /t`, (error, stdout, stderr) => {
       if (error) {
-        logger.error(`exec error: ${error}`)
+        // logger.error(`exec error: ${error}`)
         return
       }
       // console.log(`stdout: ${stdout}`)
@@ -209,6 +209,6 @@ export const killPID = async (pid) => {
       logger.info(`Process ${pid} killed successfully.`)
     })
   } catch (error) {
-    logger.error(`Error killing process ${pid}: ${error}`)
+    // logger.error(`Error killing process ${pid}: ${error}`)
   }
 }

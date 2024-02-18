@@ -37,7 +37,6 @@ CronJob.from({
 const fetchAndProcessTask = async () => {
   while (true) {
     try {
-      // if we dont have any task in queue, kill all chrome
       if (taskQueue.length() < concurrencyLimit) {
         const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
@@ -47,10 +46,7 @@ const fetchAndProcessTask = async () => {
           })
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 20000))
-      // if (taskQueue.length() === 0) {
-      //   await cpuMonitoring()
-      // }
+      await new Promise((resolve) => setTimeout(resolve, 60000))
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
@@ -88,10 +84,6 @@ const processTaskQueue = async (queueData) => {
     const [page, browser] = await openProfileBrowser(profileIdGiver)
 
     if (browser) {
-      browser.on('disconnected', async () => {
-        console.log('BROWSER disconnected')
-      })
-
       // page.setDefaultNavigationTimeout(0)
       processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)

@@ -303,26 +303,5 @@ ipcMain.on('getDetailedAccountById', async (event, profileId) => {
 })
 
 ipcMain.on('downloadCSV', async (event, csvData) => {
-  // const options = {
-  //   title: 'Save CSV file',
-  //   defaultPath: './exportedData.csv',
-  //   buttonLabel: 'Save',
-  //   filters: [{ name: 'CSV files', extensions: ['csv'] }]
-  // }
-
   clipboard.writeText(csvData)
-
-  // dialog
-  //   .showSaveDialog(options)
-  //   .then((result) => {
-  //     if (!result.canceled) {
-  //       fs.writeFile(result.filePath, csvData, (err) => {
-  //         if (err) throw err
-  //         console.log('The file has been saved!')
-  //       })
-  //     }
-  //   })
-  //   .catch((err) => {
-  //     console.log(err)
-  //   })
 })

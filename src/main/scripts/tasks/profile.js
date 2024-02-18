@@ -34,12 +34,12 @@ export const openProfileBrowser = async (profile) => {
     const debuggerPort = profileData.debugger_port
     if (debuggerPort) {
       const webSocketDebuggerUrl = await checkPort(debuggerPort)
-      console.log(`Found ${webSocketDebuggerUrl}`)
+      logger.info(`Found ${webSocketDebuggerUrl}`)
       if (webSocketDebuggerUrl) {
         const browser = await puppeteer.connect({
           browserWSEndpoint: webSocketDebuggerUrl
         })
-        console.log('Connected to the browser')
+        logger.info('Connected to the browser')
 
         // Close the browser
         await browser.close()
@@ -49,7 +49,22 @@ export const openProfileBrowser = async (profile) => {
     }
     if (profileData.settings.browserType === 'hideMyAcc') {
       try {
-        const tz = await hideMyAcc.network(splitProxy(profileData.proxy))
+        let retryCount = 0
+        let tz = null
+        const maxRetries = 5
+        while (retryCount < maxRetries) {
+          try {
+            tz = await hideMyAcc.network(splitProxy(profileData.proxy))
+            break // If successful, exit the loop
+          } catch (error) {
+            logger.info(`Error fetching data. Retrying... (${retryCount + 1}/${maxRetries})`)
+            retryCount++
+          }
+        }
+        if (tz === null) {
+          await updateProfileData(profile, { status: 'Get timezone error' })
+          return [page, browser]
+        }
         profileData = await getProfileData(profile, tz)
       } catch (error) {
         logger.error('Get proxy data error', {
