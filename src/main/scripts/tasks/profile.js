@@ -382,6 +382,24 @@ export const startSignIn = async (profileId, page) => {
 
     await page.goto('https://twitter.com')
 
+    try {
+      const clientEventResponse = await page.waitForResponse(
+        (response) => response.url().includes('client_event.json') && response.status() === 200
+      )
+      const clientEventResponseData = await clientEventResponse.json()
+      for (const item of clientEventResponseData.errors) {
+        if (item.code === 64) {
+          let profileInfo = profileData.profile_data ? profileData.profile_data : {}
+          profileInfo.suspended = true
+          logger.info(`Found account suspended ${profileData.username}`)
+          await updateProfileData(profileId, { profile_data: profileInfo, status: 'Suspended' })
+          return
+        }
+      }
+    } catch (error) {
+      logger.error(`Check suspended ${error}`)
+    }
+
     // check if profile is already logged in
     try {
       // await page.waitForSelector('div[aria-label="Home timeline"]', {
@@ -507,7 +525,7 @@ export const getCookies = async (profileId, page) => {
 export const checkProfiles = async (profileId, page) => {
   logger.info('checkProfiles')
   const profileData = await getProfileData(profileId, {})
-  const profileInfo = profileData.profile_data ? profileData.profile_data : {}
+  let profileInfo = profileData.profile_data ? profileData.profile_data : {}
   await page.goto(`https://twitter.com/${profileData.username}`)
 
   try {
