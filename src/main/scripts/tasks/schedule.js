@@ -46,7 +46,7 @@ const fetchAndProcessTask = async () => {
           })
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 60000))
+      await new Promise((resolve) => setTimeout(resolve, 20000))
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
@@ -107,15 +107,14 @@ const processTaskQueue = async (queueData) => {
         const endDate = new Date()
         logger.info(`${endDate} ${profileIdGiver} Worker finished ${taskName}`)
       }
-      await browser.close()
+      await closeBrowserWithTimeout(browser)
     }
   } catch (error) {
-    logger.error('processTaskQueue_error', {
-      error: mapErrorConstructor(error)
-    })
+    logger.error(`processTaskQueue_error ${error}`)
   }
-  await killPID(processPID)
   listOpenBrowser = listOpenBrowser.filter((item) => item !== profileIdGiver)
+  logger.info(`listOpenBrowser ${JSON.stringify(listOpenBrowser)}`)
+  await killPID(processPID)
 }
 
 const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJson, page) => {
@@ -167,5 +166,19 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
     logger.error('processTaskWorker_error', {
       error: mapErrorConstructor(error)
     })
+  }
+}
+
+// Closing the browser with a timeout
+const closeBrowserWithTimeout = async (browser) => {
+  const closePromise = browser.close()
+  const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 10000))
+
+  try {
+    // Wait for either the close operation to complete or the timeout to occur
+    await Promise.race([closePromise, timeoutPromise])
+  } catch (error) {
+    // Handle any errors
+    console.error('Error while closing browser:', error)
   }
 }

@@ -30,7 +30,11 @@ const getContentReUp = (chatOpenAIKey, content, tryTime = 0) => {
     return
   }
   return chatIntegration
-    .getCompletion(chatOpenAIKey, content, 'Can you please paraphase the text bellow')
+    .getCompletion(
+      chatOpenAIKey,
+      content,
+      'Can you please paraphase the text bellow to crypto or bitcoin keep the length in 50 words'
+    )
     .catch(async (error) => {
       logger.error('GET_CONTENT_RE_UP_ERROR', error?.error || error)
       await utils.delayRandom([3500, 4000, 4500, 5000, 5500])
