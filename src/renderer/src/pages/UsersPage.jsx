@@ -24,6 +24,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AppConfig from '../config/enums'
 import { useSnackbar } from '../context/SnackbarContext'
 import { getRequest } from '../helpers/backend'
+import EditIcon from '@mui/icons-material/Edit'
 
 const UsersPage = () => {
   const [users, setUsers] = useState([])
@@ -32,9 +33,11 @@ const UsersPage = () => {
   const [newUserRole, setNewUserRole] = useState('')
   const [newUserExpiredDate, setNewUserExpiredDate] = useState(90)
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false)
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false)
   const { openSnackbar } = useSnackbar()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userIdToDelete, setUserIdToDelete] = useState(null)
+  const [userIdToEdit, setUserIdToEdit] = useState(null)
   const [selectedGroup, setSelectedGroup] = useState('')
   const [resultCount, setResultCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -108,10 +111,10 @@ const UsersPage = () => {
 
       if (response.ok) {
         openSnackbar(`${newUserName} added successfully`, 'success')
-        await fetchUsers()
         // API call to create a new user with newUserName and newUserRole
         // After successful creation, close the dialog and refresh the user list
-        handleCloseAddUserDialog()
+        // handleCloseAddUserDialog()
+        await fetchUsers()
       } else {
         const jsonResponse = await response.json()
         openSnackbar(jsonResponse.message, 'error')
@@ -122,14 +125,50 @@ const UsersPage = () => {
       // Handle errors, such as showing an error message to the user
     }
   }
-
+  const handleEditProfile = (profileId) => {
+    setUserIdToEdit(profileId)
+    setEditUserDialogOpen(true)
+  }
   const handleOpenDeleteDialog = (userId) => {
     setUserIdToDelete(userId)
     setDeleteDialogOpen(true)
   }
 
+  const handleCloseEditDialog = () => {
+    setEditUserDialogOpen(false)
+  }
+
   const handleCloseDeleteDialog = () => {
     setDeleteDialogOpen(false)
+  }
+
+  const handleEditUserConfirm = async () => {
+    try {
+      const requestBody = {
+        group_id: selectedGroup
+      }
+      const response = await fetch(`${AppConfig.BASE_URL}/teams/user?username=${userIdToEdit}`, {
+        method: 'PUT',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (response.ok) {
+        openSnackbar('User updated successfully', 'success')
+        fetchUsers() // Reload the user list
+        handleCloseEditDialog()
+      } else {
+        const jsonResponse = await response.json()
+        openSnackbar(jsonResponse.message, 'error')
+      }
+    } catch (error) {
+      openSnackbar('Error deleting user', 'error')
+      console.error('Error deleting user:', error)
+    }
   }
 
   const handleDeleteUserConfirm = async () => {
@@ -144,9 +183,9 @@ const UsersPage = () => {
       })
 
       if (response.ok) {
-        openSnackbar('User deleted successfully', 'success')
-        await fetchUsers() // Reload the user list
-        handleCloseDeleteDialog()
+        openSnackbar('User updated successfully', 'success')
+        fetchUsers() // Reload the user list
+        handleCloseEditDialog()
       } else {
         const jsonResponse = await response.json()
         openSnackbar(jsonResponse.message, 'error')
@@ -224,6 +263,9 @@ const UsersPage = () => {
                 </TableCell>
                 <TableCell>{user.last_active_at}</TableCell>
                 <TableCell>
+                  <IconButton color="primary" onClick={() => handleEditProfile(user.username)}>
+                    <EditIcon />
+                  </IconButton>
                   <IconButton color="error" onClick={() => handleOpenDeleteDialog(user.username)}>
                     <DeleteForeverIcon />
                   </IconButton>
@@ -310,8 +352,31 @@ const UsersPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Add Dialog for Creating and Editing Users */}
-      {/* Add Dialog for Confirming User Deletion */}
+      <Dialog open={editUserDialogOpen} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit User</DialogTitle>
+        <DialogContent>
+          <TextField
+            select
+            label="Group"
+            value={selectedGroup}
+            onChange={(e) => setSelectedGroup(e.target.value)}
+            fullWidth
+            margin="normal"
+          >
+            {groups.map((group) => (
+              <MenuItem key={group.group_id} value={group.group_id}>
+                {group.group_name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog}>Cancel</Button>
+          <Button onClick={handleEditUserConfirm} color="error">
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }

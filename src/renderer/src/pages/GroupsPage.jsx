@@ -46,6 +46,7 @@ const GroupsPage = () => {
       if (response.ok) {
         const data = await response.json()
         setGroups(data) // Assuming the response has a 'groups' field
+        openSnackbar('Get groups ok', 'success')
       } else {
         openSnackbar('Failed to fetch groups', 'error')
       }
