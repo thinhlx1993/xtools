@@ -171,11 +171,11 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Missions" />
             </ListItem>
           )}
-          {/* {userRole === 'admin' && (
+          {userRole === 'admin' && (
             <ListItem button component={Link} to="/admin/groups">
               <ListItemText primary="Groups" />
             </ListItem>
-          )} */}
+          )}
           {userRole && (
             <ListItem button component={Link} to="/admin/profiles">
               <ListItemText primary="Profiles" />

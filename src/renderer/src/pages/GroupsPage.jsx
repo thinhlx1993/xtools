@@ -14,7 +14,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  DialogContentText
+  DialogContentText,
+  Grid
 } from '@mui/material'
 import { useSnackbar } from '../context/SnackbarContext'
 import AppConfig from '../config/enums'
@@ -149,18 +150,20 @@ const GroupsPage = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
-        Groups Management
-      </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleOpenCreateDialog}
-        style={{ marginBottom: '20px' }}
-      >
-        Add New Group
-      </Button>
-      <Paper style={{ padding: '20px', marginBottom: '20px' }}>
+      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+        <Grid item xs>
+          <Typography variant="h4" gutterBottom>
+            Groups Management
+          </Typography>
+        </Grid>
+        <Grid item>
+          <Button variant="contained" color="primary" onClick={handleOpenCreateDialog}>
+            Add New Group
+          </Button>
+        </Grid>
+      </Grid>
+
+      <Paper style={{ marginBottom: '20px' }}>
         <Table>
           <TableHead>
             <TableRow>

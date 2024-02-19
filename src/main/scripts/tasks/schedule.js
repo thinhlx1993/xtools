@@ -1,4 +1,4 @@
-import { get, createEventLogs, updateProfileData } from '../services/backend'
+import { get, createEventLogs } from '../services/backend'
 import { openProfileBrowser, getCookies, resolveCaptcha, checkProfiles } from './profile'
 import { TASK_NAME_CONFIG } from '../../constants'
 import logger from '../../logger'
@@ -41,9 +41,9 @@ const fetchAndProcessTask = async () => {
         const response = await get(`/mission_schedule/`)
         if (response && response.schedule && response.schedule.length > 0) {
           // Add tasks to queue
-          response.schedule.forEach((task) => {
-            taskQueue.push(task)
-          })
+          // response.schedule.forEach((task) => {
+          //   taskQueue.push(task)
+          // })
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 20000))

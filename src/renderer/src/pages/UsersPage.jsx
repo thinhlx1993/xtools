@@ -17,14 +17,17 @@ import {
   DialogContentText,
   IconButton,
   MenuItem,
-  Grid
+  Grid,
+  TablePagination
 } from '@mui/material'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import AppConfig from '../config/enums'
 import { useSnackbar } from '../context/SnackbarContext'
+import { getRequest } from '../helpers/backend'
 
 const UsersPage = () => {
   const [users, setUsers] = useState([])
+  const [groups, setGroups] = useState([])
   const [newUserName, setNewUserName] = useState('') // Initialize newUserName
   const [newUserRole, setNewUserRole] = useState('')
   const [newUserExpiredDate, setNewUserExpiredDate] = useState(90)
@@ -32,19 +35,39 @@ const UsersPage = () => {
   const { openSnackbar } = useSnackbar()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userIdToDelete, setUserIdToDelete] = useState(null)
-
+  const [selectedGroup, setSelectedGroup] = useState('')
+  const [resultCount, setResultCount] = useState(0)
+  const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [rowsPerPage, setRowsPerPage] = useState(25)
   // Fetch users
   useEffect(() => {
-    fetch(`${AppConfig.BASE_URL}/user`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
-      .then((res) => res.json())
-      .then((data) => setUsers(data.user_list))
-      .catch((error) => console.error('Error fetching users:', error))
-  }, [])
+    fetchUsers()
+    fetchGroups()
+  }, [page, rowsPerPage, searchQuery])
+
+  const fetchGroups = async () => {
+    const response = await getRequest(`/groups`)
+    setGroups(response.data)
+  }
+
+  const fetchUsers = async () => {
+    const response = await getRequest(
+      `/user?page=${page}&per_page=${rowsPerPage}&filter=${searchQuery}`
+    )
+    openSnackbar(`Get users success`, 'success')
+    setResultCount(response.data.result_count)
+    setUsers(response.data.data)
+  }
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage + 1)
+  }
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(+event.target.value)
+    setPage(1) // Reset to the first page when changing rows per page
+  }
 
   const handleOpenAddUserDialog = () => {
     setAddUserDialogOpen(true)
@@ -54,29 +77,22 @@ const UsersPage = () => {
     setAddUserDialogOpen(false)
   }
 
-  const reloadUserList = async () => {
-    const response = await fetch(`${AppConfig.BASE_URL}/user`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
-    if (response.ok) {
-      const data = await response.json()
-      setUsers(data.user_list)
-    }
-  }
-
   const handleCreateNewUser = async () => {
     const roleIds = {
       admin: AppConfig.ADMIN_ROLE_ID, // Replace with actual admin role ID
       user: AppConfig.CLIENT_ROLE_ID // Replace with actual user role ID
     }
 
+    if (selectedGroup === '' || newUserRole === '') {
+      openSnackbar(`Group and Role is required`, 'error')
+      return
+    }
+
     // Prepare the request body
     const requestBody = {
       username: newUserName,
-      role_id: roleIds[newUserRole]
+      role_id: roleIds[newUserRole],
+      group_id: selectedGroup
     }
 
     try {
@@ -92,24 +108,19 @@ const UsersPage = () => {
 
       if (response.ok) {
         openSnackbar(`${newUserName} added successfully`, 'success')
-        await reloadUserList()
+        await fetchUsers()
+        // API call to create a new user with newUserName and newUserRole
+        // After successful creation, close the dialog and refresh the user list
+        handleCloseAddUserDialog()
       } else {
         const jsonResponse = await response.json()
         openSnackbar(jsonResponse.message, 'error')
       }
-
-      // Handle the successful response here
-      // Example: Update the user list and show a success message
-      console.log('User created successfully')
-      // You might want to fetch the updated list of users here
     } catch (error) {
       openSnackbar('Add new user failed', 'error')
       console.error('Error creating user:', error.message)
       // Handle errors, such as showing an error message to the user
     }
-    // API call to create a new user with newUserName and newUserRole
-    // After successful creation, close the dialog and refresh the user list
-    handleCloseAddUserDialog()
   }
 
   const handleOpenDeleteDialog = (userId) => {
@@ -134,7 +145,8 @@ const UsersPage = () => {
 
       if (response.ok) {
         openSnackbar('User deleted successfully', 'success')
-        await reloadUserList() // Reload the user list
+        await fetchUsers() // Reload the user list
+        handleCloseDeleteDialog()
       } else {
         const jsonResponse = await response.json()
         openSnackbar(jsonResponse.message, 'error')
@@ -143,9 +155,22 @@ const UsersPage = () => {
       openSnackbar('Error deleting user', 'error')
       console.error('Error deleting user:', error)
     }
-
-    handleCloseDeleteDialog()
   }
+
+  // Debounce function
+  const debounce = (func, delay) => {
+    let timer
+    return function (...args) {
+      const context = this
+      clearTimeout(timer)
+      timer = setTimeout(() => func.apply(context, args), delay)
+    }
+  }
+
+  // Function to handle input change with debounce
+  const handleInputChange = debounce((value) => {
+    setSearchQuery(value)
+  }, 50) // Adjust the delay as needed (300ms in this example)
 
   return (
     <Container>
@@ -169,15 +194,23 @@ const UsersPage = () => {
             Add New User
           </Button>
         </Grid>
+        <TextField
+          label="Search Users"
+          variant="outlined"
+          fullWidth
+          style={{ margin: '20px 0' }}
+          value={searchQuery}
+          onChange={(e) => handleInputChange(e.target.value)}
+        />
       </Grid>
-      <Paper style={{ padding: '20px', marginBottom: '20px' }}>
+      <Paper style={{ marginBottom: '20px' }}>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell>User Name</TableCell>
-              <TableCell>Created at</TableCell>
-              <TableCell>Last active at</TableCell>
               <TableCell>Roles</TableCell>
+              <TableCell>Group</TableCell>
+              <TableCell>Last active at</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
@@ -185,9 +218,11 @@ const UsersPage = () => {
             {users.map((user) => (
               <TableRow key={user.user_id}>
                 <TableCell>{user.username}</TableCell>
-                <TableCell>{user.created_at}</TableCell>
-                <TableCell>{user.last_active_at}</TableCell>
                 <TableCell>{user.roles}</TableCell>
+                <TableCell>
+                  {user?.groups.length > 0 ? user?.groups[0].group_name : <></>}
+                </TableCell>
+                <TableCell>{user.last_active_at}</TableCell>
                 <TableCell>
                   <IconButton color="error" onClick={() => handleOpenDeleteDialog(user.username)}>
                     <DeleteForeverIcon />
@@ -197,6 +232,14 @@ const UsersPage = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          count={resultCount} // Total number of items
+          page={page - 1} // Current page (0-based index)
+          rowsPerPage={rowsPerPage}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </Paper>
       <Dialog open={addUserDialogOpen} onClose={handleCloseAddUserDialog}>
         <DialogTitle>Add New User</DialogTitle>
@@ -234,6 +277,20 @@ const UsersPage = () => {
           >
             <MenuItem value="user">User</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
+          </TextField>
+          <TextField
+            select
+            label="Group"
+            value={selectedGroup}
+            onChange={(e) => setSelectedGroup(e.target.value)}
+            fullWidth
+            margin="normal"
+          >
+            {groups.map((group) => (
+              <MenuItem key={group.group_id} value={group.group_id}>
+                {group.group_name}
+              </MenuItem>
+            ))}
           </TextField>
         </DialogContent>
         <DialogActions>
