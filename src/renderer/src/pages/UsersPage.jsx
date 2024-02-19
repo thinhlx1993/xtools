@@ -177,7 +177,7 @@ const UsersPage = () => {
       <Grid container alignItems="center" style={{ marginTop: '20px' }}>
         {/* Event Logs Title */}
         <Grid item xs>
-          <Typography variant="h4" gutterBottom style={{ marginTop: '20px' }}>
+          <Typography variant="h4" gutterBottom>
             Users Management
           </Typography>
         </Grid>

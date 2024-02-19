@@ -171,11 +171,6 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
               <ListItemText primary="Missions" />
             </ListItem>
           )}
-          {userRole === 'admin' && (
-            <ListItem button component={Link} to="/admin/groups">
-              <ListItemText primary="Groups" />
-            </ListItem>
-          )}
           {userRole && (
             <ListItem button component={Link} to="/admin/profiles">
               <ListItemText primary="Profiles" />
@@ -184,6 +179,11 @@ const Navbar = ({ onLogout, userRole, userSuperAdmin, updateUserRole }) => {
           {userRole === 'admin' && (
             <ListItem button component={Link} to="/admin/events">
               <ListItemText primary="Events" />
+            </ListItem>
+          )}
+          {userRole === 'admin' && (
+            <ListItem button component={Link} to="/admin/groups">
+              <ListItemText primary="Groups" />
             </ListItem>
           )}
           {userRole === 'admin' && (
