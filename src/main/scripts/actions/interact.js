@@ -152,12 +152,12 @@ const commentEntry = async (page, entryElementHandle, content) => {
 
 export const getRandomAskingQuestion = () => {
   const randomPositions = [
-    'How can I reply to the post below? Keep it under 20 words',
-    'Can you explain why?',
-    'Ask author a question please, question length from 10 to 20 words',
-    'Can you paraphase this one more academic? from 10 to 20 words',
-    'Can you paraphase this one more positive? from 10 to 20 words',
-    'Can you paraphase this one more negative? from 10 to 20 words'
+    'How can I reply to the post below? Keep the answer under 280 character',
+    'Can you explain why? Keep the response under 280 character',
+    'Ask author a question please? Keep the response under 280 character',
+    'Can you paraphase this one more academic? Keep the response under 280 character',
+    'Can you paraphase this one more positive? Keep the response under 280 character',
+    'Can you paraphase this one more negative? Keep the response under 280 character'
   ]
   const randomIndex = Math.floor(Math.random() * randomPositions.length)
   return randomPositions[randomIndex]
