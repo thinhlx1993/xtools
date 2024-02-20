@@ -92,11 +92,11 @@ export const killChrome = () => {
 
   exec(command, (error, stdout, stderr) => {
     if (error) {
-      console.error(`Error: ${error.message}`)
+      // console.error(`Error: ${error.message}`)
       return
     }
     if (stderr) {
-      console.error(`Stderr: ${stderr}`)
+      // console.error(`Stderr: ${stderr}`)
       return
     }
     logger.info('Chrome killed successfully')
@@ -193,7 +193,7 @@ export const cpuMonitoring = async () => {
  */
 export const killPID = async (pid) => {
   if (!pid) {
-    logger.error('No PID provided')
+    // logger.error('No PID provided')
     return
   }
 

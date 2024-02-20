@@ -27,7 +27,8 @@ const SettingsPage = () => {
     chatGptKey: '',
     defaultCaptchaResolve: 'capguru',
     capguruKey: '',
-    smsPoolKey: ''
+    smsPoolKey: '',
+    threads: 25
   })
 
   useEffect(() => {
@@ -122,7 +123,7 @@ const SettingsPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <TextField
               required
-              label="Path to chrome.exe"
+              label="Path to macro.exe"
               value={settings.browserPath}
               InputProps={{
                 readOnly: true
@@ -152,7 +153,7 @@ const SettingsPage = () => {
         <Grid item xs={12}>
           <TextField
             fullWidth
-            label="Profiles Folder"
+            label="Profiles Data Folder"
             name="folderPath"
             value={settings.folderPath}
             onChange={handleChange}
@@ -195,11 +196,12 @@ const SettingsPage = () => {
         </Grid>
         <Grid item xs={12}>
           <TextField
-            label="ChatGPT Key"
-            name="chatGptKey"
-            value={settings.chatGptKey}
+            label="Number threads"
+            name="threads"
+            value={settings.threads}
             onChange={handleChange}
             fullWidth
+            type="number"
           />
         </Grid>
         <Grid item xs={12}>
@@ -225,7 +227,7 @@ const SettingsPage = () => {
             fullWidth
           />
         </Grid>
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <TextField
             label="smsPoolKey"
             type="password"
@@ -234,7 +236,7 @@ const SettingsPage = () => {
             onChange={handleChange}
             fullWidth
           />
-        </Grid>
+        </Grid> */}
         <Grid item xs={12} style={{ marginBottom: 20 }}>
           <Button variant="contained" color="primary" onClick={handleSubmit}>
             Save Settings

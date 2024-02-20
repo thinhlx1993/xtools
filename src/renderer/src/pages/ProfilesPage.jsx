@@ -26,6 +26,8 @@ import {
   InputLabel,
   FormControlLabel
 } from '@mui/material'
+import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite'
+import StopCircleIcon from '@mui/icons-material/StopCircle'
 import Papa from 'papaparse'
 import VerifiedIcon from '@mui/icons-material/Verified'
 import PaidIcon from '@mui/icons-material/Paid'
@@ -71,25 +73,34 @@ const ProfilesPage = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-  const [targetGroup, setTargetGroup] = useState('')
-  const [selectedGroup, setSelectedGroup] = useState('All')
   const [targetUser, setTargetUser] = useState('')
   const [filterByType, setFilterByType] = useState('all')
   const [newProfileDefaultType, setNewProfileDefaultType] = useState(false)
-  const [data, setData] = useState([])
   const [batchUpdateDialogOpen, setBatchUpdateDialogOpen] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [startBtnStatus, setStartBtnStatus] = useState('stop')
 
   useEffect(() => {
     fetchProfiles()
-    // fetchGroups()
-    // fetchUsers()
+    ipcMainConsumer.emit('performScheduledTasks', '')
+    ipcMainConsumer.on('replyPerformScheduledTasks', (event, data) => {
+      console.log(data.command)
+      if (data.command) {
+        setStartBtnStatus(data.command)
+      }
+    })
+
     // Set up the interval to call fetchData every 10 seconds
     const interval = setInterval(fetchProfiles, 20000)
     // Clear the interval on component unmount
+
     return () => clearInterval(interval)
-  }, [page, rowsPerPage, searchQuery, selectedGroup, filterByType])
+  }, [page, rowsPerPage, searchQuery, filterByType])
+
+  const startWorker = async (command) => {
+    ipcMainConsumer.emit('performScheduledTasks', command)
+  }
 
   const parseCsv = (file) => {
     return new Promise((resolve, reject) => {
@@ -111,13 +122,6 @@ const ProfilesPage = () => {
   const fetchProfiles = async () => {
     try {
       const apiUrl = `${AppConfig.BASE_URL}/profiles/?page=${page}&per_page=${rowsPerPage}&search=${searchQuery}&sort_by=created_at&sort_order=asc&filter=${filterByType}`
-      // const response = await fetch(apiUrl, {
-      //   method: 'GET',
-      //   headers: {
-      //     Accept: 'application/json',
-      //     Authorization: `Bearer ${localStorage.getItem('access_token')}` // Replace with actual token
-      //   }
-      // })
       const response = await getRequest(apiUrl)
       const data = await response.data
       setProfiles(data.profiles) // Assuming the API response contains an array of profiles in 'profiles' key
@@ -431,14 +435,6 @@ const ProfilesPage = () => {
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Give access to an user</DialogTitle>
       <DialogContent>
-        {/* <DialogContentText>Select a group to move the selected profiles.</DialogContentText>
-        <Select fullWidth value={targetGroup} onChange={(e) => setTargetGroup(e.target.value)}>
-          {groups.map((group) => (
-            <MenuItem key={group.group_id} value={group.group_id}>
-              {group.group_name}
-            </MenuItem>
-          ))}
-        </Select> */}
         <DialogContentText>Select a user</DialogContentText>
         <Select fullWidth value={targetUser} onChange={(e) => setTargetUser(e.target.value)}>
           {users.map((user) => (
@@ -626,12 +622,35 @@ const ProfilesPage = () => {
 
   return (
     <Grid item xs={12} md={6} lg={4} style={{ padding: '20px' }}>
-      <Grid container alignItems="center" style={{ marginTop: '20px' }}>
+      <Grid container alignItems="center">
         {/* Event Logs Title */}
         <Grid item xs>
-          <Typography variant="h4" gutterBottom>
+          {/* <Typography variant="h4" gutterBottom>
             Profiles
-          </Typography>
+          </Typography> */}
+          {/* startBtnStatus */}
+          {startBtnStatus === 'stop' ? (
+            <>
+              <Button
+                variant="contained"
+                onClick={() => startWorker('start')}
+                endIcon={<PlayCircleFilledWhiteIcon />}
+              >
+                Start
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                color="error"
+                variant="contained"
+                onClick={() => startWorker('stop')}
+                endIcon={<StopCircleIcon />}
+              >
+                Stop
+              </Button>
+            </>
+          )}
         </Grid>
 
         <Grid item style={{ marginRight: '20px' }}>
@@ -721,7 +740,9 @@ const ProfilesPage = () => {
         Profiles Management
       </Typography> */}
 
-      <Paper style={{ padding: '20px', marginBottom: '20px', overflowX: 'auto' }}>
+      <Paper
+        style={{ padding: '20px', marginBottom: '20px', marginTop: '20px', overflowX: 'auto' }}
+      >
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -740,23 +761,12 @@ const ProfilesPage = () => {
               {!isMobile && <TableCell>Total View</TableCell>}
               {!isMobile && <TableCell>LinkClicks</TableCell>}
               {!isMobile && <TableCell>Replies</TableCell>}
+              {!isMobile && <TableCell>xClick</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* "profile_data": {
-                "followers": 471,
-                "following": "61 Following",
-                "verify": true,
-                "monetizable": false,
-                "payouts": [],
-                "suspended": false,
-                "phone_require": false,
-                "view": 5921569,
-                "account_status": "ERROR",
-                "stripe_connect_account": false
-            }, */}
             {profiles.map((profile) => (
               <TableRow key={profile.profile_id}>
                 <TableCell padding="checkbox">
@@ -917,6 +927,20 @@ const ProfilesPage = () => {
                   >
                     <Tooltip title={profile.profile_data?.metrics?.Replies}>
                       <span>{profile.profile_data?.metrics?.Replies}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      width: '50px'
+                    }}
+                  >
+                    <Tooltip title={profile.click_count}>
+                      <span>{profile.click_count}</span>
                     </Tooltip>
                   </TableCell>
                 )}

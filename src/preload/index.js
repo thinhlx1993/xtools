@@ -36,7 +36,8 @@ contextBridge.exposeInMainWorld(
     replyGetMachineId: (values) => ipcRenderer.on('replyGetMachineId', values),
     startOpenProfile: (profile) => ipcRenderer.send('startOpenProfile', profile),
     setAccessToken: (accessToken) => ipcRenderer.send('setAccessToken', accessToken),
-    performScheduledTasks: () => ipcRenderer.send('performScheduledTasks'),
+    performScheduledTasks: (command) => ipcRenderer.send('performScheduledTasks', command),
+    replyPerformScheduledTasks: (value) => ipcRenderer.on('replyPerformScheduledTasks', value),
     getDetailedAccountById: (profileId) => ipcRenderer.send('getDetailedAccountById', profileId),
     replyGetDetailedAccountById: (value) => ipcRenderer.on('replyGetDetailedAccountById', value),
     downloadCSV: (csvData) => ipcRenderer.send('downloadCSV', csvData)

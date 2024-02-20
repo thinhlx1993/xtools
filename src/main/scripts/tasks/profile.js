@@ -14,8 +14,6 @@ import {
   clickIntoNext,
   calculateClicks,
   sendCapGuruRequest,
-  scrollIntoView,
-  closeBlankPages,
   checkPort
 } from './utils'
 import { cacheCookies } from './cookies'
@@ -59,6 +57,7 @@ export const openProfileBrowser = async (profile) => {
           } catch (error) {
             logger.info(`Error fetching data. Retrying... (${retryCount + 1}/${maxRetries})`)
             retryCount++
+            await randomDelay(1000, 2000)
           }
         }
         if (tz === null) {
@@ -74,7 +73,7 @@ export const openProfileBrowser = async (profile) => {
           // Handle specific error (e.g., retry logic, alternate action)
           await updateProfileData(profile, { status: 'Check HMA Account' })
         } else {
-          await updateProfileData(profile, { status: 'Proxy unstable' })
+          await updateProfileData(profile, { status: 'Unhandled error' })
         }
 
         return [page, browser]

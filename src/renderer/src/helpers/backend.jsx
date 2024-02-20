@@ -14,7 +14,9 @@ const axiosInstance = axios.create({
 // Function to get the access token from your storage
 const getAccessToken = () => {
   // Implement logic to retrieve your access token
-  return localStorage.getItem('access_token')
+  const accessToken = localStorage.getItem('access_token')
+  ipcMainConsumer.emit('setAccessToken', accessToken)
+  return accessToken
 }
 
 // Function to get the refresh token from your storage

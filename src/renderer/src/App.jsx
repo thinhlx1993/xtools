@@ -31,25 +31,16 @@ const ClientDashboard = () => {
 }
 
 const App = () => {
-  const [keyActivation, setKeyActivation] = useState({ key: '', status: 'Đang kiểm tra' })
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole'))
+  const [username, setUsername] = useState('')
   const [userSuperAdmin, setUserSuperAdmin] = useState(false)
 
   useEffect(() => {
     initIpcMainConsumer()
-    // ipcMainConsumer.emit('getKeyActivation')
-    // ipcMainConsumer.on('replyGetKeyActivation', (event, result) => {
-    //   setKeyActivation(result.key)
-    // })
     console.log('init app')
     // worker for mission schedule
     fetchUserRole()
-    ipcMainConsumer.emit('performScheduledTasks')
   }, [])
-
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(keyActivation.key)
-  }
 
   const handleLogout = () => {
     // Add any additional logout logic if needed
@@ -102,6 +93,7 @@ const App = () => {
         }
       })
       const data = await response.json()
+      setUsername(data.username)
       if (data.is_super_admin) {
         setUserSuperAdmin(true)
       }
@@ -122,6 +114,7 @@ const App = () => {
     <SnackbarProvider>
       <HashRouter>
         <Navbar
+          username={username}
           onLogout={handleLogout}
           userRole={userRole}
           userSuperAdmin={userSuperAdmin}

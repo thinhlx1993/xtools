@@ -11,11 +11,10 @@ import trends24Integration from './integration/trends24'
 import { delay } from './scripts/utils'
 import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
-import crawlPostStep from './scripts/steps/crawl-post'
-import reUpStep from './scripts/steps/reup-post'
 import { checkProfiles } from './scripts/tasks/profile'
 
 const dataMemories = {}
+let workerStaus = ''
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
@@ -292,9 +291,10 @@ ipcMain.on('setAccessToken', (event, accessToken) => {
 })
 
 // performScheduledTasks
-ipcMain.on('performScheduledTasks', async () => {
-  // open profile
-  fetchScheduledTasks()
+ipcMain.on('performScheduledTasks', async (event, command) => {
+  // start schedule
+  const workerStatus = await fetchScheduledTasks(command)
+  event.reply('replyPerformScheduledTasks', { command: workerStatus })
 })
 
 ipcMain.on('getDetailedAccountById', async (event, profileId) => {

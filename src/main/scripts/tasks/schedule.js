@@ -8,21 +8,22 @@ import profileAdsStep from '../steps/profile-ads/index'
 import fairInteractStep from '../steps/fair-interact'
 import crawlPostStep from '../steps/crawl-post'
 import reUpStep from '../steps/reup-post'
-import { killChrome, handleNewPage } from './utils'
+import { killChrome, handleNewPage, randomDelay } from './utils'
 import { mapErrorConstructor } from '../../helpers'
 import { killPID } from './utils'
 import { CronJob } from 'cron'
 
 let isStarted = false
-const concurrencyLimit = 25
+let concurrencyLimit = 25
 let listOpenBrowser = []
+
 let taskQueue = async.queue(async (task) => {
   try {
     await processTaskQueue(task)
   } catch (error) {
     logger.error(`processTaskQueue ERROR ${error}`)
   }
-}, concurrencyLimit) // 1 is the concurrency limit
+}, concurrencyLimit) // set the concurrency limit
 
 // kill marco.exe every hours
 CronJob.from({
@@ -37,10 +38,30 @@ CronJob.from({
 const fetchAndProcessTask = async () => {
   while (true) {
     try {
+      //  Get default schedule
+      const response = await get(`/mission_schedule/?schedule_type=mission_should_start`)
+      if (response && response.schedule && response.schedule.length > 0) {
+        // Add default tasks to queue
+        logger.info(`Add default tasks to queue`)
+        response.schedule.forEach((task) => {
+          taskQueue.push(task)
+        })
+        await new Promise((resolve) => setTimeout(resolve, 60000))
+        continue
+      }
+
+      //  Get clicks ads
       if (taskQueue.length() < concurrencyLimit) {
-        const response = await get(`/mission_schedule/`)
-        if (response && response.schedule && response.schedule.length > 0) {
+        logger.info(`Get clicks ads`)
+        const response = await get(`/mission_schedule/?schedule_type=clickAds`)
+        if (
+          response &&
+          response.schedule &&
+          response.schedule.length > 0 &&
+          response.schedule_type === 'clickAds'
+        ) {
           // Add tasks to queue
+          logger.info(`Add clickAds tasks to queue ${taskQueue.length()} limit ${concurrencyLimit}`)
           response.schedule.forEach((task) => {
             taskQueue.push(task)
           })
@@ -51,29 +72,63 @@ const fetchAndProcessTask = async () => {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
     }
+    if (!isStarted) {
+      // return loop
+      killChrome()
+      return
+    }
   }
 }
 
-export const fetchScheduledTasks = async () => {
-  if (!isStarted) {
+export const fetchScheduledTasks = async (command) => {
+  if (command === 'start' && isStarted === false) {
     logger.info('Starting task fetching and processing')
     isStarted = true
+    const response = await get(`/settings/`)
+    if (response.settings.settings.threads) {
+      try {
+        concurrencyLimit = parseInt(response.settings.settings.threads)
+      } catch (error) {
+        logger.error(`Threads is not a number`)
+      }
+    }
+    logger.info(`Number of threads: ${concurrencyLimit}`)
+    taskQueue.concurrency = concurrencyLimit
     killChrome()
     fetchAndProcessTask() // Start task fetching and processing
+  } else if (command === 'stop' && isStarted === true) {
+    logger.info('Stopping task fetching and processing')
+    killChrome()
+    taskQueue.concurrency = 0
+    // Remove all pending tasks from the queue
+    taskQueue.remove((task) => {
+      // Return true to remove all tasks
+      return true
+    })
+    isStarted = false
   }
+  return isStarted ? 'start' : 'stop'
 }
 
 const processTaskQueue = async (queueData) => {
   const profileIdGiver = queueData?.profile_id
+  const mission_tasks = queueData.tasks
   let processPID = null
-  // let browserWSEndpoint = null
   if (listOpenBrowser.includes(profileIdGiver)) {
     logger.info(`The user ${profileIdGiver} is running`)
+    const clickAdsTasks = mission_tasks.filter(
+      (mission_task) => mission_task.tasks.tasks_name === TASK_NAME_CONFIG.ClickAds
+    )
+    if (!clickAdsTasks) {
+      logger.info(`Push task back to queue`)
+      taskQueue.push(queueData)
+      await randomDelay()
+    }
+
     return
   }
 
   try {
-    const mission_tasks = queueData.tasks
     let profileIdReceiver = queueData.profile_id_receiver
 
     if (!profileIdReceiver) {
@@ -87,14 +142,11 @@ const processTaskQueue = async (queueData) => {
       // page.setDefaultNavigationTimeout(0)
       processPID = browser.process().pid
       browser.on('targetcreated', handleNewPage)
-
-      for (let task of mission_tasks) {
-        // logger.info(`Task: ${JSON.stringify(task)}`)
-        const taskName = task.tasks.tasks_name
-        // await updateProfileData(profileIdGiver, { status: `Task: ${taskName}` })
-        const tasksJson = task.tasks.tasks_json
+      for (let mission_task of mission_tasks) {
+        const taskName = mission_task.tasks.tasks_name
+        const tasksJson = mission_task.tasks.tasks_json
         try {
-          const configProfiles = task?.config?.profiles
+          const configProfiles = mission_task?.config?.profiles
           if (tasksJson && configProfiles) {
             tasksJson.profiles = configProfiles
           }
