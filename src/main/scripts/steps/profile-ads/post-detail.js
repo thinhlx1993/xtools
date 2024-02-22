@@ -96,16 +96,14 @@ export default async (page, giverData, receiverData, featOptions, postEntry) => 
         await scrollAction.scrollToEntryMedia(page, elementHandle)
         await _getDelayTimeAction(featOptions)
 
-        const clickStatus = await interactAction.interactAdsEntry(page, elementHandle, subEntryItem)
-        if (clickStatus) {
-          await createEventLogs({
-            event_type: 'clickAds',
-            profile_id: receiverData.profile_id,
-            profile_id_interact: giverData.profile_id,
-            issue: 'OK'
-          })
-          logger.info(`interactAdsEntry OK from ${giverData.username} -> ${receiverData.username}`)
-        }
+        await interactAction.interactAdsEntry(page, elementHandle, subEntryItem)
+        await createEventLogs({
+          event_type: 'clickAds',
+          profile_id: receiverData.profile_id,
+          profile_id_interact: giverData.profile_id,
+          issue: 'OK'
+        })
+        logger.info(`interactAdsEntry OK from ${giverData.username} -> ${receiverData.username}`)
         await page.mouse.reset()
         adsInteracted = true
       }

@@ -87,7 +87,11 @@ export const defaultPuppeteerOptions = {
   },
   args: [
     '--disable-notifications',
+    '--disable-encryption ',
+    '--lang=en-US',
     '--no-sandbox',
+    '--flag-switches-begin',
+    '--flag-switches-end',
     `--window-size=${DEFAULT_WINDOWS_SIZE.width},${DEFAULT_WINDOWS_SIZE.height}`
   ],
   ignoreDefaultArgs: ['--enable-automation']

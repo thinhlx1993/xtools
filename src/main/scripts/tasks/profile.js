@@ -57,7 +57,7 @@ export const openProfileBrowser = async (profile) => {
           } catch (error) {
             logger.info(`Error fetching data. Retrying... (${retryCount + 1}/${maxRetries})`)
             retryCount++
-            await randomDelay(1000, 2000)
+            await randomDelay(3000)
           }
         }
         if (tz === null) {

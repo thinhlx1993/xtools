@@ -39,15 +39,26 @@ const fetchAndProcessTask = async () => {
   while (true) {
     try {
       //  Get default schedule
+      logger.info(`Add default tasks to queue`)
       const response = await get(`/mission_schedule/?schedule_type=mission_should_start`)
       if (response && response.schedule && response.schedule.length > 0) {
         // Add default tasks to queue
-        logger.info(`Add default tasks to queue`)
-        response.schedule.forEach((task) => {
-          taskQueue.push(task)
+        logger.info(`Found task ${response.schedule.length}`)
+        // response.schedule.forEach((task) => {
+        // })
+        killChrome()
+        listOpenBrowser = []
+        // Remove all pending tasks from the queue
+        taskQueue.remove((task) => {
+          // Return true to remove all tasks
+          return true
         })
+
+        for (const task of response.schedule) {
+          taskQueue.push(task)
+          await randomDelay(500, 1000)
+        }
         await new Promise((resolve) => setTimeout(resolve, 60000))
-        continue
       }
 
       //  Get clicks ads
@@ -62,12 +73,14 @@ const fetchAndProcessTask = async () => {
         ) {
           // Add tasks to queue
           logger.info(`Add clickAds tasks to queue ${taskQueue.length()} limit ${concurrencyLimit}`)
-          response.schedule.forEach((task) => {
+          for (const task of response.schedule) {
             taskQueue.push(task)
-          })
+            await randomDelay(500, 1000)
+          }
+          continue
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 20000))
+      await new Promise((resolve) => setTimeout(resolve, 60000))
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
@@ -124,7 +137,6 @@ const processTaskQueue = async (queueData) => {
       taskQueue.push(queueData)
       await randomDelay()
     }
-
     return
   }
 
@@ -165,7 +177,6 @@ const processTaskQueue = async (queueData) => {
     logger.error(`processTaskQueue_error ${error}`)
   }
   listOpenBrowser = listOpenBrowser.filter((item) => item !== profileIdGiver)
-  logger.info(`listOpenBrowser ${JSON.stringify(listOpenBrowser)}`)
   await killPID(processPID)
 }
 
@@ -180,9 +191,9 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         await newsFeedStep.init(page, profileIdGiver, tasksJson)
         break
       case TASK_NAME_CONFIG.ClickAds:
-        if (Math.random() < 0.1) {
-          await newsFeedStep.init(page, profileIdGiver, tasksJson)
-        }
+        // if (Math.random() < 0.1) {
+        //   await newsFeedStep.init(page, profileIdGiver, tasksJson)
+        // }
         if (Math.random() < 0.03) {
           await checkProfiles(profileIdGiver, page)
         }
