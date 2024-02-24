@@ -287,7 +287,7 @@ const ProfilesPage = () => {
         openSnackbar('Profile deleted successfully', 'success')
         setProfiles(profiles.filter((profile) => profile.profile_id !== profileToDelete)) // Update the state to remove the deleted profile
       } else {
-        openSnackbar('Failed to delete profile', 'error')
+        openSnackbar('Failed to delete profile, Please check your HMA Account', 'error')
       }
     } catch (error) {
       openSnackbar('Error deleting profile', 'error')
@@ -382,17 +382,22 @@ const ProfilesPage = () => {
       })
     )
 
-    openSnackbar('It might be take times, please waiting for the success message', 'info')
+    openSnackbar('It might take some time, please wait for the success message', 'info')
 
     try {
       // Execute all delete requests concurrently
-      await Promise.all(deletePromises)
+      const results = await Promise.all(deletePromises)
+
+      // Check if any request failed
+      if (results.some((result) => !result.ok)) {
+        throw new Error('One or more requests failed')
+      }
 
       // If all requests are successful
       openSnackbar('Profiles deleted successfully', 'success')
     } catch (error) {
       // If any request fails
-      openSnackbar('Error deleting profiles', 'error')
+      openSnackbar('Error deleting profiles. Please check your HMA account', 'error')
       console.error('Error deleting profiles:', error)
     }
 

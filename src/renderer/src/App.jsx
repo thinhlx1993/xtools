@@ -37,8 +37,6 @@ const App = () => {
 
   useEffect(() => {
     initIpcMainConsumer()
-    console.log('init app')
-    // worker for mission schedule
     fetchUserRole()
   }, [])
 

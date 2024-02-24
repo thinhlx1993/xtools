@@ -67,6 +67,7 @@ const Navbar = ({ username, onLogout, userRole, userSuperAdmin, updateUserRole }
         if (response.ok) {
           const data = await response.json()
           setTeams(data.data) // Adjust based on actual response structure
+          navigate('/admin/profiles')
         } else {
           console.error('Failed to fetch teams')
         }
@@ -156,11 +157,6 @@ const Navbar = ({ username, onLogout, userRole, userSuperAdmin, updateUserRole }
     <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
       <div role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
         <List>
-          {/* {userRole === 'admin' && (
-            <ListItem button component={Link} to="/admin">
-              <ListItemText primary="Admin Dashboard" />
-            </ListItem>
-          )} */}
           {userSuperAdmin && (
             <ListItem button component={Link} to="/admin/teams">
               <ListItemText primary="Teams" />
