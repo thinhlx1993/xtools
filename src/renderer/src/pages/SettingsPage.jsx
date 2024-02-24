@@ -238,7 +238,12 @@ const SettingsPage = () => {
           />
         </Grid> */}
         <Grid item xs={12} style={{ marginBottom: 20 }}>
-          <Button variant="contained" color="primary" onClick={handleSubmit}>
+          <Button
+            disabled={!settings.browserPath}
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+          >
             Save Settings
           </Button>
         </Grid>

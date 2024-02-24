@@ -108,6 +108,7 @@ export const openProfileBrowser = async (profile) => {
     if (profileData.browser_data) {
       args.push(`--hidemyacc-data=${profileData.browser_data}`)
     }
+
     logger.info(`hideMyAccProfileDir: ${hideMyAccProfileDir}`)
 
     try {

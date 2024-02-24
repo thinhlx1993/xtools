@@ -68,7 +68,15 @@ export default async (page, giverData, featOptions, receiverData) => {
       return
     }
     entries.shift()
+
+    if (totalCount >= totalPosts) {
+      await _getDelayTimeAction(featOptions)
+      logger.info(`click ads done with totalPosts ${receiverData.username}`)
+      return
+    }
+
     currentEntrie = currentEntrie + 1
+    totalCount += 1
     const entryType = entry.content.entryType
     if (entryType === ENTRY_TYPE.module) {
       await windowScrollBy(page, 300)
@@ -217,14 +225,7 @@ export default async (page, giverData, featOptions, receiverData) => {
         }),
         entryUrl.click().then(() => page.mouse.reset())
       ])
-      totalCount += 1
       await navAction.back(page)
-    }
-
-    if (totalCount >= totalPosts) {
-      await _getDelayTimeAction(featOptions)
-      logger.info(`click ads done with totalPosts ${receiverData.username}`)
-      return
     }
   }
   logger.info(`click ads feed done ${receiverData.username}`)
