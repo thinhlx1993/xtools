@@ -60,8 +60,6 @@ const fetchAndProcessTask = async () => {
         }
         await new Promise((resolve) => setTimeout(resolve, 60000))
       }
-
-      //  Get clicks ads
       if (taskQueue.length() < concurrencyLimit) {
         logger.info(`Get clicks ads`)
         const response = await get(`/mission_schedule/?schedule_type=clickAds`)

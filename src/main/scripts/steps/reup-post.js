@@ -38,7 +38,7 @@ const getContentReUp = (chatOpenAIKey, content, tryTime = 0) => {
     .getCompletion(
       chatOpenAIKey,
       content,
-      'Can you please paraphase the text bellow to crypto or bitcoin keep the length in 50 words'
+      'Please rewrite the text, and please keep the output lower than 20 words'
     )
     .catch(async (error) => {
       logger.error('GET_CONTENT_RE_UP_ERROR', error?.error || error)
@@ -108,41 +108,41 @@ const _base = async (page, openAIConfig, twPost) => {
     }
 
     // ??
-    if (post.legacy.quotedStatusPermalink?.expanded || post.legacy.quotedStatusPermalink?.url) {
-      contentInput += `\n`
-      contentInput +=
-        post.legacy.quotedStatusPermalink.expanded || post.legacy.quotedStatusPermalink.url
-    }
+    // if (post.legacy.quotedStatusPermalink?.expanded || post.legacy.quotedStatusPermalink?.url) {
+    //   contentInput += `\n`
+    //   contentInput +=
+    //     post.legacy.quotedStatusPermalink.expanded || post.legacy.quotedStatusPermalink.url
+    // }
 
     // hashtag trending
-    const hashtagTrendingList = JSON.parse(store.get(STORE_KEYS.TRENDING_HASH_TAG) || '[]')
-    if (hashtagTrendingList.length) {
-      const hashtagRandom = utils.random(hashtagTrendingList)
-      contentInput += '\n'
-      contentInput += `#${hashtagRandom.replace(/\s/g, '')}`
-      contentInput += ' '
-    }
+    // const hashtagTrendingList = JSON.parse(store.get(STORE_KEYS.TRENDING_HASH_TAG) || '[]')
+    // if (hashtagTrendingList.length) {
+    //   const hashtagRandom = utils.random(hashtagTrendingList)
+    //   contentInput += '\n'
+    //   contentInput += `#${hashtagRandom.replace(/\s/g, '')}`
+    //   contentInput += ' '
+    // }
 
     // media link (image, video)
-    post.legacy.extendedEntities.media.forEach((mediaItem) => {
-      switch (mediaItem.type) {
-        case TWEET_MEDIA_TYPE.video:
-          if (!openAIConfig.reUpWithVideo) {
-            return false
-          }
-          break
-        case TWEET_MEDIA_TYPE.gif:
-        case TWEET_MEDIA_TYPE.photo:
-          if (!openAIConfig.reUpWithImage) {
-            return false
-          }
-          break
-        default:
-          return false
-      }
-      contentInput += '\n'
-      contentInput += mediaItem.expandedUrl
-    })
+    // post.legacy.extendedEntities.media.forEach((mediaItem) => {
+    //   switch (mediaItem.type) {
+    //     case TWEET_MEDIA_TYPE.video:
+    //       if (!openAIConfig.reUpWithVideo) {
+    //         return false
+    //       }
+    //       break
+    //     case TWEET_MEDIA_TYPE.gif:
+    //     case TWEET_MEDIA_TYPE.photo:
+    //       if (!openAIConfig.reUpWithImage) {
+    //         return false
+    //       }
+    //       break
+    //     default:
+    //       return false
+    //   }
+    //   contentInput += '\n'
+    //   contentInput += mediaItem.expandedUrl
+    // })
 
     // compose post
     await page.waitForSelector(composeTweetPathSelector.input, {

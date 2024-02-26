@@ -92,7 +92,7 @@ const ProfilesPage = () => {
     })
 
     // Set up the interval to call fetchData every 10 seconds
-    const interval = setInterval(fetchProfiles, 20000)
+    const interval = setInterval(fetchProfiles, 60000)
     // Clear the interval on component unmount
 
     return () => clearInterval(interval)
@@ -312,46 +312,6 @@ const ProfilesPage = () => {
 
   const isRowSelected = (profileId) => selectedRows.includes(profileId)
 
-  const fetchGroups = async () => {
-    try {
-      const response = await fetch(`${AppConfig.BASE_URL}/groups`, {
-        headers: {
-          accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setGroups(data) // Store the group data in state
-      } else {
-        console.error('Failed to fetch groups')
-      }
-    } catch (error) {
-      console.error('Error fetching groups:', error)
-    }
-  }
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`${AppConfig.BASE_URL}/user`, {
-        headers: {
-          accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setUsers(data.user_list) // Store the group data in state
-      } else {
-        console.error('Failed to fetch users')
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error)
-    }
-  }
-
   const handleChangePage = (event, newPage) => {
     setPage(newPage + 1)
   }
@@ -412,9 +372,13 @@ const ProfilesPage = () => {
     setConfirmDialogOpen(true)
   }
 
-  // Open Profile
+  // Open Profile and Login and Check Data
+  const handleCheckProfiles = () => {
+    ipcMainConsumer.emit('startOpenProfile', { profileIds: selectedRows, type: 'checkProfile' })
+  }
+
   const handleOpenProfile = (profile) => {
-    ipcMainConsumer.emit('startOpenProfile', profile.profile_id)
+    ipcMainConsumer.emit('startOpenProfile', { profileId: profile.profile_id, type: 'OpenBrowser' })
   }
 
   const ConfirmationDialog = ({ open, onClose, onConfirm, actionType }) => (
@@ -630,9 +594,6 @@ const ProfilesPage = () => {
       <Grid container alignItems="center">
         {/* Event Logs Title */}
         <Grid item xs>
-          {/* <Typography variant="h4" gutterBottom>
-            Profiles
-          </Typography> */}
           {/* startBtnStatus */}
           {startBtnStatus === 'stop' ? (
             <>
@@ -656,6 +617,15 @@ const ProfilesPage = () => {
               </Button>
             </>
           )}
+          <Button
+            style={{ marginLeft: 20 }}
+            color="warning"
+            variant="contained"
+            onClick={() => handleCheckProfiles()}
+            endIcon={<PlayCircleFilledWhiteIcon />}
+          >
+            Check Profile
+          </Button>
         </Grid>
 
         <Grid item style={{ marginRight: '20px' }}>
@@ -675,6 +645,9 @@ const ProfilesPage = () => {
               </MenuItem>
               <MenuItem key="main_account" value="main_account">
                 Main Account
+              </MenuItem>
+              <MenuItem key="clone_account" value="clone_account">
+                Clone Account
               </MenuItem>
               <MenuItem key="monetizable" value="monetizable">
                 Monetizable
@@ -962,7 +935,7 @@ const ProfilesPage = () => {
                     <DeleteForeverIcon />
                   </IconButton>
                   <Button color="info" onClick={() => handleOpenProfile(profile)}>
-                    Check Profile
+                    Open Browser
                   </Button>
                 </TableCell>
               </TableRow>

@@ -136,7 +136,7 @@ export const openProfileBrowser = async (profile) => {
     let pages = await browser.pages()
 
     // Check if there are pages open
-    logger.info(`Page length: ${pages.length}`)
+    // logger.info(`Page length: ${pages.length}`)
     if (pages.length > 1) {
       // Iterate through all pages except the first one
       for (let i = 1; i < pages.length; i++) {
@@ -166,7 +166,17 @@ export const openProfileBrowser = async (profile) => {
 
       await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0' })
       logger.info('Open the browser successfully')
-      await startSignIn(profile, page)
+      const loginStatus = await startSignIn(profileData, page)
+      if (loginStatus === 'something went wrong') {
+        await browser.close()
+        try {
+          // Use fs.rmSync to remove the folder synchronously
+          fs.rmSync(hideMyAccProfileDir, { recursive: true })
+          logger.info(`Folder ${hideMyAccProfileDir} has been successfully removed.`)
+        } catch (err) {
+          logger.error(`Error removing folder: ${err.message}`)
+        }
+      }
     } catch (error) {
       logger.error(`Open the browser ${error}`)
       throw error
@@ -369,135 +379,126 @@ export const resolveCaptcha = async (profileId, page) => {
   }
 }
 
-export const startSignIn = async (profileId, page) => {
+export const startSignIn = async (profileData, page) => {
+  // let profileData = await getProfileData(profileId, {})
+  const profileId = profileData.profile_id
+  if (profileData.cookies) {
+    await setCookies(page, profileData)
+    await updateProfileData(profileId, { status: 'set cookies ok' })
+    // return
+  }
+  // Start Puppeteer
+  // await updateProfileData(profileId, { status: 'logging in' })
+
+  await page.goto('https://twitter.com')
+
   try {
-    let profileData = await getProfileData(profileId, {})
-    if (profileData.cookies) {
-      await setCookies(page, profileData)
-      await updateProfileData(profileId, { status: 'set cookies ok' })
-      // return
-    }
-    // Start Puppeteer
-    // await updateProfileData(profileId, { status: 'logging in' })
-
-    await page.goto('https://twitter.com')
-
-    try {
-      const clientEventResponse = await page.waitForResponse(
-        (response) => response.url().includes('client_event.json') && response.status() === 200
-      )
-      const clientEventResponseData = await clientEventResponse.json()
-      for (const item of clientEventResponseData.errors) {
-        if (item.code === 64) {
-          let profileInfo = profileData.profile_data ? profileData.profile_data : {}
-          profileInfo.suspended = true
-          logger.info(`Found account suspended ${profileData.username}`)
-          await updateProfileData(profileId, { profile_data: profileInfo, status: 'Suspended' })
-          return
-        }
-      }
-    } catch (error) {
-      logger.error(`Check suspended ${error}`)
-    }
-
-    // check if profile is already logged in
-    try {
-      // await page.waitForSelector('div[aria-label="Home timeline"]', {
-      //   visible: true,
-      //   timeout: 10000
-      // })
-      // badge_count.json
-      const badgeCount = await page.waitForResponse(
-        (response) => response.url().includes('badge_count.json') && response.status() === 200
-      )
-      if (badgeCount.ok()) {
-        await cacheCookies(page, profileId)
-        await updateProfileData(profileId, { status: 'Login ok' })
-        return
-      } else {
-        await updateProfileData(profileId, { status: 'logging in' })
-      }
-    } catch (error) {
-      logger.info('Not found home page')
-    }
-
-    try {
-      const acceptAllCookies =
-        "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Accept all cookies')]"
-      await page.waitForXPath(acceptAllCookies, { timeout: 2000 })
-      const nextButtons = await page.$x(acceptAllCookies)
-      await nextButtons[0].click()
-    } catch (error) {
-      logger.info(`Not found accept cookies`)
-    }
-
-    await page.waitForSelector('a[href="/login"][data-testid="loginButton"]')
-    await page.click('a[href="/login"][data-testid="loginButton"]')
-    await randomDelay()
-
-    try {
-      const profileErrorText = await page.evaluate(() =>
-        document
-          .querySelector('span')
-          ?.innerText?.includes('Oops, something went wrong. Please try again later.')
-      )
-      if (profileErrorText) {
-        await updateProfileData(profileId, { status: 'something went wrong' })
-        return
-      }
-      // Oops, something went wrong. Please try again later.
-    } catch (error) {}
-    await page.waitForSelector('div[dir="ltr"] > input[autocomplete="username"]')
-    // Replace sendDelays with typing with delay
-    await page.type('div[dir="ltr"] > input[autocomplete="username"]', profileData.username, {
-      delay: 100
-    })
-    await randomDelay()
-    await page.waitForSelector('div[role="button"] > div[dir="ltr"] > span > span')
-    const nextButtonXPath =
-      "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Next')]"
-    await page.waitForXPath(nextButtonXPath)
-    const nextButtons = await page.$x(nextButtonXPath)
-    if (nextButtons.length === 0) {
-      await updateProfileData(profileId, { status: 'Login error' })
-      return
-    }
-    await nextButtons[0].click()
-    await randomDelay()
-    await page.waitForSelector('div[dir="ltr"] > input[autocomplete="current-password"]')
-    await page.type(
-      'div[dir="ltr"] > input[autocomplete="current-password"]',
-      profileData.password,
-      {
-        delay: 100
-      }
+    const clientEventResponse = await page.waitForResponse(
+      (response) => response.url().includes('client_event.json') && response.status() === 200
     )
-    await randomDelay()
-    await page.waitForSelector('div[role="button"][data-testid="LoginForm_Login_Button"]')
-    await page.click('div[role="button"][data-testid="LoginForm_Login_Button"]')
-    await randomDelay()
-    await page.waitForSelector('input[data-testid="ocfEnterTextTextInput"]')
+    const clientEventResponseData = await clientEventResponse.json()
+    for (const item of clientEventResponseData.errors) {
+      if (item.code === 64) {
+        let profileInfo = profileData.profile_data ? profileData.profile_data : {}
+        profileInfo.suspended = true
+        logger.info(`Found account suspended ${profileData.username}`)
+        await updateProfileData(profileId, { profile_data: profileInfo, status: 'Suspended' })
+        return false
+      }
+    }
+  } catch (error) {
+    logger.error(`Check suspended ${error}`)
+  }
 
-    const currentOtp = getOtp(profileData.fa)
-    logger.info(profileData.fa)
-    await randomDelay()
-    await page.type('input[data-testid="ocfEnterTextTextInput"]', currentOtp, { delay: 100 })
-    await randomDelay()
-    await page.waitForSelector('div[role="button"][data-testid="ocfEnterTextNextButton"]')
-    await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
+  // check if profile is already logged in
+  try {
     const badgeCount = await page.waitForResponse(
       (response) => response.url().includes('badge_count.json') && response.status() === 200
     )
     if (badgeCount.ok()) {
       await cacheCookies(page, profileId)
       await updateProfileData(profileId, { status: 'Login ok' })
-      return
+      return true
     } else {
-      await updateProfileData(profileId, { status: 'Login error' })
+      await updateProfileData(profileId, { status: 'logging in' })
     }
   } catch (error) {
-    await updateProfileData(profileId, { status: 'login failed' })
+    logger.info('Not found home page')
   }
+
+  try {
+    const acceptAllCookies =
+      "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Accept all cookies')]"
+    await page.waitForXPath(acceptAllCookies, { timeout: 2000 })
+    const nextButtons = await page.$x(acceptAllCookies)
+    await nextButtons[0].click()
+  } catch (error) {
+    logger.info(`Not found accept cookies`)
+  }
+
+  await page.waitForSelector('a[href="/login"][data-testid="loginButton"]')
+  await page.click('a[href="/login"][data-testid="loginButton"]')
+  await randomDelay(500, 1000)
+
+  try {
+    await page.waitForSelector('div[dir="ltr"] > input[autocomplete="username"]', { timeout: 5000 })
+  } catch (error) {
+    const profileErrorText = await page.evaluate(() =>
+      document
+        .querySelector('span')
+        ?.innerText?.includes('Oops, something went wrong. Please try again later.')
+    )
+    if (profileErrorText) {
+      await updateProfileData(profileId, { status: 'something went wrong' })
+    }
+    return 'something went wrong'
+  }
+
+  // Replace sendDelays with typing with delay
+  await page.type('div[dir="ltr"] > input[autocomplete="username"]', profileData.username, {
+    delay: 100
+  })
+  await randomDelay(500, 1000)
+  await page.waitForSelector('div[role="button"] > div[dir="ltr"] > span > span')
+  const nextButtonXPath =
+    "//div[@role='button']/div[@dir='ltr']/span/span[contains(text(), 'Next')]"
+  await page.waitForXPath(nextButtonXPath)
+  const nextButtons = await page.$x(nextButtonXPath)
+  await nextButtons[0].click()
+  await randomDelay(500, 1000)
+
+  await page.waitForSelector('div[dir="ltr"] > input[autocomplete="current-password"]')
+  await page.type('div[dir="ltr"] > input[autocomplete="current-password"]', profileData.password, {
+    delay: 100
+  })
+  await randomDelay(500, 1000)
+  await page.waitForSelector('div[role="button"][data-testid="LoginForm_Login_Button"]')
+  await page.click('div[role="button"][data-testid="LoginForm_Login_Button"]')
+  await randomDelay(500, 1000)
+
+  try {
+    await page.waitForSelector('input[data-testid="ocfEnterTextTextInput"]')
+  } catch (error) {
+    await updateProfileData(profileId, { status: 'Wrong password' })
+    return false
+  }
+
+  const currentOtp = getOtp(profileData.fa)
+  await randomDelay()
+  await page.type('input[data-testid="ocfEnterTextTextInput"]', currentOtp, { delay: 100 })
+  await randomDelay()
+  await page.waitForSelector('div[role="button"][data-testid="ocfEnterTextNextButton"]')
+  await page.click('div[role="button"][data-testid="ocfEnterTextNextButton"]')
+  const badgeCount = await page.waitForResponse(
+    (response) => response.url().includes('badge_count.json') && response.status() === 200
+  )
+  if (badgeCount.ok()) {
+    await cacheCookies(page, profileId)
+    await updateProfileData(profileId, { status: 'Login ok' })
+    return true
+  }
+  await updateProfileData(profileId, { status: 'Login error' })
+  return false
 }
 
 const tryAgain = async (page) => {

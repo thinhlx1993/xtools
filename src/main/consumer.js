@@ -1,5 +1,6 @@
 import fs from 'fs'
-import { app, BrowserWindow, ipcMain, dialog, clipboard } from 'electron'
+import async from 'async'
+import { BrowserWindow, ipcMain, clipboard } from 'electron'
 import { machineIdSync } from 'node-machine-id'
 import hideMyAcc from './integration/hidemyacc'
 import store from './store'
@@ -12,9 +13,11 @@ import { delay } from './scripts/utils'
 import { openProfileBrowser } from './scripts/tasks/profile'
 import { fetchScheduledTasks } from './scripts/tasks/schedule'
 import { checkProfiles } from './scripts/tasks/profile'
+import { killChrome } from './scripts/tasks/utils'
+import { get } from './scripts/services/backend'
+import { killPID } from './scripts/tasks/utils'
 
 const dataMemories = {}
-let workerStaus = ''
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
@@ -280,9 +283,44 @@ ipcMain.on('fetchMachineId', async (event) => {
 })
 
 // open profile
-ipcMain.on('startOpenProfile', async (event, profile) => {
-  const [page, browser] = await openProfileBrowser(profile)
-  await checkProfiles(profile, page)
+ipcMain.on('startOpenProfile', async (event, data) => {
+  const startType = data.type
+  if (startType === 'checkProfile') {
+    killChrome()
+    const response = await get(`/settings/`)
+    let concurrencyLimit = 10
+    if (response.settings.settings.threads) {
+      try {
+        concurrencyLimit = parseInt(response.settings.settings.threads)
+      } catch (error) {
+        logger.error(`Threads is not a number`)
+      }
+    }
+    logger.info(`Number of threads: ${concurrencyLimit}`)
+    const taskQueue = async.queue(async (profileId) => {
+      let processPID = null
+      try {
+        const [page, browser] = await openProfileBrowser(profileId)
+        processPID = browser.process().pid
+        try {
+          await checkProfiles(profileId, page)
+        } catch (error) {}
+        await browser.close()
+      } catch (error) {
+        logger.error(`processTaskQueue ERROR ${error}`)
+      }
+      await killPID(processPID)
+    }, concurrencyLimit) // set the concurrency limit
+
+    const profileIds = data.profileIds
+    for (const profileId of profileIds) {
+      taskQueue.push(profileId)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+  } else {
+    const profileId = data.profileId
+    await openProfileBrowser(profileId)
+  }
 })
 
 // save access token
