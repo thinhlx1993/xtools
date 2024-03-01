@@ -4,7 +4,6 @@ import logger from '../../../logger'
 import { Browser, Account, InteractAdsOptions } from '../../define-type'
 import profile from './profiles'
 import { getProfileData } from '../../services/backend'
-import { randomDelay } from '../../tasks/utils'
 
 const dataMemories = {}
 

@@ -152,10 +152,10 @@ const commentEntry = async (page, entryElementHandle, content) => {
 
 export const getRandomAskingQuestion = () => {
   const randomPositions = [
-    'How can I reply to the post below? Keep the answer under 100 character',
-    'Can you explain why? Keep the response under 100 character',
-    'Ask author a question please? Keep the response under 100 character',
-    'Give me an advise for this one? Keep it under 100 character'
+    'How can I reply to the post below? Keep the answer from 20 to 100 character',
+    'Can you explain why? Keep the response from 20 to 100 character',
+    'Ask author a question please? Keep the response from 20 to 100 character',
+    'Give me an advise for this one? Keep it from 20 to 100 character'
   ]
   const randomIndex = Math.floor(Math.random() * randomPositions.length)
   return randomPositions[randomIndex]
@@ -201,6 +201,9 @@ const _getContentCommentByChatGPT = (chatGPT, content, tryTime = 0) => {
 const commentEntryWithChatGPT = async (page, entryElementHandle, entryContent, chatGPT) => {
   const commentContent = await _getContentCommentByChatGPT(chatGPT, entryContent)
   if (!commentContent) {
+    return false
+  }
+  if (commentContent.includes('I cannot') || commentContent.includes('sorry')) {
     return false
   }
   logger.info(`ChatGPT return content ${commentContent}`)

@@ -129,7 +129,6 @@ export default async (page, giverData, featOptions, receiverData) => {
     await _getDelayTimeAction(featOptions)
 
     const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
-    const maxCommentLike = !featOptions.maxCommentLike ? 3 : featOptions.maxCommentLike
     logger.info(
       `actionType ${actionType} allowLikeAction ${featOptions.allowLikeAction} currentEntrie ${currentEntrie} isAds ${entryItem.isAds} receiverData comment_count ${receiverData.comment_count} giverData comment_count ${giverData.comment_count}`
     )
@@ -138,8 +137,8 @@ export default async (page, giverData, featOptions, receiverData) => {
       featOptions.allowLikeAction &&
       currentEntrie === 1 &&
       !entryItem.isAds &&
-      receiverData.like_count <= maxCommentLike &&
-      giverData.like_count <= maxCommentLike
+      receiverData.like_count <= 3 &&
+      giverData.like_count <= 3
     ) {
       await utils.delayRandom()
       logger.info(`${receiverData.username} favoriteEntry`)
@@ -157,8 +156,8 @@ export default async (page, giverData, featOptions, receiverData) => {
       featOptions.allowCommentAction &&
       receiverData.gpt_key &&
       featOptions.chatOpenAIPrefix &&
-      receiverData.comment_count <= maxCommentLike &&
-      giverData.comment_count <= maxCommentLike
+      receiverData.comment_count <= 3 &&
+      giverData.comment_count <= 3
     ) {
       // maximum 5 comment likes per user per day
       logger.info(`${receiverData.username} today have ${receiverData.comment_count} ${actionType}`)
