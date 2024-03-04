@@ -164,8 +164,8 @@ export const openProfileBrowser = async (profile) => {
         })
       }
 
-      await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0' })
-      logger.info('Open the browser successfully')
+      // await page.goto('https://ipfighter.com/', { waitUntil: 'networkidle0' })
+      // logger.info('Open the browser successfully')
       const loginStatus = await startSignIn(profileData, page)
       if (loginStatus === 'something went wrong') {
         await browser.close()
@@ -384,7 +384,7 @@ export const startSignIn = async (profileData, page) => {
   const profileId = profileData.profile_id
   if (profileData.cookies) {
     await setCookies(page, profileData)
-    await updateProfileData(profileId, { status: 'set cookies ok' })
+    // await updateProfileData(profileId, { status: 'set cookies ok' })
     // return
   }
   // Start Puppeteer
@@ -419,8 +419,6 @@ export const startSignIn = async (profileData, page) => {
       await cacheCookies(page, profileId)
       await updateProfileData(profileId, { status: 'Login ok' })
       return true
-    } else {
-      await updateProfileData(profileId, { status: 'logging in' })
     }
   } catch (error) {
     logger.info('Not found home page')
@@ -441,7 +439,9 @@ export const startSignIn = async (profileData, page) => {
   await randomDelay(500, 1000)
 
   try {
-    await page.waitForSelector('div[dir="ltr"] > input[autocomplete="username"]', { timeout: 5000 })
+    await page.waitForSelector('div[dir="ltr"] > input[autocomplete="username"]', {
+      timeout: 15000
+    })
   } catch (error) {
     const profileErrorText = await page.evaluate(() =>
       document

@@ -75,7 +75,7 @@ const fetchAndProcessTask = async () => {
             taskQueue.push(task)
             await randomDelay(500, 1000)
           }
-          continue
+          // continue
         }
       }
       await new Promise((resolve) => setTimeout(resolve, 60000))

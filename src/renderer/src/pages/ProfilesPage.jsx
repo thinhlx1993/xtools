@@ -92,10 +92,9 @@ const ProfilesPage = () => {
     })
 
     // Set up the interval to call fetchData every 10 seconds
-    const interval = setInterval(fetchProfiles, 60000)
+    // const interval = setInterval(fetchProfiles, 60000)
     // Clear the interval on component unmount
-
-    return () => clearInterval(interval)
+    // return () => clearInterval(interval)
   }, [page, rowsPerPage, searchQuery, filterByType])
 
   const startWorker = async (command) => {

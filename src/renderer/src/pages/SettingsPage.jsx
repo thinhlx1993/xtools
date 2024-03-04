@@ -220,23 +220,21 @@ const SettingsPage = () => {
         <Grid item xs={12}>
           <TextField
             label="capguruKey"
-            type="password"
             name="capguruKey"
             value={settings.capguruKey}
             onChange={handleChange}
             fullWidth
           />
         </Grid>
-        {/* <Grid item xs={12}>
+        <Grid item xs={12}>
           <TextField
             label="smsPoolKey"
-            type="password"
             name="smsPoolKey"
             value={settings.smsPoolKey}
             onChange={handleChange}
             fullWidth
           />
-        </Grid> */}
+        </Grid>
         <Grid item xs={12} style={{ marginBottom: 20 }}>
           <Button
             disabled={!settings.browserPath}
