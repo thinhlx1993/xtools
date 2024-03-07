@@ -11,11 +11,13 @@ import scrollAction from '../../actions/scroll'
 import navAction from '../../actions/nav'
 import interactAction from '../../actions/interact'
 import postDetail from './post-detail'
+import moment from 'moment-timezone'
 import {
   getEventsLogs,
   createEventLogs,
   getGiverEventsLogs,
-  createAnewPost
+  createAnewPost,
+  updateProfileData
 } from '../../services/backend'
 /**
  *
@@ -60,6 +62,26 @@ export default async (page, giverData, featOptions, receiverData) => {
     })
   await utils.delayRandom()
   logger.info('done wait timeline section')
+
+  const utcPlus7 = 'Asia/Bangkok'
+
+  // Get the current date in UTC+7
+  const todayInUtcPlus7 = moment().tz(utcPlus7).startOf('day')
+
+  // Filter entries that belong to today in UTC+7
+  const entriesTodayUtcPlus7 = entries.filter((entry) => {
+    const entryItem = mapper.mapUserTweet(entry)
+    if (entryItem) {
+      const createdAtUtc = moment(entryItem.createdAt, 'ddd MMM DD HH:mm:ss Z YYYY').utc()
+      return createdAtUtc.isSame(todayInUtcPlus7, 'day')
+    }
+  })
+
+  // update post today
+  await updateProfileData(receiverData.profile_id, {
+    today_post_count: entriesTodayUtcPlus7.length
+  })
+
   while (entries.length) {
     const entry = entries[0]
     if (!entry) {
@@ -87,6 +109,9 @@ export default async (page, giverData, featOptions, receiverData) => {
       continue
     }
     const entryItem = mapper.mapUserTweet(entry)
+
+    logger.info(`Created At: ${entryItem.createdAt}`)
+
     // logger.info('entryItem', entryItem)
 
     // const postData = {
@@ -214,7 +239,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    if (Math.random() < 1 && receiverData.click_count < 350) {
+    if (Math.random() < 0.5 && receiverData.click_count < 300) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,

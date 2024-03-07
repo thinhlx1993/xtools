@@ -26,6 +26,7 @@ import {
   InputLabel,
   FormControlLabel
 } from '@mui/material'
+import LaunchIcon from '@mui/icons-material/Launch'
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite'
 import StopCircleIcon from '@mui/icons-material/StopCircle'
 import Papa from 'papaparse'
@@ -40,6 +41,7 @@ import { ipcMainConsumer } from '../helpers/api'
 import CachedIcon from '@mui/icons-material/Cached'
 import ExportCSV from './exportCSV'
 import { getRequest } from '../helpers/backend'
+import { convertToLocalDateTime } from '../helpers/format-date'
 
 const ProfilesPage = () => {
   const { openSnackbar } = useSnackbar()
@@ -738,7 +740,11 @@ const ProfilesPage = () => {
               {!isMobile && <TableCell>Total View</TableCell>}
               {!isMobile && <TableCell>LinkClicks</TableCell>}
               {!isMobile && <TableCell>Replies</TableCell>}
+              {!isMobile && <TableCell>Posts</TableCell>}
               {!isMobile && <TableCell>xClick</TableCell>}
+              {!isMobile && <TableCell>Proxy</TableCell>}
+              {!isMobile && <TableCell>GPT Key</TableCell>}
+              {!isMobile && <TableCell>last Activate</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -813,13 +819,7 @@ const ProfilesPage = () => {
                   </Tooltip>
                 </TableCell>
                 {!isMobile && (
-                  <TableCell
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
+                  <TableCell>
                     <span>{profile.main_profile ? 'Main Account' : ''}</span>
                   </TableCell>
                 )}
@@ -846,9 +846,7 @@ const ProfilesPage = () => {
                       maxWidth: 50
                     }}
                   >
-                    <Tooltip title={profile?.profile_data?.suspended}>
-                      <span>{!profile?.profile_data?.suspended ? 'No' : 'Yes'}</span>
-                    </Tooltip>
+                    <span>{!profile?.profile_data?.suspended ? 'No' : 'Yes'}</span>
                   </TableCell>
                 )}
                 {!isMobile && (
@@ -885,7 +883,7 @@ const ProfilesPage = () => {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      width: '50px'
+                      maxWidth: 50
                     }}
                   >
                     <Tooltip title={profile.profile_data?.metrics?.LinkClicks}>
@@ -899,7 +897,7 @@ const ProfilesPage = () => {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      width: '50px'
+                      maxWidth: 50
                     }}
                   >
                     <Tooltip title={profile.profile_data?.metrics?.Replies}>
@@ -913,7 +911,21 @@ const ProfilesPage = () => {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      width: '50px'
+                      maxWidth: 50
+                    }}
+                  >
+                    <Tooltip title={profile.profile_data?.today_post_count}>
+                      <span>{profile.profile_data?.today_post_count}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 50
                     }}
                   >
                     <Tooltip title={profile.click_count}>
@@ -921,7 +933,58 @@ const ProfilesPage = () => {
                     </Tooltip>
                   </TableCell>
                 )}
-                <TableCell>{profile.status}</TableCell>
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 20
+                    }}
+                  >
+                    <Tooltip title={profile.proxy}>
+                      <span>{profile.proxy}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 10
+                    }}
+                  >
+                    <Tooltip title={profile.gpt_key}>
+                      <span>{profile.gpt_key}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                {!isMobile && (
+                  <TableCell
+                    style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 170
+                    }}
+                  >
+                    <Tooltip title={convertToLocalDateTime(profile.modified_at)}>
+                      <span>{convertToLocalDateTime(profile.modified_at)}</span>
+                    </Tooltip>
+                  </TableCell>
+                )}
+                <TableCell
+                  style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: 150
+                  }}
+                >
+                  {profile.status}
+                </TableCell>
                 <TableCell style={{ textAlign: 'right' }}>
                   <IconButton color="primary" onClick={() => handleEditProfile(profile)}>
                     <EditIcon />
@@ -933,9 +996,17 @@ const ProfilesPage = () => {
                   >
                     <DeleteForeverIcon />
                   </IconButton>
-                  <Button color="info" onClick={() => handleOpenProfile(profile)}>
+                  <IconButton
+                    color="info"
+                    onClick={() => handleOpenProfile(profile)} // Replace 'profile.id' with actual identifier
+                    style={{ marginLeft: '10px' }}
+                  >
+                    <LaunchIcon />
+                  </IconButton>
+                  {/* LaunchIcon */}
+                  {/* <Button color="info" onClick={() => handleOpenProfile(profile)}>
                     Open Browser
-                  </Button>
+                  </Button> */}
                 </TableCell>
               </TableRow>
             ))}

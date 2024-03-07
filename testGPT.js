@@ -34,5 +34,5 @@ const getCompletion = async (
 }
 
 // Replace 'your-api-key' with your actual OpenAI API key
-const apiKey = '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'
+const apiKey = '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'
 getCompletion(apiKey, 'hello')
