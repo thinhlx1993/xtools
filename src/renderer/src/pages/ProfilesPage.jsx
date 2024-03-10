@@ -914,8 +914,8 @@ const ProfilesPage = () => {
                       maxWidth: 50
                     }}
                   >
-                    <Tooltip title={profile.profile_data?.today_post_count}>
-                      <span>{profile.profile_data?.today_post_count}</span>
+                    <Tooltip title={profile?.today_post_count}>
+                      <span>{profile?.today_post_count}</span>
                     </Tooltip>
                   </TableCell>
                 )}

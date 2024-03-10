@@ -153,73 +153,77 @@ export default async (page, giverData, featOptions, receiverData) => {
     await scrollAction.scrollToEntry(page, elementHandle)
     await _getDelayTimeAction(featOptions)
 
-    const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
-    logger.info(
-      `actionType ${actionType} allowLikeAction ${featOptions.allowLikeAction} currentEntrie ${currentEntrie} isAds ${entryItem.isAds} receiverData comment_count ${receiverData.comment_count} giverData comment_count ${giverData.comment_count}`
-    )
-    if (
-      actionType === 'like' &&
-      featOptions.allowLikeAction &&
-      currentEntrie === 1 &&
-      !entryItem.isAds &&
-      receiverData.like_count <= 3 &&
-      giverData.like_count <= 3
-    ) {
-      await utils.delayRandom()
-      logger.info(`${receiverData.username} favoriteEntry`)
-      await interactAction.favoriteEntry(page, elementHandle)
-      await createEventLogs({
-        event_type: actionType,
-        profile_id: receiverData.profile_id,
-        profile_id_interact: giverData.profile_id,
-        issue: 'OK'
-      })
-    } else if (
-      actionType === 'comment' &&
-      !entryItem.isAds &&
-      currentEntrie === 1 &&
-      featOptions.allowCommentAction &&
-      receiverData.gpt_key &&
-      featOptions.chatOpenAIPrefix &&
-      receiverData.comment_count <= 3 &&
-      giverData.comment_count <= 3
-    ) {
-      // maximum 5 comment likes per user per day
-      logger.info(`${receiverData.username} today have ${receiverData.comment_count} ${actionType}`)
-      const choices = featOptions.chatOpenAIPrefix.split('|')
-      const chosenOption = choices[Math.floor(Math.random() * choices.length)]
-      logger.info(`${receiverData.username} commentEntryWithChatGPT`)
-      const commentStatus = await interactAction.commentEntryWithChatGPT(
-        page,
-        elementHandle,
-        entryItem.fullText,
-        {
-          key: receiverData.gpt_key,
-          prefix: chosenOption,
-          maxRetryTime: 2
-        }
+    if (Math.random() < 0.1) {
+      const actionType = Math.random() < 0.5 ? 'comment' : 'like' // 50% chance for each
+      logger.info(
+        `actionType ${actionType} allowLikeAction ${featOptions.allowLikeAction} currentEntrie ${currentEntrie} isAds ${entryItem.isAds} receiverData comment_count ${receiverData.comment_count} giverData comment_count ${giverData.comment_count}`
       )
-      if (commentStatus) {
+      if (
+        actionType === 'like' &&
+        featOptions.allowLikeAction &&
+        currentEntrie === 1 &&
+        !entryItem.isAds &&
+        receiverData.like_count <= 8 &&
+        giverData.like_count <= 8
+      ) {
+        await utils.delayRandom()
+        logger.info(`${receiverData.username} favoriteEntry`)
+        await interactAction.favoriteEntry(page, elementHandle)
         await createEventLogs({
           event_type: actionType,
           profile_id: receiverData.profile_id,
           profile_id_interact: giverData.profile_id,
           issue: 'OK'
         })
-      } else {
-        await createEventLogs({
-          event_type: actionType,
-          profile_id: receiverData.profile_id,
-          profile_id_interact: giverData.profile_id,
-          issue: 'Comment error'
-        })
+      } else if (
+        actionType === 'comment' &&
+        !entryItem.isAds &&
+        currentEntrie === 1 &&
+        featOptions.allowCommentAction &&
+        receiverData.gpt_key &&
+        featOptions.chatOpenAIPrefix &&
+        receiverData.comment_count <= 8 &&
+        giverData.comment_count <= 8
+      ) {
+        // maximum 5 comment likes per user per day
+        logger.info(
+          `${receiverData.username} today have ${receiverData.comment_count} ${actionType}`
+        )
+        const choices = featOptions.chatOpenAIPrefix.split('|')
+        const chosenOption = choices[Math.floor(Math.random() * choices.length)]
+        logger.info(`${receiverData.username} commentEntryWithChatGPT`)
+        const commentStatus = await interactAction.commentEntryWithChatGPT(
+          page,
+          elementHandle,
+          entryItem.fullText,
+          {
+            key: receiverData.gpt_key,
+            prefix: chosenOption,
+            maxRetryTime: 2
+          }
+        )
+        if (commentStatus) {
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'OK'
+          })
+        } else {
+          await createEventLogs({
+            event_type: actionType,
+            profile_id: receiverData.profile_id,
+            profile_id_interact: giverData.profile_id,
+            issue: 'Comment error'
+          })
+        }
       }
     }
 
     if (entryItem.isRePost || entryItem.replyCount < 2) {
       continue
     }
-    if (entryItem.isAds && receiverData.click_count < 350) {
+    if (entryItem.isAds && receiverData.click_count < 500) {
       await scrollAction.scrollToEntryMedia(page, elementHandle)
       await _getDelayTimeAction(featOptions)
       await interactAction.interactAdsEntry(page, elementHandle, entryItem)
@@ -239,7 +243,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    if (Math.random() < 0.5 && receiverData.click_count < 300) {
+    if (Math.random() < 0.3 && receiverData.click_count < 500) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,
@@ -250,6 +254,8 @@ export default async (page, giverData, featOptions, receiverData) => {
         entryUrl.click().then(() => page.mouse.reset())
       ])
       await navAction.back(page)
+    } else {
+      await utils.delayRandom()
     }
   }
   logger.info(`click ads feed done ${receiverData.username}`)

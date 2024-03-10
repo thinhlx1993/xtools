@@ -56,7 +56,7 @@ const fetchAndProcessTask = async () => {
 
         for (const task of response.schedule) {
           taskQueue.push(task)
-          await randomDelay(500, 1000)
+          await randomDelay(200)
         }
         await new Promise((resolve) => setTimeout(resolve, 60000))
       }
@@ -73,12 +73,12 @@ const fetchAndProcessTask = async () => {
           logger.info(`Add clickAds tasks to queue ${taskQueue.length()} limit ${concurrencyLimit}`)
           for (const task of response.schedule) {
             taskQueue.push(task)
-            await randomDelay(500, 1000)
+            await randomDelay(200)
           }
-          // continue
+          continue
         }
       }
-      await new Promise((resolve) => setTimeout(resolve, 60000))
+      await new Promise((resolve) => setTimeout(resolve, 20000))
     } catch (error) {
       logger.error(`fetchAndProcessTask Error: ${error}`)
       await new Promise((resolve) => setTimeout(resolve, 60000)) // Wait before retrying in case of error
@@ -189,9 +189,9 @@ const processTask = async (profileIdGiver, profileIdReceiver, taskName, tasksJso
         await newsFeedStep.init(page, profileIdGiver, tasksJson)
         break
       case TASK_NAME_CONFIG.ClickAds:
-        // if (Math.random() < 0.1) {
-        //   await newsFeedStep.init(page, profileIdGiver, tasksJson)
-        // }
+        if (Math.random() < 0.1) {
+          await newsFeedStep.init(page, profileIdGiver, tasksJson)
+        }
         if (Math.random() < 0.03) {
           await checkProfiles(profileIdGiver, page)
         }
