@@ -49,7 +49,7 @@ export const openProfileBrowser = async (profile) => {
       try {
         let retryCount = 0
         let tz = null
-        const maxRetries = 5
+        const maxRetries = 10
         while (retryCount < maxRetries) {
           try {
             tz = await hideMyAcc.network(splitProxy(profileData.proxy))
@@ -195,6 +195,9 @@ export const openProfileBrowser = async (profile) => {
     } else if (error.message.includes('HMA')) {
       // Handle specific error (e.g., retry logic, alternate action)
       await updateProfileData(profile, { status: 'Check HMA Account' })
+    } else if (error.message.includes('ENOENT')) {
+      // Handle specific error (e.g., retry logic, alternate action)
+      await updateProfileData(profile, { status: 'Not found macro.exe' })
     } else {
       logger.error(`Error occurred when open profiles:[${profile}] ${error}`)
       // Handle other types of errors

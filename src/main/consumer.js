@@ -319,7 +319,69 @@ ipcMain.on('startOpenProfile', async (event, data) => {
     }
   } else {
     const profileId = data.profileId
-    await openProfileBrowser(profileId)
+    const [page, browser] = await openProfileBrowser(profileId)
+    // Capture click events with x and y coordinates
+    // Inject script to capture mouse and keyboard events
+    if (page) {
+      await page.evaluate(() => {
+        const getCssSelector = (element) => {
+          if (!(element instanceof Element) || !element.nodeType) {
+            return null
+          }
+
+          const path = []
+          while (element) {
+            let selector = element.nodeName.toLowerCase()
+            if (element.id) {
+              selector += `#${element.id}`
+              path.unshift(selector)
+              break
+            } else {
+              let sibling = element
+              while (sibling) {
+                if (
+                  sibling.nodeType === Node.ELEMENT_NODE &&
+                  sibling.nodeName.toLowerCase() === selector
+                ) {
+                  break
+                }
+                sibling = sibling.nextSibling
+              }
+              if (sibling === null) {
+                selector = `${selector}:nth-child(${
+                  Array.from(element.parentNode.children).indexOf(element) + 1
+                })`
+              }
+            }
+            path.unshift(selector)
+            element = element.parentNode
+          }
+          return path.join(' > ')
+        }
+
+        const logEvent = (eventType, event) => {
+          const targetSelector = getCssSelector(event.target)
+          console.log(
+            `${eventType} Event:`,
+            JSON.stringify({
+              eventType,
+              targetElement: targetSelector,
+              x: event.clientX,
+              y: event.clientY,
+              timestamp: new Date().toISOString()
+            })
+          )
+        }
+
+        document.addEventListener('mousedown', (event) => {
+          logEvent('mousedown', event)
+        })
+
+        document.addEventListener('keypress', (event) => {
+          logEvent('Keypress', event)
+        })
+      })
+    }
   }
 })
 
