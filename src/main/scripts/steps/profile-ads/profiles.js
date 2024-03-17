@@ -163,8 +163,8 @@ export default async (page, giverData, featOptions, receiverData) => {
         featOptions.allowLikeAction &&
         currentEntrie === 1 &&
         !entryItem.isAds &&
-        receiverData.like_count <= 8 &&
-        giverData.like_count <= 8
+        receiverData.like_count <= 4 &&
+        giverData.like_count <= 4
       ) {
         await utils.delayRandom()
         logger.info(`${receiverData.username} favoriteEntry`)
@@ -182,8 +182,8 @@ export default async (page, giverData, featOptions, receiverData) => {
         featOptions.allowCommentAction &&
         receiverData.gpt_key &&
         featOptions.chatOpenAIPrefix &&
-        receiverData.comment_count <= 8 &&
-        giverData.comment_count <= 8
+        receiverData.comment_count <= 4 &&
+        giverData.comment_count <= 4
       ) {
         // maximum 5 comment likes per user per day
         logger.info(
@@ -223,7 +223,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     if (entryItem.isRePost || entryItem.replyCount < 2) {
       continue
     }
-    if (entryItem.isAds && receiverData.click_count < 500) {
+    if (entryItem.isAds && receiverData.click_count < 100) {
       await scrollAction.scrollToEntryMedia(page, elementHandle)
       await _getDelayTimeAction(featOptions)
       await interactAction.interactAdsEntry(page, elementHandle, entryItem)
@@ -243,7 +243,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    if (Math.random() < 0.5 && receiverData.click_count < 500) {
+    if (Math.random() < 0.3 && receiverData.click_count < 100) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,
