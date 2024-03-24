@@ -17,7 +17,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppConfig from '../config/enums'
 import { useSnackbar } from '../context/SnackbarContext'
 
-const Navbar = ({ username, onLogout, userRole, userSuperAdmin, updateUserRole }) => {
+const Navbar = ({ username, expiredDate, onLogout, userRole, userSuperAdmin, updateUserRole }) => {
   const navigate = useNavigate()
   const [selectedTeam, setSelectedTeam] = useState({ id: '', name: 'Select a team' })
   const { openSnackbar } = useSnackbar()
@@ -239,7 +239,9 @@ const Navbar = ({ username, onLogout, userRole, userSuperAdmin, updateUserRole }
             </MenuItem>
           ))}
         </Select>
-        <div style={{ marginLeft: 'auto', color: 'dark' }}>{username}</div>{' '}
+        <div style={{ marginLeft: 'auto', color: 'dark' }}>
+          {username} | Date Exp: {expiredDate}
+        </div>{' '}
         {/* Display the username */}
       </Toolbar>
       <DrawerMenu />

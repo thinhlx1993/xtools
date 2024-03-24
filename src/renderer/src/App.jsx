@@ -33,6 +33,7 @@ const ClientDashboard = () => {
 const App = () => {
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole'))
   const [username, setUsername] = useState('')
+  const [expiredDate, setExpiredDate] = useState('')
   const [userSuperAdmin, setUserSuperAdmin] = useState(false)
 
   useEffect(() => {
@@ -92,6 +93,7 @@ const App = () => {
       })
       const data = await response.json()
       setUsername(data.username)
+      setExpiredDate(data.expired_at)
       if (data.is_super_admin) {
         setUserSuperAdmin(true)
       }
@@ -113,6 +115,7 @@ const App = () => {
       <HashRouter>
         <Navbar
           username={username}
+          expiredDate={expiredDate}
           onLogout={handleLogout}
           userRole={userRole}
           userSuperAdmin={userSuperAdmin}
