@@ -128,8 +128,12 @@ const ProfilesPage = () => {
       setProfiles(data.profiles) // Assuming the API response contains an array of profiles in 'profiles' key
       setresultCount(data.result_count)
     } catch (error) {
-      openSnackbar('Error fetching profiles', 'error')
       console.error('Error fetching profiles:', error)
+      if (error?.response?.data?.message) {
+        openSnackbar(error?.response?.data?.message, 'error')
+      } else {
+        openSnackbar('Error fetching profiles', 'error')
+      }
     }
   }
 

@@ -31,7 +31,7 @@ const UsersPage = () => {
   const [groups, setGroups] = useState([])
   const [newUserName, setNewUserName] = useState('') // Initialize newUserName
   const [newUserRole, setNewUserRole] = useState('')
-  const [newUserExpiredDate, setNewUserExpiredDate] = useState(90)
+  const [newUserExpiredDate, setNewUserExpiredDate] = useState(0)
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false)
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false)
   const { openSnackbar } = useSnackbar()
@@ -47,7 +47,7 @@ const UsersPage = () => {
   useEffect(() => {
     fetchUsers()
     fetchGroups()
-  }, [page, rowsPerPage, searchQuery])
+  }, [page, rowsPerPage])
 
   const fetchGroups = async () => {
     const response = await getRequest(`/groups`)
@@ -125,8 +125,12 @@ const UsersPage = () => {
       // Handle errors, such as showing an error message to the user
     }
   }
-  const handleEditProfile = (profileId) => {
-    setUserIdToEdit(profileId)
+  const handleEditProfile = (user) => {
+    setUserIdToEdit(user.username)
+    if (user.groups.length > 0) {
+      setSelectedGroup(user.groups[0].group_id)
+    }
+
     setEditUserDialogOpen(true)
   }
   const handleOpenDeleteDialog = (userId) => {
@@ -145,8 +149,10 @@ const UsersPage = () => {
   const handleEditUserConfirm = async () => {
     try {
       const requestBody = {
-        group_id: selectedGroup
+        group_id: selectedGroup,
+        expired_days: newUserExpiredDate
       }
+      console.log(requestBody)
       const response = await fetch(`${AppConfig.BASE_URL}/teams/user?username=${userIdToEdit}`, {
         method: 'PUT',
         headers: {
@@ -222,25 +228,26 @@ const UsersPage = () => {
         </Grid>
 
         {/* Search Field */}
-
+        <Grid item>
+          <TextField
+            size="small"
+            label="Search Users"
+            variant="outlined"
+            style={{ margin: '20px 0' }}
+            value={searchQuery}
+            onChange={(e) => handleInputChange(e.target.value)}
+          />
+        </Grid>
         <Grid item style={{ marginLeft: '20px' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenAddUserDialog}
-            style={{ marginBottom: '20px' }}
-          >
+          <Button variant="contained" color="primary" onClick={fetchUsers}>
+            Search
+          </Button>
+        </Grid>
+        <Grid item style={{ marginLeft: '20px' }}>
+          <Button variant="contained" color="primary" onClick={handleOpenAddUserDialog}>
             Add New User
           </Button>
         </Grid>
-        <TextField
-          label="Search Users"
-          variant="outlined"
-          fullWidth
-          style={{ margin: '20px 0' }}
-          value={searchQuery}
-          onChange={(e) => handleInputChange(e.target.value)}
-        />
       </Grid>
       <Paper style={{ marginBottom: '20px' }}>
         <Table size="small">
@@ -250,6 +257,7 @@ const UsersPage = () => {
               <TableCell>Roles</TableCell>
               <TableCell>Group</TableCell>
               <TableCell>Last active at</TableCell>
+              <TableCell>Expired at</TableCell>
               <TableCell></TableCell>
             </TableRow>
           </TableHead>
@@ -262,8 +270,9 @@ const UsersPage = () => {
                   {user?.groups.length > 0 ? user?.groups[0].group_name : <></>}
                 </TableCell>
                 <TableCell>{user.last_active_at}</TableCell>
+                <TableCell>{user.expired_at}</TableCell>
                 <TableCell>
-                  <IconButton color="primary" onClick={() => handleEditProfile(user.username)}>
+                  <IconButton color="primary" onClick={() => handleEditProfile(user)}>
                     <EditIcon />
                   </IconButton>
                   <IconButton color="error" onClick={() => handleOpenDeleteDialog(user.username)}>
@@ -297,18 +306,18 @@ const UsersPage = () => {
             value={newUserName}
             onChange={(e) => setNewUserName(e.target.value)}
           />
-          <TextField
+          {/* <TextField
             autoFocus
             number
             margin="normal"
             required
             fullWidth
             id="new-user-expired"
-            label="number of days user will expire. Setting the value to 0 is never expire."
+            label="Number of days user will expire. Admin is never expire."
             name="expired_date"
             value={newUserExpiredDate}
             onChange={(e) => setNewUserExpiredDate(e.target.value)}
-          />
+          /> */}
           <TextField
             select
             label="Role"
@@ -369,6 +378,18 @@ const UsersPage = () => {
               </MenuItem>
             ))}
           </TextField>
+          <TextField
+            autoFocus
+            number
+            margin="normal"
+            required
+            fullWidth
+            id="new-user-expired"
+            label="Gia hạn thời gian sử dụng"
+            name="expired_date"
+            value={newUserExpiredDate}
+            onChange={(e) => setNewUserExpiredDate(e.target.value)}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditDialog}>Cancel</Button>

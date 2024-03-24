@@ -223,7 +223,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     if (entryItem.isRePost || entryItem.replyCount < 2) {
       continue
     }
-    if (entryItem.isAds && receiverData.click_count < 100) {
+    if (entryItem.isAds) {
       await scrollAction.scrollToEntryMedia(page, elementHandle)
       await _getDelayTimeAction(featOptions)
       await interactAction.interactAdsEntry(page, elementHandle, entryItem)
@@ -243,7 +243,7 @@ export default async (page, giverData, featOptions, receiverData) => {
     await entryUrl.hover()
     await utils.delayRandom()
 
-    if (Math.random() < 0.3 && receiverData.click_count < 100) {
+    if (Math.random() < 0.3) {
       await Promise.all([
         postDetail(page, giverData, receiverData, featOptions, {
           entryId: entryItem.postId,
