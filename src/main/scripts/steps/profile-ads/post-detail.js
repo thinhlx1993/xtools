@@ -36,6 +36,7 @@ export default async (page, giverData, receiverData, featOptions, postEntry) => 
   logger.info(`${giverData.username} start view post detail`)
   const entries = []
   let adsInteracted = false
+  let totalPostInteact = 0
   handleResponseTweetDetail(page, ({ addEntries }) => {
     entries.push(...addEntries)
   })
@@ -54,6 +55,11 @@ export default async (page, giverData, receiverData, featOptions, postEntry) => 
       return
     }
     entries.shift()
+    if (totalPostInteact > 30) {
+      await utils.delayRandom()
+      return
+    }
+    totalPostInteact += 1
     const entryType = entry.content.entryType
     if (
       entryType === ENTRY_TYPE.item &&
@@ -69,7 +75,7 @@ export default async (page, giverData, receiverData, featOptions, postEntry) => 
     }
     const subEntryItems = mapper.mapTweetDetail(entry)
     for (let index = 0; index < subEntryItems.length; index++) {
-      await page.bringToFront()
+      // await page.bringToFront()
       const subEntryItem = subEntryItems[index]
       // logger.info('subEntryItem', subEntryItem)
       const username = subEntryItem.authorId

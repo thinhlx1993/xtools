@@ -17,6 +17,7 @@ import interactSpecializationStep from './steps/interact-specialization'
 import { regTwDomain, regXDomain } from './regex'
 import utils from './utils'
 import { mapErrorConstructor, splitProxy } from '../helpers'
+import { windowScrollBy } from './helpers'
 import { getAppPath } from '../utils'
 // eslint-disable-next-line no-unused-vars
 import { Account, ScriptOption } from './define-type'
@@ -188,6 +189,10 @@ const _handleNewPage = async (target) => {
       if (isTwUrl(pageUrlSecond)) {
         return
       }
+      for (let i = 0; i < utils.random([3, 5, 7, 9]); i++) {
+        await windowScrollBy(newPage, 300)
+        await utils.delayRandom([1000, 2000, 3000])
+      }
     } catch (error) {
       console.log('targetcreated__closed')
       return
@@ -281,28 +286,28 @@ const init = async (options, callbackFuncUpdateStatus, accountId) => {
         (feature) => feature.type === FEATURE_TYPE.interactSpecialization
       )
       if (followProfiles?.enable) {
-        followProfilesStep.init(browser, account, followProfiles)
+        await followProfilesStep.init(browser, account, followProfiles)
       }
       callbackFuncUpdateStatus(SCRIPT_STATUS.start)
       if (fairInteractOptions?.enable) {
-        fairInteractStep.init(browser, account, fairInteractOptions)
+        await fairInteractStep.init(browser, account, fairInteractOptions)
       }
       if (buffViewsOptions?.enable) {
-        buffViewsStep.init(browser, account, buffViewsOptions)
+        await buffViewsStep.init(browser, account, buffViewsOptions)
       }
       // auto post
       if (reUpPostOptions?.enable) {
-        crawlPostStep.init(browser, account, reUpPostOptions)
-        reUpStep.init(browser, account, reUpPostOptions)
+        await crawlPostStep.init(browser, account, reUpPostOptions)
+        await reUpStep.init(browser, account, reUpPostOptions)
       }
       if (interactAdsOptions?.enable) {
-        profileAdsStep.init(browser, account, interactAdsOptions)
+        await profileAdsStep.init(browser, account, interactAdsOptions)
       }
       if (newsFeedOptions?.enable) {
-        newsFeedStep.init(browser, account, newsFeedOptions)
+        await newsFeedStep.init(browser, account, newsFeedOptions)
       }
       if (interactSpecializationOptions?.enable) {
-        interactSpecializationStep.init(browser, account, interactSpecializationOptions)
+        await interactSpecializationStep.init(browser, account, interactSpecializationOptions)
       }
       callbackFuncUpdateStatus(SCRIPT_STATUS.playing)
     } catch (error) {

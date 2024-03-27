@@ -24,7 +24,8 @@ import {
   IconButton,
   FormControl,
   InputLabel,
-  FormControlLabel
+  FormControlLabel,
+  Chip
 } from '@mui/material'
 import LaunchIcon from '@mui/icons-material/Launch'
 import PlayCircleFilledWhiteIcon from '@mui/icons-material/PlayCircleFilledWhite'
@@ -644,7 +645,11 @@ const ProfilesPage = () => {
         {/* Search Field */}
         {!isMobile && (
           <Grid item style={{ marginRight: '20px' }}>
-            <Select value={filterByType} onChange={(e) => setFilterByType(e.target.value)}>
+            <Select
+              size="small"
+              value={filterByType}
+              onChange={(e) => setFilterByType(e.target.value)}
+            >
               <MenuItem key="all" value="all">
                 All Account
               </MenuItem>
@@ -681,6 +686,7 @@ const ProfilesPage = () => {
         {!isMobile && (
           <Grid item>
             <TextField
+              size="small"
               label="Search by Username, Status"
               variant="outlined"
               value={searchQuery}
@@ -739,16 +745,15 @@ const ProfilesPage = () => {
               <TableCell>Username</TableCell>
               {!isMobile && <TableCell>Type</TableCell>}
               {!isMobile && <TableCell>Followers</TableCell>}
-              {!isMobile && <TableCell>Suspended</TableCell>}
               {!isMobile && <TableCell>Payouts</TableCell>}
               {!isMobile && <TableCell>Total View</TableCell>}
               {!isMobile && <TableCell>LinkClicks</TableCell>}
               {!isMobile && <TableCell>Replies</TableCell>}
-              {!isMobile && <TableCell>Posts</TableCell>}
+              {!isMobile && <TableCell>New Posts</TableCell>}
               {!isMobile && <TableCell>xClick</TableCell>}
               {!isMobile && <TableCell>Proxy</TableCell>}
               {!isMobile && <TableCell>GPT Key</TableCell>}
-              {!isMobile && <TableCell>last Activate</TableCell>}
+              {!isMobile && <TableCell>Last Activate</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell></TableCell>
             </TableRow>
@@ -769,6 +774,7 @@ const ProfilesPage = () => {
                     <span>
                       {profile.username}
                       <VerifiedIcon
+                        fontSize="small"
                         style={{
                           marginLeft: '5px',
                           verticalAlign: 'middle',
@@ -777,6 +783,7 @@ const ProfilesPage = () => {
                       />
                       {profile.profile_data?.account_status === 'ERROR' ? (
                         <PaidIcon
+                          fontSize="small"
                           style={{
                             marginLeft: '5px',
                             verticalAlign: 'middle',
@@ -788,6 +795,7 @@ const ProfilesPage = () => {
                       )}
                       {profile.profile_data?.account_status === 'AdsEligible' ? (
                         <PaidIcon
+                          fontSize="small"
                           style={{
                             marginLeft: '5px',
                             verticalAlign: 'middle',
@@ -799,6 +807,7 @@ const ProfilesPage = () => {
                       )}
                       {profile.profile_data?.account_status === 'NotStarted' ? (
                         <PaidIcon
+                          fontSize="small"
                           style={{
                             marginLeft: '5px',
                             verticalAlign: 'middle',
@@ -810,6 +819,7 @@ const ProfilesPage = () => {
                       )}
                       {profile.profile_data?.account_status === 'OK' ? (
                         <PaidIcon
+                          fontSize="small"
                           style={{
                             marginLeft: '5px',
                             verticalAlign: 'middle',
@@ -839,18 +849,6 @@ const ProfilesPage = () => {
                     <Tooltip title={profile?.profile_data?.followers}>
                       <span>{profile?.profile_data?.followers}</span>
                     </Tooltip>
-                  </TableCell>
-                )}
-                {!isMobile && (
-                  <TableCell
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: 50
-                    }}
-                  >
-                    <span>{!profile?.profile_data?.suspended ? 'No' : 'Yes'}</span>
                   </TableCell>
                 )}
                 {!isMobile && (
@@ -987,7 +985,20 @@ const ProfilesPage = () => {
                     maxWidth: 150
                   }}
                 >
-                  {profile.status}
+                  {profile.status.includes('ok') ? (
+                    <>
+                      <Chip
+                        label={profile.status}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Chip label={profile.status} size="small" color="error" variant="outlined" />
+                    </>
+                  )}
                 </TableCell>
                 <TableCell style={{ textAlign: 'right' }}>
                   <IconButton color="primary" onClick={() => handleEditProfile(profile)}>

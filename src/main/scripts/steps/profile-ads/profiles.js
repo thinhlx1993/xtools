@@ -50,7 +50,27 @@ export default async (page, giverData, featOptions, receiverData) => {
     }
     entries.push(...addEntries)
   })
-  await page.goto(PAGE_URL.profile(receiverData.username))
+
+  // 10% random search this user
+  if (Math.random() < 0.1) {
+    await page.goto(PAGE_URL.home)
+    const searchBtn = await page.waitForSelector('a[data-testid="AppTabBar_Explore_Link"]')
+    await searchBtn.click()
+    await utils.delayRandom()
+    const searchInput = await page.waitForSelector('input[data-testid="SearchBox_Search_Input"]')
+    await searchInput.click()
+    await utils.delayRandom()
+    await page.keyboard.type(`@${receiverData.username}`, { delay: 200 })
+    await utils.delayRandom()
+    await page.waitForSelector('div[data-testid="typeaheadResult"]')
+    await utils.delayRandom()
+    const results = await page.$$('div[data-testid="typeaheadResult"]')
+    await results[1].click()
+    console.log(`Search the user ${entries.length}`)
+  } else {
+    await page.goto(PAGE_URL.profile(receiverData.username))
+  }
+
   logger.info(`done goto ${receiverData.username}`)
   await page
     .waitForSelector(commonPathSelector.timelineSection, {

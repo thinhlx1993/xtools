@@ -58,7 +58,7 @@ const Navbar = ({ username, expiredDate, onLogout, userRole, userSuperAdmin, upd
   const fetchTeams = async () => {
     try {
       if (localStorage.getItem('access_token')) {
-        const response = await fetch(`${AppConfig.BASE_URL}/teams`, {
+        const response = await fetch(`${AppConfig.BASE_URL}/teams/`, {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -227,22 +227,35 @@ const Navbar = ({ username, expiredDate, onLogout, userRole, userSuperAdmin, upd
         >
           <MenuIcon />
         </IconButton>
-        <Select
-          value={selectedTeam.teams_id}
-          onChange={(e) => handleTeamSwitch(teams.find((team) => team.teams_id === e.target.value))}
-          displayEmpty
-          renderValue={() => selectedTeam.teams_name}
-        >
-          {teams.map((team) => (
-            <MenuItem key={team.teams_id} value={team.teams_id}>
-              {team.teams_name}
-            </MenuItem>
-          ))}
-        </Select>
-        <div style={{ marginLeft: 'auto', color: 'dark' }}>
-          {username} | Date Exp: {expiredDate}
-        </div>{' '}
-        {/* Display the username */}
+        {userRole ? (
+          <>
+            {/* <Select
+              value={selectedTeam.teams_id}
+              onChange={(e) =>
+                handleTeamSwitch(teams.find((team) => team.teams_id === e.target.value))
+              }
+              displayEmpty
+              renderValue={() => selectedTeam.teams_name}
+            >
+              {teams.map((team) => (
+                <MenuItem key={team.teams_id} value={team.teams_id}>
+                  {team.teams_name}
+                </MenuItem>
+              ))}
+            </Select> */}
+            <div style={{ marginLeft: 'auto', color: 'dark' }}>
+              {userRole == 'admin' ? (
+                <>{username}</>
+              ) : (
+                <>
+                  {username} | Date Exp: {expiredDate}
+                </>
+              )}
+            </div>{' '}
+          </>
+        ) : (
+          <></>
+        )}
       </Toolbar>
       <DrawerMenu />
     </AppBar>
