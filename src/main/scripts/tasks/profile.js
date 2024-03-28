@@ -178,6 +178,12 @@ export const openProfileBrowser = async (profile) => {
         }
       }
     } catch (error) {
+      try {
+        logger.info(`Check captcha`)
+        await resolveCaptcha(profile, page)
+      } catch (error) {
+        logger.error(`Check captcha error ${error}`)
+      }
       logger.error(`Open the browser ${error}`)
       throw error
     }
@@ -234,30 +240,29 @@ export const setCookies = async (page, profileData) => {
 }
 
 export const resolveCaptcha = async (profileId, page) => {
-  // await randomDelay()
-  // try {
-  //   // aria-label="Home timeline"
-  //   await page.waitForSelector('div[aria-label="Home timeline"]', {
-  //     visible: true,
-  //     timeout: 5000
-  //   })
-  //   await updateProfileData(profileId, { status: 'ok' })
-  //   return
-  // } catch (error) {
-  //   logger.info('Cant access to the homepage')
-  // }
-
   try {
-    const textExists = await page.evaluate(() =>
-      document
-        .querySelector('span')
-        ?.innerText?.includes('Hmm...this page doesn’t exist. Try searching for something else.')
-    )
-    if (!textExists) {
+    try {
+      const textExists = await page.evaluate(() =>
+        document.querySelector('body')?.innerText?.includes('Pass an Arkose challenge')
+      )
+      if (textExists) {
+        const startBtn = await page.waitForSelector('input.Button.EdgeButton.EdgeButton--primary')
+        await startBtn.click()
+        await randomDelay()
+      }
+    } catch (error) {}
+
+    if (page.url().includes('/account/access')) {
+      await randomDelay(10000, 15000)
+      await page.waitForSelector('iframe[id="arkose_iframe"]', {
+        visible: true,
+        timeout: 2000
+      })
+      await updateProfileData(profileId, { status: 'found captcha' })
+      logger.info('ok found iframe')
+    } else {
       return
     }
-
-    await updateProfileData(profileId, { status: 'found captcha' })
 
     let profileData = await getProfileData(profileId, {})
     let key = ''
@@ -268,13 +273,6 @@ export const resolveCaptcha = async (profileId, page) => {
       return
     }
 
-    if (await page.$('a[href="/search"')) await page.click('a[href="/search"')
-
-    await randomDelay(5000, 10000)
-    await page.waitForSelector('iframe[id="arkose_iframe"]', {
-      visible: true,
-      timeout: 2000
-    })
     logger.info('ok found iframe')
     // Access the first level iframe
     const firstLevelFrame = await accessToIframe(page, 'iframe')
@@ -340,6 +338,8 @@ export const resolveCaptcha = async (profileId, page) => {
       const solutionResponse = await axios.get(solutionUrl)
       logger.info(solutionResponse.data)
       if (solutionResponse.data === 'ERROR_CAPTCHA_UNSOLVABLE') {
+        // aria-label="Restart"
+        // await thirdLevelFrame.click('button[aria-label="Restart"]') // click into authentication button
         await updateProfileData(profileId, { status: 'ERROR_CAPTCHA_UNSOLVABLE' })
         return
       }
